@@ -1,91 +1,143 @@
 # Realistic Economy
 
-Un mod para This Grand Life 2 que cambia las reglas del dinero del juego. Un hogar con muchas deudas paga más interés por sus préstamos. Mirar los precios de las acciones del mes siguiente y cargar después una partida anterior para comprar ya no sirve. Tampoco sirve cargar una partida después de perder en el casino. La ventana de Bolsa muestra las cifras que hacen falta para valorar una empresa. Cuando tienes varios negocios, puedes dejar al mod las contrataciones, los anuncios y los contratos. También se corrigen algunos fallos del propio juego.
+Realistic Economy es un mod para This Grand Life 2. El mod cambia las reglas del dinero del juego. Impide la ganancia que puedes conseguir cuando cargas una partida. Añade datos a la ventana de Bolsa y funciones automáticas a la ventana de negocio. Corrige algunos fallos del juego.
 
-Solo funciona con la versión v1.03.22 del juego. No lo ha hecho el desarrollador del juego. La versión actual es la 1.0.0.
+- Versión del mod: 1.0.0
+- Versión del juego: solo v1.03.22
+- El desarrollador del juego no ha hecho este mod.
 
 Otros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
-## Qué cambia
+## Qué hace el mod
 
 ### Interés de los préstamos
-El interés de un préstamo pasa a ser el tipo de interés del Banco Central más un margen, y el margen depende de la calificación crediticia de tu hogar. Hay seis niveles, de AAA a B. La calificación sale de cuatro cosas: la deuda frente a los activos, los pagos de un año frente a los ingresos de un año, el efectivo frente a los gastos de un año y el patrimonio neto. Una hipoteca cuesta más cuanto mayor es la parte del precio de la casa que pides prestada. Las ventanas de préstamos muestran tu calificación junto al tipo de interés.
+El tipo de interés de un préstamo es el tipo de interés del Banco Central más un margen. La calificación crediticia de tu hogar fija el margen. Hay seis calificaciones: AAA, AA, A, BBB, BB y B.
 
-### El efectivo que se llevará el fin de mes
-El resumen mensual, la ventana que se abre al cambiar de mes, empieza con la línea "Fin de mes: efectivo necesario $X". Es la suma de los pagos de tus préstamos y de lo que se llevaron de verdad los salarios, el alquiler y otros gastos en el último fin de mes.
+El mod calcula la calificación con estos cuatro valores:
+
+- la deuda comparada con los activos
+- los pagos de préstamos de un año comparados con los ingresos de un año
+- el efectivo comparado con los gastos de un año
+- el patrimonio neto
+
+En una hipoteca, el margen es mayor cuando pides prestada una parte mayor del precio de la casa. La ventana de préstamos muestra la calificación.
+
+### Efectivo para el fin de mes
+El resumen mensual es la ventana que se abre cuando cambia el mes. El mod pone la línea "Fin de mes: efectivo necesario $X" al principio de esta ventana. El importe es la suma de los pagos de tus préstamos y de los otros gastos que pagaste en el último fin de mes. Los salarios y el alquiler son gastos de este tipo.
 
 ### Bloqueo de operaciones después de cargar
-Si cargas una partida de antes de un fin de mes que ya has jugado, no puedes comprar ni vender acciones ni futuros hasta que ese fin de mes pase otra vez. Así no se gana dinero con precios que ya has visto. El bloqueo dura dos meses como mucho. Una partida guardada después del fin de mes más lejano al que has llegado no se bloquea. Esta función se puede desactivar en la configuración.
+Si cargas una partida anterior a un fin de mes que ya pasaste, el mod bloquea las operaciones. Durante el bloqueo no puedes comprar ni vender acciones. Tampoco puedes operar con futuros. El bloqueo termina cuando pasas otra vez ese fin de mes. El bloqueo no dura más de dos meses.
+
+Sin el bloqueo, puedes mirar los precios de las acciones del mes siguiente, cargar una partida antigua y comprar acciones. Puedes desactivar esta función en el archivo de configuración.
 
 ### Casino
-Los cuatro juegos pasan a tener una apuesta fija y probabilidades fijas.
+El mod da a los cuatro juegos una apuesta fija y probabilidades fijas.
 
-| Juego | Apuesta | Premio |
+| Juego | Apuesta | Resultado |
 |---|---|---|
-| Tragaperras | $1,000 | 22 % de recuperar 3 veces la apuesta, 0,8 % de 40 veces |
-| Ruleta | $10,000 | 44 % de 2 veces, 2 % de 4 veces |
-| Blackjack | $100,000 | 45 % de 2 veces, 2 % de 2,5 veces |
-| Bacará | $1,000,000 | 46,5 % de 2 veces |
+| Tragaperras | $1,000 | 22 %: recibes 3 veces la apuesta. 0,8 %: recibes 40 veces la apuesta. |
+| Ruleta | $10,000 | 44 %: 2 veces. 2 %: 4 veces. |
+| Blackjack | $100,000 | 45 %: 2 veces. 2 %: 2,5 veces. |
+| Bacará | $1,000,000 | 46,5 %: 2 veces. |
 
-Cada juego se puede jugar una vez al mes. El dinero se mueve al terminar la jugada. Guardar justo antes del final y cargar una y otra vez da siempre el mismo resultado. Si pierdes y luego cargas una partida anterior, la pérdida se descuenta otra vez de tu efectivo nada más cargar. Las apuestas suben con los precios del juego.
+- Puedes jugar a cada juego una vez al mes.
+- Recibes o pierdes el dinero cuando termina la acción del casino.
+- Si guardas y cargas otra vez, el resultado es el mismo.
+- Si pierdes y después cargas una partida antigua, el mod quita otra vez el dinero perdido.
+- Las apuestas suben con los precios del juego.
 
 ### Ventana de Bolsa
-Con una empresa seleccionada, la primera pestaña muestra junto a los importes del juego el PBR, el PER, la rentabilidad por dividendo y el cambio del precio respecto al mes anterior. Al pasar el ratón por una empresa de la lista se ven las mismas cifras en una línea. Una empresa que has investigado en el juego muestra además su precio justo.
+El mod muestra estos valores de cada empresa:
 
-Una empresa que está a punto de quebrar o de emitir acciones nuevas lleva un aviso. Si tienes acciones de una empresa así, el resumen mensual también lo dice. El juego solo avisa cuando ya ha pasado.
+- PBR
+- PER
+- rentabilidad por dividendo
+- cambio del precio de la acción desde el mes pasado
+- precio justo (solo de una empresa que has investigado en el juego)
 
-Con Mayús+clic en una empresa de la lista, el mod repite su investigación cada mes y cobra una cuota cada vez. Ctrl+Mayús+clic lo hace para todas las empresas.
+Selecciona una empresa para ver los valores en la primera pestaña. También puedes poner el puntero del ratón sobre una empresa de la lista.
 
-Cuatro de los cinco botones de orden que hay sobre la lista ordenan ahora por capitalización, por las más infravaloradas, por las más sobrevaloradas y por la subida del último mes. El gráfico de una empresa se abre solo con el precio de la acción, y los gráficos tienen una vista de seis meses. En la lista de futuros cada elemento muestra su tasa de inflación actual y la esperada.
+El mod muestra un aviso en una empresa que está cerca de la quiebra, de una reducción de tamaño o de una emisión de acciones nuevas. Si tienes acciones de esa empresa, el resumen mensual también muestra el aviso.
 
-### Salida a bolsa y Consejo de Administración
-En el juego, sacar un negocio a bolsa te da el 25 % de las acciones y nada de efectivo. Con el mod te quedas el 45 %, y el otro 55 % se vende al precio de salida y se te paga en efectivo. Ese efectivo es ingreso sujeto a impuestos de ese año.
+Suscripción de investigación:
 
-Cada 20 % que tengas de una empresa cotizada garantiza uno de los cinco puestos del Consejo de Administración. Aun así tienes que nominar a un miembro de tu hogar en el mes de la elección.
+- Haz Mayús+clic en una empresa de la lista. El mod investiga esa empresa otra vez cada mes. Pagas una cuota por cada investigación.
+- Para suscribir todas las empresas, haz Ctrl+Mayús+clic en una empresa.
 
-### Contratación y ofertas de contrato
-La ventana de contratación muestra el salario por hora efectiva de cada candidato (salario por hora ÷ eficiencia laboral) y pone primero al más barato. Alguien que cobra $64.84 por hora con una eficiencia del 114 % cuesta $56.88. Los candidatos de un mes siguen siendo los mismos después de cargar una partida.
+Otros cambios:
 
-Pasa el ratón por el icono de pago de un contrato ofrecido para ver qué porcentaje paga por encima del coste estándar del trabajo. Cuando un negocio pierde eficiencia laboral porque le faltan activos, el resumen mensual lo nombra.
+- Cuatro de los cinco botones de orden tienen un orden nuevo:
+  - mayor capitalización
+  - precio más bajo comparado con el precio justo
+  - precio más alto comparado con el precio justo
+  - mayor subida desde el mes pasado
+- El gráfico de una empresa se abre solo con la línea del precio de la acción.
+- Los gráficos tienen una vista de 6 meses.
+- La lista de futuros muestra la tasa de inflación y la tasa de inflación esperada de cada elemento.
 
-### Dejar un negocio al mod
-En cada negocio puedes dejar al mod las tareas siguientes una por una. Contratar a alguien, mantener anuncios y firmar un contrato cuestan cada uno una cuota, que se calcula con el salario por hora de un empleo del juego.
+### Salida a bolsa y puestos en el Consejo
+En el juego, la salida a bolsa de tu negocio te da el 25 % de las acciones. No recibes efectivo. Con el mod, conservas el 45 % de las acciones. El mod vende el otro 55 % al precio de salida y te da el efectivo. Este efectivo es ingreso sujeto a impuestos de ese año.
 
-- Empleados: activa el modo de gestión automática del juego, el icono de la flecha circular en la pestaña de empleados. El mod contrata a un candidato para un puesto al que le faltan manos. Cuando en un puesto sobran manos tres meses seguidos, despide a la persona más cara. Cuando un empleado pide un aumento, el mod lo sustituye por un candidato que hace el mismo trabajo por menos, y concede el aumento si no hay ninguno.
-- Activos: marca en el negocio la casilla que compra activos nuevos automáticamente cuando caducan. Con el mod compra también los activos que faltan.
-- Anuncios: Mayús+clic en un icono de anuncio. El mod activa los anuncios de pago mientras la conciencia está por debajo del 103 % y los desactiva por encima.
-- Contratos: Mayús+clic en el icono de contratos. A principios de cada mes el mod firma las ofertas que pagan más que su coste estándar, tantas como admita el negocio. Solo lo hace en un negocio donde también le has dejado los empleados y los activos.
-- El negocio entero: Ctrl+Mayús+clic en un icono de anuncio. Esto deja las cuatro tareas, y además el mod alquila más superficie cuando falta. Mientras el negocio está en manos del mod, los clics que lo cambian a mano quedan bloqueados (contratar, despedir, comprar y vender activos, aceptar y cancelar contratos). Otro Ctrl+Mayús+clic lo recupera.
+Cada 20 % de las acciones de una empresa cotizada garantiza un puesto en el Consejo de Administración. El Consejo tiene cinco puestos. Nomina a un miembro de tu hogar en el mes de la elección. Si no nominas a un miembro, no recibes un puesto.
 
-Mientras un negocio está cerrado, el mod no hace nada en él hasta que lo abras otra vez.
+### Candidatos y ofertas de contrato
+La ventana de contratación muestra el pago por hora efectiva de cada candidato. Pago por hora efectiva = pago por hora ÷ eficiencia laboral. Ejemplo: $64.84 ÷ 114 % = $56.88. La lista muestra primero al candidato con el valor más bajo.
 
-### Propiedades en venta por debajo de su valor
-Cuando una propiedad en venta tiene un precio muy por debajo de su valor, el resumen mensual da su dirección y lo que ganarías después de los gastos de compra.
+Los candidatos de un mes no cambian cuando cargas una partida.
+
+Pon el puntero del ratón sobre el icono de pago de una oferta de contrato. El mod muestra qué porcentaje paga la oferta por encima del coste estándar del trabajo.
+
+Si un negocio no tiene activos suficientes, su eficiencia laboral baja. El resumen mensual muestra entonces el nombre de ese negocio.
+
+### Automatización de un negocio
+El mod puede hacer cinco tareas para un negocio. Tú inicias cada tarea en cada negocio.
+
+| Tarea | Cómo se inicia | Qué hace el mod |
+|---|---|---|
+| Empleados | Activa el modo de gestión automática del juego. Su icono es la flecha circular de la pestaña de empleados. | Contrata a un candidato cuando un puesto no tiene empleados suficientes. Despide al empleado más caro cuando un puesto tiene demasiados empleados durante tres meses. Cuando un empleado pide más salario, lo sustituye por un candidato más barato. Si no hay un candidato así, acepta la petición. |
+| Activos | Marca en el negocio la casilla que compra activos nuevos automáticamente. | Compra también los activos que faltan. |
+| Anuncios | Haz Mayús+clic en un icono de anuncio. | Activa los anuncios de pago cuando la conciencia es menor del 103 %. Los desactiva cuando la conciencia es del 103 % o más. |
+| Contratos | Haz Mayús+clic en el icono de contratos. | Al principio de cada mes, firma las ofertas que pagan más que su coste estándar. Firma tantas ofertas como admite el negocio. Solo lo hace cuando las tareas Empleados y Activos también están activas. |
+| Todo | Haz Ctrl+Mayús+clic en un icono de anuncio. | Hace las cuatro tareas anteriores. Alquila más superficie cuando la superficie no es suficiente. Bloquea los clics que cambian el negocio a mano. |
+
+- Para parar una tarea, haz el mismo clic otra vez.
+- El mod cobra una cuota cuando contrata a un empleado, mantiene anuncios activos o firma un contrato.
+- El mod no hace nada en un negocio cerrado.
+
+### Propiedades por debajo de su valor
+Si una propiedad en venta tiene un precio mucho más bajo que su valor, el resumen mensual muestra una línea. La línea da la dirección y la ganancia. La ganancia es el valor menos el precio y los gastos de compra.
 
 ### Educación terminada
-El juego quita cada mes un 1 % del valor de un título o un certificado. A los cinco años queda cerca del 55 %, así que quien no empieza el trabajo poco después de titularse tiene que estudiar lo mismo otra vez. Con el mod, una educación que ha terminado un miembro del hogar no baja de lo que dio. La experiencia ganada trabajando sigue bajando como antes.
+El juego baja cada mes un 1 % el valor de un título o un certificado. Después de cinco años queda aproximadamente el 55 %. Con el mod, la educación terminada de un miembro de tu hogar conserva su valor. Solo baja la parte que supera el requisito más alto de un empleo. La experiencia del trabajo baja como en el juego.
 
 ### Fallos del juego corregidos
-- El juego se cerraba después de cargar partidas unas decenas de veces sin reiniciarlo.
-- Se corrigen textos equivocados de las traducciones del juego. En español, el interés fijo aparecía como "Corregido" y ahora dice "Fijo", y un número de meses salía como "MESm".
-- En algunos nombres de personas salían recuadros en lugar de letras.
+- El juego se cerraba cuando cargabas partidas unas decenas de veces sin reiniciar. El mod corrige este fallo.
+- Algunos textos traducidos eran incorrectos. El mod los corrige. Ejemplo: el interés fijo aparecía como "Corregido" y ahora aparece como "Fijo".
+- Algunas letras de los nombres de personas aparecían como recuadros. El mod muestra las letras correctas.
 
-## Antes de instalar
-- Cuando una actualización cambia la versión del juego, el mod se desactiva solo. No cambia nada hasta que salga una edición para la versión nueva.
-- Un antivirus puede desconfiar de `version.dll`. Es el Ultimate ASI Loader, de código público, el archivo que carga el mod al abrir el juego.
-- La primera vez que cargas una partida de antes del mod, el modo de gestión automática de los empleados y la compra automática de activos se desactivan en todos los negocios, porque con el mod estos dos interruptores hacen más. Actívalos de nuevo en los negocios que quieras dejar al mod.
-- El mod no añade ninguna ventana ni ningún botón. Sus textos salen dentro de las ventanas del juego, en el idioma del juego.
+## Antes de la instalación
+- Si una actualización cambia la versión del juego, el mod se desactiva solo. Espera una versión nueva del mod.
+- Un antivirus puede avisar de `version.dll`. Este archivo es el Ultimate ASI Loader, que es público. Carga el mod cuando se inicia el juego.
+- Cuando cargas por primera vez una partida anterior al mod, el mod desactiva dos interruptores en todos los negocios. Son el modo de gestión automática de los empleados y la compra automática de activos. Con el mod, estos dos interruptores hacen más tareas. Actívalos otra vez solo en los negocios que el mod debe llevar.
+- El mod no añade ventanas ni botones. Los textos del mod aparecen en las ventanas del juego, en el idioma del juego.
 
 ## Instalación
 1. Cierra el juego.
-2. Descarga el zip de [Releases](../../releases) y extráelo en la carpeta del juego, la que contiene `TGL2.exe`.
-3. Haz doble clic en `RealisticEconomy_install.bat`. Antes de nada copia tus partidas a la carpeta `saves_before_RealisticEconomy_1`.
-4. Abre el juego. El mod está instalado si detrás de la versión, en la esquina inferior derecha del menú principal, pone "+ Realistic Economy".
+2. Descarga el archivo zip de [Releases](../../releases).
+3. Extrae el archivo zip en la carpeta del juego. La carpeta del juego es la carpeta que contiene `TGL2.exe`.
+4. Haz doble clic en `RealisticEconomy_install.bat`. Este archivo copia primero tus partidas a la carpeta `saves_before_RealisticEconomy_1`.
+5. Inicia el juego.
+6. Mira el texto de versión en la esquina inferior derecha del menú principal. Si el texto contiene "+ Realistic Economy", el mod está instalado.
 
-Para quitar el mod, cierra el juego y ejecuta `RealisticEconomy_uninstall.bat`. Las partidas guardadas con el mod se abren sin él.
+## Desinstalación
+1. Cierra el juego.
+2. Haz doble clic en `RealisticEconomy_uninstall.bat`.
 
-## Configuración y descripción completa
-Cada función se puede desactivar en `RealisticEconomy.ini`, que queda junto a `TGL2.exe` después de instalar. El manual con las cifras y las cuotas de cada regla está en inglés: [docs/RealisticEconomy_README_en.txt](docs/RealisticEconomy_README_en.txt). También viene dentro del zip.
+Puedes abrir sin el mod las partidas que guardaste con el mod.
+
+## Configuración y manual
+- El archivo de configuración es `RealisticEconomy.ini`. Después de la instalación está en la carpeta del juego. En este archivo puedes desactivar cada función.
+- El manual completo está en inglés: [docs/RealisticEconomy_README_en.txt](docs/RealisticEconomy_README_en.txt). Da todas las cifras y cuotas de las reglas. El archivo zip también lo contiene.
 
 ## Licencia y código fuente
-Licencia MIT. El código fuente está en la carpeta [src](src).
+La licencia es MIT. El código fuente está en la carpeta [src](src).
