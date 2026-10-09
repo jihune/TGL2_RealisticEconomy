@@ -8,7 +8,9 @@
 # `repo` may be the clone that is pushed: its .git stays as it is and everything else in it is made anew, so that
 # `git -C mod_src/_build/github/repo status` shows what a new version changes.
 # The last line is `github=<folder> readmes=<n> source_files=<n> zip=<name> leaks=<n> verdict=PASS|FAIL`.
-# -Control puts a file with a home path into the copy, which must give FAIL; the folder it leaves is not for upload.
+# -Control puts a file with a home path into the copy, and reads the German README with one percentage changed and
+# a link to a file that is not there: it must give FAIL with leaks=1, readmes_complete=False and dead_links=1. The
+# folder it leaves is not for upload.
 param([switch]$Control)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -30,16 +32,26 @@ if (Test-Path -LiteralPath $repo) { Get-ChildItem -LiteralPath $repo -Force | Wh
 New-Item -ItemType Directory -Force (Join-Path $repo 'docs'), (Join-Path $repo 'src\analysis\scripts'), $release | Out-Null
 function Get-Copied([string]$folder) { Get-ChildItem -LiteralPath $folder -Recurse -File -Force | Where-Object { $_.FullName -notmatch '\\\.git\\' } }
 
-# the READMEs: each names this version and links to every other one
+# the READMEs: each names this version, links to every other one and has the amounts and percentages of the English
+# one (a decimal comma counts as a point); the files their links name are looked for further down, after the copy
 $names = @('README.md') + ($languages | ForEach-Object { "README.$_.md" })
+function Get-Figures([string]$text) {
+    ([regex]::Matches($text, '\$[\d,.]+\d|\d+(?:[.,]\d+)?\s?%') | ForEach-Object { $_.Value -replace '\s', '' -replace '(\d),(\d+%)', '$1.$2' } | Sort-Object) -join ' '
+}
 $readmesOk = $true
+$figures = $null
+$links = @()
 foreach ($name in $names) {
     $source = Join-Path $PSScriptRoot "github\$name"
     if (-not (Test-Path -LiteralPath $source)) { "missing: $source"; $readmesOk = $false; continue }
     $text = [IO.File]::ReadAllText($source)
+    if ($Control -and $name -eq 'README.de.md') { $text = $text.Replace('103', '130') + '[x](docs/not_there.txt)' }
     $others = @($names | Where-Object { $_ -ne $name -and -not $text.Contains("($_)") })
     if (-not $text.Contains($version)) { "$name does not name version $version"; $readmesOk = $false }
     if ($others.Count) { "$name has no link to: $($others -join ', ')"; $readmesOk = $false }
+    if ($null -eq $figures) { $figures = Get-Figures $text }
+    elseif ((Get-Figures $text) -ne $figures) { "$name has other amounts or percentages than README.md"; $readmesOk = $false }
+    $links += @([regex]::Matches($text, '\]\(([^)]+)\)') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch '^(\.\./|https?:)' } | ForEach-Object { "$name -> $_" })
     Copy-Item -LiteralPath $source (Join-Path $repo $name)
 }
 
@@ -84,10 +96,13 @@ foreach ($file in Get-Copied $repo) {
 }
 $gameFiles = @(Get-Copied $out | Where-Object { $_.Name -match '^(TGL2\.exe|.*\.sav|misc\.txt)$' -or $_.Extension -in '.png', '.dll', '.exe', '.asi' })
 
+$deadLinks = @($links | Where-Object { -not (Test-Path -LiteralPath (Join-Path $repo ($_ -replace '^.* -> ', ''))) })
+$deadLinks | ForEach-Object { "link to a file that is not in the repository: $_" }
+
 $sourceFiles = @(Get-Copied $src).Count
 $readmes = @(Get-ChildItem -LiteralPath $repo -File -Filter 'README*.md').Count
-$ok = $readmesOk -and $readmes -eq $names.Count -and $leaks -eq 0 -and $gameFiles.Count -eq 0 -and $sourceFiles -gt 0
+$ok = $readmesOk -and $readmes -eq $names.Count -and $deadLinks.Count -eq 0 -and $leaks -eq 0 -and $gameFiles.Count -eq 0 -and $sourceFiles -gt 0
 if ($gameFiles.Count) { $gameFiles | ForEach-Object { "not for upload: $($_.FullName.Substring($out.Length + 1))" } }
-"version=$version readmes_complete=$readmesOk binaries_or_game_files=$($gameFiles.Count)"
+"version=$version readmes_complete=$readmesOk links=$($links.Count) dead_links=$($deadLinks.Count) binaries_or_game_files=$($gameFiles.Count)"
 "github=$out readmes=$readmes source_files=$sourceFiles zip=$(Split-Path -Leaf $zip) leaks=$leaks verdict=$(if ($ok) { 'PASS' } else { 'FAIL' })"
 exit ([int](-not $ok))
