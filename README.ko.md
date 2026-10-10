@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.0.0. 게임 제작사가 만든 것이 아닙니다.
+This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.1.0. 게임 제작사가 만든 것이 아닙니다.
 
 다른 언어: [English](README.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -55,6 +55,7 @@ This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.0.0. 
 설정 파일에서 하나씩 끌 수 있습니다.
 
 - 예전 세이브를 불러온 뒤의 주식·선물 거래 잠금
+- 그 달의 경제 성장률, 주가, 상장가, 부동산 매물은 불러와도 그대로
 - 카지노: 정해진 판돈과 확률, 게임마다 한 달에 한 번
 - 그 달의 채용 지원자는 불러와도 그대로
 - 가치보다 많이 싼 부동산이 나오면 알림

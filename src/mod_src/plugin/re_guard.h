@@ -51,4 +51,38 @@ void re_guard_buy_hook(void); /* entries for the detours and the redirected call
 void re_guard_sell_hook(void);
 void re_guard_futures_hook(void);
 
+/* What a month end draws (note m37 Q4). The game's month-end routine calls the economy's month (growth, a crash),
+ * then the industries' cycles and the interest rates, then the month of the listed companies; the first and the last
+ * of these calls take ecx only:
+ *   0x00695272  call 0x004d37c0   the economy's month
+ *   0x00695297  call 0x00533340   the listed companies' month
+ * `re_guard_month_draws` is told before the first runs, with every register put back for it, and after the second
+ * has returned, with every register as that function left it.
+ * The properties for sale of a new month and the month's offers for the household's own properties are drawn when
+ * the game's month-start routine calls the property market's month start, again with ecx only:
+ *   0x0069558a  call 0x0054a730
+ * The callback is told before and after that call in the same way.
+ * Inside the property market's month start the game walks its sites twice, for the list for rent (0x0054ded0) and for
+ * the list for sale (0x0054c9c0), and draws for one site after the other; a search of the character makes a new site,
+ * so with one seed for the whole walk a search would still give other lists. Each walk starts a site with the same
+ * call, and `re_guard_site_draws` is told there with the site's map node:
+ *   0x0054e058  call 0x0080e290   list for rent, node in edi
+ *   0x0054cb08  call 0x0080e290   list for sale, node in esi
+ * After the two walks comes 0x0054a787 call 0x0054f010, and after that the offers for the properties the household
+ * sells or lets: `re_guard_month_draws` is told RE_DRAWS_PROPERTY_OFFERS before that call. */
+enum { RE_DRAWS_MONTH_END, RE_DRAWS_MONTH_END_DONE, RE_DRAWS_PROPERTY, RE_DRAWS_PROPERTY_DONE, RE_DRAWS_PROPERTY_OFFERS };
+typedef void (*re_guard_month_fn)(int moment);
+typedef void (*re_guard_site_fn)(int rent, const unsigned char *node);
+extern re_guard_month_fn re_guard_month_draws;
+extern re_guard_site_fn re_guard_site_draws;
+/* the redirected calls' own targets */
+extern void *re_guard_economy_month, *re_guard_stocks_month, *re_guard_property_month, *re_guard_site_data, *re_guard_own_values;
+
+void re_guard_economy_hook(void); /* for the redirected calls; not callable from C */
+void re_guard_stocks_hook(void);
+void re_guard_property_hook(void);
+void re_guard_sale_site_hook(void);
+void re_guard_rent_site_hook(void);
+void re_guard_offers_hook(void);
+
 #endif

@@ -17,6 +17,7 @@ enum {
     RE_GROUP_MONEY,
     RE_GROUP_TEXT,
     RE_GROUP_GUARD,
+    RE_GROUP_MONTH,
     RE_GROUP_IPO,
     RE_GROUP_BOARD,
     RE_GROUP_STOCKS,
@@ -122,6 +123,35 @@ enum {
 #define RE_VA_POST_MESSAGE 0x007e0010u /* ecx = the ticker's message list; type, text and two more strings by value (ret 0x4c) */
 #define RE_DEBTINV_UI 0x34             /* DebtInvM: pointer to the object that holds the ticker at the top of the screen */
 #define RE_UI_MESSAGES 0x478           /* the ticker's message list inside it */
+
+/* What a month end draws (note m37 Q4): two calls inside the month-end routine 0x00695020, each with ecx only and no
+ * stack arguments, to functions that end in a plain `ret`. Between the two the routine calls the industries' cycles
+ * (0x004d5300), the interest rates (0x004d3cc0) and 0x004d6310; the property market's month comes after them. */
+#define RE_VA_CALL_ECONOMY_MONTH 0x00695272u /* call 0x4d37c0, ecx = economy: growth and a crash */
+#define RE_VA_ECONOMY_MONTH 0x004d37c0u
+#define RE_VA_ECONOMY_MONTH_RET 0x004d3ca9u
+#define RE_VA_CALL_STOCKS_MONTH 0x00695297u /* call 0x533340, ecx = stock market: the month of every listed company */
+#define RE_VA_STOCKS_MONTH 0x00533340u
+#define RE_VA_STOCKS_MONTH_RET 0x00533566u
+/* The property market's month start, called by the month-start routine 0x00695430 with ecx only; a plain `ret`. It
+ * empties the list of properties for sale and fills it again, then makes the month's offer for every property the
+ * household has put up for sale or for rent; all of it drawn from the market stream (note b17). */
+#define RE_VA_CALL_RESTATE_MONTH 0x0069558au /* call 0x54a730, ecx = [main + 0x390] */
+#define RE_VA_RESTATE_MONTH 0x0054a730u
+#define RE_VA_RESTATE_MONTH_RET 0x0054c87cu
+/* Inside it the game fills the list for rent (0x0054ded0) and the list for sale (0x0054c9c0): each walks a copy of
+ * the map of sites and starts a site with a call of 0x0080e290 for the site's type, [node + 0x18]. The node's
+ * [+ 0x14] is what the making of a listing gets as the site and looks its street name up with (0x0054cef0). Then
+ * 0x0054f010, and after it the offers for the properties the household sells or lets. */
+#define RE_VA_RENT_SITE_TYPE 0x0054e020u      /* mov eax, [edi + 0x18]: in the walk for rent the node is in edi */
+#define RE_VA_CALL_RENT_SITE_DATA 0x0054e058u /* call 0x80e290 */
+#define RE_VA_SALE_SITE_TYPE 0x0054cad0u      /* mov eax, [esi + 0x18]: in the walk for sale it is in esi */
+#define RE_VA_CALL_SALE_SITE_DATA 0x0054cb08u /* call 0x80e290 */
+#define RE_VA_SITE_DATA 0x0080e290u
+#define RE_VA_SALE_SITE_ID 0x0054cd8au        /* lea eax, [esi + 0x14]: the site handed to the making of a listing */
+#define RE_VA_CALL_OWN_VALUES 0x0054a787u     /* call 0x54f010 */
+#define RE_VA_OWN_VALUES 0x0054f010u
+#define RE_SITE_NODE_ID 0x14
 
 /* The listing of a public company, FUN_005362a0 (notes b5 and m12). The IPO window runs it without committing, for
  * its preview; that run leaves before the investment sites and the fee. */
@@ -1188,6 +1218,7 @@ enum {
 #define RE_ECON_BASE_RATE 0xa8
 #define RE_ECON_RESERVE_RATE 0xac
 #define RE_RANDGEN_MARKET 0x48 /* RandUnit {seed, numCalls, engine*} that drives stock prices */
+#define RE_RANDGEN_ECONOMY 0x6c /* the one of growth, a crash and the industries' cycles (note b2: 0x004d37c0, 0x004d5300) */
 #define RE_PFM_DEBTINV 0xa8    /* DebtInvM inside PFM */
 #define RE_DEBTINV_EVENTS 0x38 /* pointer to the owner of the monthly summary's event list */
 #define RE_EVENTS_LIST 0x3c4   /* std::list of the month's lines inside that owner */

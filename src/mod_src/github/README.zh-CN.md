@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.0.0。不是游戏开发商制作的。
+This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.1.0。不是游戏开发商制作的。
 
 其他语言：[English](README.md)、[한국어](README.ko.md)、[Deutsch](README.de.md)、[Español](README.es.md)、[Français](README.fr.md)、[Português (Brasil)](README.pt-BR.md)、[日本語](README.ja.md)
 
@@ -55,6 +55,7 @@ This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.0.0�
 每一项都可以在设置文件里关闭。
 
 - 读取以前的存档后锁定股票和期货交易
+- 当月的经济增长率、股价、上市价和在售房产读档后不变
 - 赌场：固定的赌注和概率，每种游戏每月一次
 - 当月的求职候选人读档后不变
 - 有房产以远低于价值的价格出售时给出提示

@@ -53,9 +53,9 @@ text of the thing you click (as the game's own Ctrl-click is).
        rate now" first.
      - The time button at the top right of a chart: 6 months -> 1 year -> 2 years -> 5 years -> the most.
 
-   The rest (loan rates, the trade lock, the casino, fixed candidates and so on) works by itself once it is on.
-   It is switched in RealisticEconomy.ini; the table is at the end, under "What the mod does in your place,
-   its switches and what it costs".
+   The rest (loan rates, the trade lock, the fixed month end, the casino, fixed candidates and so on) works by
+   itself once it is on. It is switched in RealisticEconomy.ini; the table is at the end, under "What the mod does
+   in your place, its switches and what it costs".
 
 
 What it does
@@ -96,13 +96,41 @@ What it does
        during a lock would buy at prices already seen.
      - While locked, the summary panel shows "Trade lock: another N hour(s) (stocks, futures)".
      - If you do not want this feature, switch it off: see "Switching features on and off" below.
-     - A lock lasts at most 2 months from the load. If you went further ahead than that, share prices take another
-       course from the load on. Loading the same save again gives that same course.
+     - A lock lasts at most 2 months from the load. If you went further ahead than that, economic growth, the
+       industries' cycles and share prices all take another course from the load on. Futures settle against growth
+       and the cycles, so what they pay changes too. Loading the same save again gives that same course.
      - Stock purchases of the auto transfer are skipped during a lock as well, except after an end-of-month
        autosave that was written with no lock running.
      - If you went ahead by mistake: set release=1 under [guard] in RealisticEconomy.ini and load. The record of
        that playthrough is cleared and the value goes back to 0 by itself.
-     - Futures settle against another random stream than share prices; their course is not changed.
+
+   A month end that a load does not change ([guard] monthEndFixed, on by default)
+   At the month end the game draws the month's economic growth, the industries' cycles and the new share prices from
+   random numbers. Other things use up the same numbers: a search for a property, opening the "create a public
+   company" window, an activity with a random payment. So if you load a save, do one of them and then pass the
+   month end, the same month ends with other share prices. With shares or futures in hand you can repeat that until
+   a month you like comes, and the trade lock does not notice, because nothing is traded. In a test save with
+   shares worth $7.8 million one such try moved their worth at the month end by $50,000 to $240,000.
+   The mod makes this part of the month end independent of how many random numbers were used up before it. The
+   same month of the same playthrough ends with the same growth, the same cycles and the same share prices,
+   whatever save you load and whatever you do first.
+     - The listing price too. Within a month the window gives the same listing price for the same set of businesses
+       however often you open it, and the listing gets the price the window showed. The game itself draws anew
+       every time the window opens and once more at the listing, so the listing price was about 1% off what the
+       window showed.
+     - The properties of a new month too. When a month starts the game draws the lists of properties for sale and
+       for rent anew, and that depended on how many random numbers had been used up before as well, so a load could
+       be repeated until a property far under its value was in the list. Now the list of a month is the same
+       whatever you do first. Every site is drawn by itself: a search for a property makes new sites, and the
+       properties of the other sites stay as they are.
+     - The offer a month brings for a property you have put up for sale, and the tenant's offer for one you let,
+       are the same within a month as well.
+     - The course changes in one case only: when you went further ahead than the lock's limit of 2 months and came
+       back (see above).
+     - Not stopped: buying shares, seeing them fall that month, and going back to the save from before the
+       purchase. That only undoes the purchase, and after the load the lock keeps you from buying anything else
+       until that month has passed again.
+     - To switch it off: monthEndFixed=0 under [guard]. guard=0 switches it off as well.
 
 4. Creating a public company (IPO)
    In the game itself a listing leaves you 25% of the shares and no cash. With the mod you keep 45% and sell the
@@ -924,6 +952,7 @@ What stays in a save:
      - Variable-rate loans return to the game's own rates.
      - The lines in the summary panel disappear at the next month end.
      - A course of share prices that the trade lock changed goes on as it is.
+     - The fixed month end leaves nothing in a save. Without the mod a month end is drawn the game's own way again.
      - A company listed while the mod was in use, the cash it paid you and the tax on that cash stay as they are.
      - A member seated by the guarantee stays until the next election. The election notice of a company you
        listed stays switched on.
@@ -946,7 +975,9 @@ feature that is off leaves that part of the game alone. Keep only the ones you l
 
      credit=0      no credit-grade rates: loan rates are the game's own again
      forecast=0    no "This month end: cash needed" line in the summary panel
-     guard=0       no trade lock after a load: stock and futures trades are never refused
+     guard=0       no trade lock after a load: stock and futures trades are never refused. The fixed month end
+                   goes with it: growth, share prices, a listing price and a new month's properties are drawn
+                   the game's own way
      ipo=0         a listing works as in the game itself (you keep 25%, no cash)
      board=0       no guaranteed board seats
      stocks=0      nothing of 6 above: no ratios or fair price in the stock window, no research subscription, the
@@ -972,8 +1003,9 @@ know when you switch something off:
      - wording=0: lines already written into a month's summary stay as they were written.
 
 The trade lock is a matter of taste. If you play by going back to earlier saves, set guard=0. To lift one lock and
-keep the feature, use release=1 under [guard] (see 3 above). To let a load undo casino games and keep the rest of
-the casino feature, use keepResultsOnLoad=0 under [casino] (see 8 above).
+keep the feature, use release=1 under [guard] (see 3 above). To keep the lock and let a month end be drawn the
+game's own way, use monthEndFixed=0 under [guard] (see 3 above). To let a load undo casino games and keep the rest
+of the casino feature, use keepResultsOnLoad=0 under [casino] (see 8 above).
 
 What the mod does in your place, its switches and what it costs:
      - Six switches are inside the game.
@@ -998,6 +1030,8 @@ What the mod does in your place, its switches and what it costs:
          [business] wageDemandRule       a pay rise answered by the job's candidates (when a candidate is put in:
                                          20 hours of a store manager, [business] hireFeeHours)
          [business] candidatesFixed      candidates that a load does not change (free)
+         [guard] monthEndFixed           a month's growth, cycles and share prices, a listing price, and a new
+                                         month's properties and offers that a load does not change (free)
          [stocks] researchOnBoard        the research of a company you sit on the board of, every month (free)
          [stocks] researchSubscription   whether the subscription for "every company" is on from the start (0
                                          by default; it is switched in the game; 5 hours of a bank analyst a

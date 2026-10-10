@@ -68,7 +68,7 @@
 #include "re_wording.h"
 #include "re_xp.h"
 
-#define PLUGIN_VERSION "1.0.0"
+#define PLUGIN_VERSION "1.1.0"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -84,7 +84,7 @@ static BYTE *g_base;
 static int g_on_credit, g_on_forecast, g_on_wording, g_on_guard, g_on_ipo, g_on_trace, g_can_text;
 static int g_lang; /* the game's language as a column of re_lang.h */
 #define T(msg) re_lang_text(g_lang, msg)
-static int g_trace_money, g_trace_getter, g_trace_cashflow, g_trace_heap, g_market_shift, g_market_shift_from;
+static int g_trace_money, g_trace_getter, g_trace_cashflow, g_trace_heap, g_market_shift, g_economy_shift, g_market_shift_from;
 static int g_load_count, g_heap_sample[4], g_heap_samples;
 static int g_getter_installed, g_money_installed, g_text_installed, g_in_monthend;
 static int g_loans_tried, g_edu_fixed, g_guard_tried;
@@ -95,11 +95,15 @@ static long long g_guard_unlock; /* trades are refused while the game's hour cou
 static int g_guard_month_end_pending; /* the loaded save is from the hour of the month end that ends the lock */
 static int g_guard_quiet;             /* ... and its panel has no lock line: that hour is not written into the panel */
 static int g_guard_auto_refused; /* purchases of the monthly auto transfer refused during this month end */
+/* What a month end draws, the price of a listing and the property market of a new month come from the month, not
+ * from where the streams stand: [guard] monthEndFixed. `hooked`: both ends of the draws are redirected, so what is
+ * seeded is put back. */
+static int g_month_fixed = 1, g_month_tried, g_month_hooked, g_listing_hooked, g_property_month_hooked;
 
 /* The listing of a public company. `g_ipo_keep` is what three instructions of the game read in place of the saved
  * fraction once the patch is in; the game's own cap on a holding is 45%. */
 static float g_ipo_keep = 0.45f;
-static int g_ipo_floor = 1, g_ipo_taxable = 1, g_ipo_tried, g_ipo_installed;
+static int g_ipo_floor = 1, g_ipo_taxable = 1, g_ipo_tried, g_ipo_installed, g_ipo_steps_hooked;
 static long long g_ipo_preview_cash = -1; /* what the last preview of the IPO window would pay; -1 = none since shown */
 /* The IPO window's quality letter by listing price / offer price: AAA above 3, AA 2.5, A 2, B 1.5, C 1.2, D 1.
  * For a business earning y of its value a year the twelve price steps give about 1 at 5%, 1.2 at 7.5%, 1.5 at 10%,
@@ -2434,22 +2438,26 @@ static void trace_state(void *main_obj, const re_household *h, const char *why)
     re_log("-- state done");
 }
 
-/* Takes numbers from the stream behind stock prices with the game's own function, as the game does when the player
- * trades property or opens the IPO window. The stream's position is saved with the game. */
-static void market_advance(void *main_obj, int draws, const char *who)
+/* Takes numbers from one of the game's random streams with the game's own function: from the stream behind stock
+ * prices (RE_RANDGEN_MARKET) as the game does when the player trades property or opens the IPO window, from the
+ * economy's (RE_RANDGEN_ECONOMY) as an activity with a random amount does. A stream's position is saved with the game. */
+static void stream_advance(void *main_obj, int stream, int draws, const char *who)
 {
+    const char *name = stream == RE_RANDGEN_MARKET ? "market" : "economy";
     unsigned *seed, *calls;
-    void *unit;
+    void *market;
     if (draws <= 0)
         return;
-    if (!re_game_market_stream(main_obj, &seed, &calls, &unit)) {
-        re_log("%s: the market stream could not be reached, not advanced", who);
+    if (!re_game_market_stream(main_obj, &seed, &calls, &market)) {
+        re_log("%s: the %s stream could not be reached, not advanced", who, name);
         return;
     }
+    BYTE *unit = (BYTE *)market - RE_RANDGEN_MARKET + stream;
+    calls = (unsigned *)(unit + RE_RAND_UNIT_CALLS);
     unsigned before = *calls;
     for (int i = 0; i < draws; i++)
         ((chance_fn)AT(RE_VA_RAND_CHANCE))(unit);
-    re_log("%s: market stream advanced by %d draw(s): numCalls %u -> %u (seed %u)", who, draws, before, *calls, *seed);
+    re_log("%s: %s stream advanced by %d draw(s): numCalls %u -> %u (seed %u)", who, name, draws, before, *calls, *(unsigned *)unit);
 }
 
 /* ----------------------------------------------------------------- guard */
@@ -2540,7 +2548,7 @@ static void guard_step(void *main_obj, const re_household *h, int is_load)
                    d.capped ? " (cut to the cap)" : "");
         else
             re_log("guard: no lock");
-        market_advance(main_obj, d.draws, "guard");
+        stream_advance(main_obj, RE_RANDGEN_MARKET, d.draws, "guard");
     } else {
         re_guard_on_month_end(&rec, now);
         now++; /* the counter moves on as soon as the routine has returned */
@@ -2660,6 +2668,7 @@ static int ipo_install(void)
                    re_patch_bytes(AT(RE_VA_IPO_KEEP_GETTER) + 3, from_getter, absolute[2], 5);
     int payment = fraction && re_patch_call(AT(RE_VA_CALL_IPO_FEE), AT(RE_VA_CHANGE_MONEY), re_ipo_fee_hook) &&
                   re_patch_call(AT(RE_VA_CALL_IPO_STEPS), AT(RE_VA_IPO_STEPS), re_ipo_steps_hook);
+    g_ipo_steps_hooked = payment; /* the steps' call is the last of the three, so nothing else leaves it redirected */
     int company = payment && re_patch_bytes(AT(RE_VA_IPO_EQUITY_HI), public_hi, push_zero, 6) &&
                   re_patch_bytes(AT(RE_VA_IPO_EQUITY_LO), public_lo, push_zero, 6) &&
                   re_patch_bytes(AT(RE_VA_IPO_INVEST_HI) + 2, founder_hi, all_hi, 4) &&
@@ -3292,6 +3301,131 @@ static void candidates_listed(void *firms, unsigned char **vector)
 {
     list_end(vector);
     business_listed(firms, vector);
+}
+
+/* ---- a month end and a listing price that a load does not change (REQUEST.md [55]; note m37) */
+
+/* At the month end the game draws the economy's growth, the industries' cycles and the listed companies' month - and,
+ * when the "create a public company" window is built, the twelve steps of a listing price - from its random streams
+ * as they stand. Anything done since the save was loaded that drew from a stream gives another result for the same
+ * month: with shares or futures held, a poor month end can be loaded away without a single trade, which the trade
+ * lock never sees (run599: one search for a property, and the shares of save "55" end the month $52,214 lower).
+ * Here the streams are kept and seeded from what the draws belong to - the playthrough, the month, which of the two
+ * it is, and the guard's generation, which a rollback beyond the lock's cap raises - and put back afterwards. So a
+ * month end and a month's listing price are the same whatever was done before them, they move no stream, and what
+ * was seen beyond the cap does not come again: for the economy too, which the move of the market stream at a load
+ * never reached.
+ * The same for the property market's month start (REQUEST.md [56]): the game empties the list of properties for
+ * sale and fills it again, and makes the month's offer for a property the household sells or lets, all from the
+ * market stream as it stands (run618: the stream seven draws further, and the same three addresses of the new month
+ * ask $1.4, $0.8 and $1.2 million instead of $1.9, $1.6 and $2.3 million). One seed for that whole routine is not
+ * enough: it walks the sites one after the other, and a search of the character makes a new site, after which the
+ * same draws fall to other sites (run703: after one search two of the month's three properties had moved to another
+ * street and the third was another one). So inside it every site of the list for rent and of the list for sale is
+ * drawn from a seed of its own, and so are the offers that come after the two lists (property_draws). */
+enum { FIXED_MONTH_END, FIXED_LISTING, FIXED_PROPERTY, FIXED_SITE_SALE, FIXED_SITE_RENT, FIXED_OFFERS };
+#define FIXED_NO_FIRM (-1) /* in the place of a business's id: no list of candidates is drawn from such a seed */
+#define FIXED_SITE(id) (-2 - (id)) /* a site in that place: below FIXED_NO_FIRM for every site id from 0 on */
+static re_streams g_fixed_streams; /* too large for the game's stack */
+static struct {
+    int on, what, month, generation;
+    int sites[2], offers; /* the property market's month start: sites seeded for sale and for rent, the offers */
+    int site_low, site_high; /* ... and the lowest and the highest of the sites' numbers */
+    LONG refreshing;
+    unsigned long long seed;
+} g_fixed;
+
+static void fixed_draws(int what, int drawn)
+{
+    static const char *const names[] = {"the month end's economy and shares", "the price steps of a listing",
+                                        "the property market's month start"};
+    const int hooked[] = {g_month_hooked, g_listing_hooked, g_property_month_hooked};
+    static int unread;
+    if (!drawn) {
+        /* a listing inside the month end's draws, or inside a list of candidates, is drawn from that seed already */
+        if (g_fixed.on || g_making.on || !hooked[what])
+            return;
+        int month = g_main_obj != NULL ? re_game_period(g_main_obj) : -1;
+        unsigned *seed, *calls;
+        void *market;
+        BYTE *randgen = month >= 0 && g_playthrough[0] != 0 ? re_game_randgen(re_game_firms(g_main_obj)) : NULL;
+        /* the streams the economy reaches have to be the ones whose thirteen engines were just checked */
+        if (randgen == NULL || !re_game_market_stream(g_main_obj, &seed, &calls, &market) ||
+            (BYTE *)market != randgen + RE_RANDGEN_MARKET) {
+            if (unread++ < 5)
+                re_log("guard: %s: the month, the playthrough id or the random streams cannot be read; drawn as the game draws them",
+                       names[what]);
+            return;
+        }
+        g_fixed.on = 1;
+        g_fixed.what = what;
+        g_fixed.month = month;
+        g_fixed.sites[0] = g_fixed.sites[1] = g_fixed.offers = 0;
+        g_fixed.generation = (int)re_state_get(g_playthrough, "guardGeneration", 0);
+        g_fixed.seed = re_business_list_seed(g_playthrough, month, FIXED_NO_FIRM, what, g_fixed.generation);
+        /* as for a list of candidates: a look at the household waits until the streams are the game's again */
+        g_fixed.refreshing = InterlockedExchange(&g_refreshing, 1);
+        re_business_streams_seed(&g_fixed_streams, randgen, AT(RE_VA_RAND_SEED), g_fixed.seed);
+        return;
+    }
+    if (!g_fixed.on || g_fixed.what != what)
+        return;
+    const int economy = RE_RANDGEN_ECONOMY / RE_RAND_UNIT_BYTES, market = RE_RANDGEN_MARKET / RE_RAND_UNIT_BYTES;
+    unsigned taken[RE_RAND_STREAMS], others = 0;
+    int same = re_business_streams_restore(&g_fixed_streams, taken);
+    InterlockedExchange(&g_refreshing, g_fixed.refreshing);
+    g_fixed.on = 0;
+    for (int i = 0; i < RE_RAND_STREAMS; i++)
+        others += i != economy && i != market ? taken[i] : 0;
+    if (!same || what != FIXED_LISTING || g_on_trace) /* a window draws a listing price at every change of it */
+        re_log("guard: %s of month %d, generation %d: drawn from seed %016llx; draws taken from the economy stream %u, the market "
+               "stream %u, the ten others %u; the game's streams after it: %s",
+               names[what], g_fixed.month, g_fixed.generation, g_fixed.seed, taken[economy], taken[market], others,
+               same ? "as before, all thirteen engines and twelve call counters" : "MISMATCH, not everything could be put back");
+    if (what == FIXED_PROPERTY)
+        re_log("guard: inside it a seed of its own for each of %d site(s) of the list for rent and %d of the list for sale "
+               "(numbered %d to %d), and for the offers after the two lists: %s",
+               g_fixed.sites[1], g_fixed.sites[0], g_fixed.site_low, g_fixed.site_high, g_fixed.offers ? "yes" : "no");
+}
+
+/* Inside the property market's month start, while its streams are the plugin's: they start again from a seed of the
+ * part that is about to draw - one site of one of the two lists, or the offers. */
+static void property_draws(int part, int site)
+{
+    if (!g_fixed.on || g_fixed.what != FIXED_PROPERTY)
+        return;
+    re_business_streams_reseed(g_fixed_streams.randgen, AT(RE_VA_RAND_SEED),
+                               re_business_list_seed(g_playthrough, g_fixed.month, site, part, g_fixed.generation));
+    if (part == FIXED_OFFERS)
+        g_fixed.offers = 1;
+    else
+        g_fixed.sites[part == FIXED_SITE_RENT]++;
+}
+
+static void site_draws(int rent, const BYTE *node)
+{
+    if (!g_fixed.on || g_fixed.what != FIXED_PROPERTY || !re_readable(node, RE_SITE_NODE_ID + 4))
+        return;
+    int id = *(const int *)(node + RE_SITE_NODE_ID);
+    if (g_fixed.sites[0] + g_fixed.sites[1] == 0 || id < g_fixed.site_low)
+        g_fixed.site_low = id;
+    if (g_fixed.sites[0] + g_fixed.sites[1] == 0 || id > g_fixed.site_high)
+        g_fixed.site_high = id;
+    property_draws(rent ? FIXED_SITE_RENT : FIXED_SITE_SALE, FIXED_SITE(id));
+}
+
+static void month_draws(int moment)
+{
+    if (moment == RE_DRAWS_PROPERTY_OFFERS)
+        property_draws(FIXED_OFFERS, FIXED_NO_FIRM);
+    else
+        fixed_draws(moment < RE_DRAWS_PROPERTY ? FIXED_MONTH_END : FIXED_PROPERTY,
+                    moment == RE_DRAWS_MONTH_END_DONE || moment == RE_DRAWS_PROPERTY_DONE);
+}
+
+static void listing_draws(int drawn)
+{
+    fixed_draws(FIXED_LISTING, drawn);
 }
 
 /* ---- the wage demand of a person under the game's automatic management (REQUEST.md [33], [38], notes b19 "B2", b20) */
@@ -5816,6 +5950,36 @@ __attribute__((force_align_arg_pointer)) static void __fastcall postload_wrapper
         g_ipo_tried = 1;
         g_ipo_installed = ipo_install();
     }
+    if (g_month_fixed && !g_month_tried) { /* after the listing's own redirects: its price steps may be redirected already */
+        g_month_tried = 1;
+        re_guard_economy_month = AT(RE_VA_ECONOMY_MONTH);
+        re_guard_stocks_month = AT(RE_VA_STOCKS_MONTH);
+        re_guard_month_draws = month_draws;
+        /* seeded at the first call, put back after the second: one of them alone is as good as none */
+        g_month_hooked = re_patch_call(AT(RE_VA_CALL_ECONOMY_MONTH), AT(RE_VA_ECONOMY_MONTH), re_guard_economy_hook) &&
+                         re_patch_call(AT(RE_VA_CALL_STOCKS_MONTH), AT(RE_VA_STOCKS_MONTH), re_guard_stocks_hook);
+        if (!g_ipo_steps_hooked) {
+            re_ipo_steps = AT(RE_VA_IPO_STEPS);
+            g_ipo_steps_hooked = re_patch_call(AT(RE_VA_CALL_IPO_STEPS), AT(RE_VA_IPO_STEPS), re_ipo_steps_hook);
+        }
+        g_listing_hooked = g_ipo_steps_hooked;
+        re_ipo_steps_draws = listing_draws;
+        re_guard_property_month = AT(RE_VA_RESTATE_MONTH);
+        re_guard_site_data = AT(RE_VA_SITE_DATA);
+        re_guard_own_values = AT(RE_VA_OWN_VALUES);
+        re_guard_site_draws = site_draws;
+        g_property_month_hooked = re_patch_call(AT(RE_VA_CALL_RESTATE_MONTH), AT(RE_VA_RESTATE_MONTH), re_guard_property_hook);
+        /* the three inside it only seed again what the call around them has kept: each works without the others */
+        int parts = g_property_month_hooked &&
+                    re_patch_call(AT(RE_VA_CALL_RENT_SITE_DATA), AT(RE_VA_SITE_DATA), re_guard_rent_site_hook) &&
+                    re_patch_call(AT(RE_VA_CALL_SALE_SITE_DATA), AT(RE_VA_SITE_DATA), re_guard_sale_site_hook) &&
+                    re_patch_call(AT(RE_VA_CALL_OWN_VALUES), AT(RE_VA_OWN_VALUES), re_guard_offers_hook);
+        re_log("guard: a month end's economy and shares are drawn from the playthrough, the month and the guard's generation, whatever "
+               "was done before it: %s; the price steps of a listing likewise: %s; the property market's month start likewise: %s, "
+               "and inside it every site and the offers by themselves: %s",
+               g_month_hooked ? "redirected" : "NOT redirected", g_listing_hooked ? "redirected" : "NOT redirected",
+               g_property_month_hooked ? "redirected" : "NOT redirected", parts ? "redirected" : "NOT redirected");
+    }
     if (g_on_board && !g_board_tried) {
         g_board_tried = 1;
         board_install();
@@ -5846,8 +6010,10 @@ __attribute__((force_align_arg_pointer)) static void __fastcall postload_wrapper
     g_refresh_due = 0;
     g_load_count++;
     re_log("load #%d of this session", g_load_count);
-    if (g_on_trace && g_load_count >= g_market_shift_from)
-        market_advance(main_obj, g_market_shift, "trace");
+    if (g_on_trace && g_load_count >= g_market_shift_from) {
+        stream_advance(main_obj, RE_RANDGEN_MARKET, g_market_shift, "trace");
+        stream_advance(main_obj, RE_RANDGEN_ECONOMY, g_economy_shift, "trace");
+    }
     after_game_step(main_obj, "after load or new game", 1);
     time_add(TIME_LOAD, since);
     time_report("a load", re_game_period(main_obj));
@@ -6037,6 +6203,7 @@ static void load_settings(void)
     if (g_guard_cap_months < 0)
         g_guard_cap_months = 0;
     g_guard_shift = re_ini_int("guard", "shiftMarketBeyondCap", 1);
+    g_month_fixed = re_ini_int("guard", "monthEndFixed", 1);
     g_on_ipo = re_ini_int("features", "ipo", 1);
     double keep = 0.45;
     re_ini_doubles("ipo", "founderKeeps", &keep, 1);
@@ -6140,6 +6307,7 @@ static void load_settings(void)
     g_trace_heap = re_ini_int("trace", "heap", 0);
     g_heap_samples = re_ini_ints("trace", "heapSample", "", g_heap_sample, 4);
     g_market_shift = re_ini_int("trace", "marketShift", 0);
+    g_economy_shift = re_ini_int("trace", "economyShift", 0);
     g_market_shift_from = re_ini_int("trace", "marketShiftFromLoad", 1);
 
     re_credit_defaults(&g_credit_cfg);
@@ -6313,6 +6481,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     int money = re_sites_verify(g_base, RE_GROUP_MONEY, report_site) == 0;
     int text = re_sites_verify(g_base, RE_GROUP_TEXT, report_site) == 0;
     int guard = re_sites_verify(g_base, RE_GROUP_GUARD, report_site) == 0;
+    int month = re_sites_verify(g_base, RE_GROUP_MONTH, report_site) == 0;
     int ipo = re_sites_verify(g_base, RE_GROUP_IPO, report_site) == 0;
     int board = re_sites_verify(g_base, RE_GROUP_BOARD, report_site) == 0;
     int stocks = re_sites_verify(g_base, RE_GROUP_STOCKS, report_site) == 0;
@@ -6327,6 +6496,9 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     re_log("  feature credit:   %s", state_of(g_on_credit, core && finance && credit));
     re_log("  feature forecast: %s", state_of(g_on_forecast, core && finance && money));
     re_log("  feature guard:    %s", state_of(g_on_guard, core && finance && guard));
+    /* the streams are reached and seeded the way the candidates of a job are: those sites are the business group's */
+    re_log("  guard, a month end drawn from the month: %s",
+           state_of(g_on_guard && g_month_fixed, core && finance && guard && month && business));
     re_log("  feature ipo:      %s", state_of(g_on_ipo, core && ipo));
     re_log("  feature board:    %s", state_of(g_on_board, core && board));
     re_log("  feature stocks:   %s", state_of(g_on_stocks, core && text && stocks));
@@ -6344,6 +6516,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     g_on_credit = g_on_credit && core && finance && credit;
     g_on_forecast = g_on_forecast && core && finance && money;
     g_on_guard = g_on_guard && core && finance && guard;
+    g_month_fixed = g_month_fixed && g_on_guard && month && business;
     g_on_ipo = g_on_ipo && core && ipo;
     g_on_board = g_on_board && core && board;
     g_stock_sites = core && text && stocks;

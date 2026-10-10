@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 
+re_ipo_draws_fn re_ipo_steps_draws;
 re_ipo_steps_fn re_ipo_steps_done;
 re_ipo_fee_fn re_ipo_before_fee;
 void *re_ipo_steps, *re_ipo_change_money;
@@ -36,9 +37,19 @@ int re_ipo_grade_index(const re_ipo_grade *g, float multiple)
     return (double)x > g->aaa ? 0 : x > g->aa ? 1 : x > g->a ? 2 : x > 0.0f ? 3 : x > g->c ? 4 : x > g->d ? 5 : 6;
 }
 
+__attribute__((force_align_arg_pointer)) void re_ipo_before_steps(void)
+{
+    re_ipo_draws_fn draws = re_ipo_steps_draws;
+    if (draws != NULL)
+        draws(0);
+}
+
 __attribute__((force_align_arg_pointer)) void re_ipo_after_steps(const BYTE *frame, long long *price, long long offer,
                                                                  long long earnings_per_share)
 {
+    re_ipo_draws_fn draws = re_ipo_steps_draws;
+    if (draws != NULL)
+        draws(1);
     re_ipo_steps_fn fn = re_ipo_steps_done;
     if (fn != NULL)
         fn(frame, price, offer, earnings_per_share);
@@ -73,9 +84,9 @@ __attribute__((force_align_arg_pointer)) void re_ipo_enter_fee(const BYTE *frame
     "  add esp, 128\n"
 
 /* The price steps take the address of the price in ecx and five stack words that the caller removes: the offer price
- * and the earnings a share (int64 each) and a context. The game's function runs first, with the same arguments; then
- * the callback gets the caller's frame, the price and the two amounts. Every register is as the game's function
- * left it when this returns. */
+ * and the earnings a share (int64 each) and a context. First the callback before the steps, with every register put
+ * back for the game's function; that runs with the same arguments; then the callback gets the caller's frame, the
+ * price and the two amounts. Every register is as the game's function left it when this returns. */
 __asm__(".intel_syntax noprefix\n"
         ".text\n"
         ".globl _re_ipo_steps_hook\n"
@@ -83,6 +94,11 @@ __asm__(".intel_syntax noprefix\n"
         "  push ebp\n" /* [ebp] = the frame pointer of the listing function */
         "  mov ebp, esp\n"
         "  push ecx\n" /* [ebp - 4] = address of the price */
+        "  pushad\n"
+        SAVE_XMM
+        "  call _re_ipo_before_steps\n"
+        RESTORE_XMM
+        "  popad\n"
         "  push dword ptr [ebp + 24]\n"
         "  push dword ptr [ebp + 20]\n"
         "  push dword ptr [ebp + 16]\n"

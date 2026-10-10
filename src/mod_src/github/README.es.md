@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Un mod para This Grand Life 2. Solo para la versión v1.03.22 del juego, versión 1.0.0 del mod. No es del desarrollador del juego.
+Un mod para This Grand Life 2. Solo para la versión v1.03.22 del juego, versión 1.1.0 del mod. No es del desarrollador del juego.
 
 Otros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -55,6 +55,7 @@ La pestaña de contratación muestra primero a quien hace el mismo trabajo por m
 Cada una se puede desactivar en el archivo de configuración.
 
 - Bloqueo de operaciones con acciones y futuros después de cargar una partida anterior
+- El crecimiento económico, las cotizaciones, el precio de salida y las propiedades en venta de un mes son los mismos después de cargar
 - Casino: apuesta y probabilidades fijas, cada juego una vez al mes
 - Los candidatos de un mes son los mismos después de cargar
 - Un aviso cuando una propiedad está en venta muy por debajo de su valor

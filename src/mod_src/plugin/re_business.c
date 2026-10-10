@@ -220,18 +220,23 @@ static unsigned char **unit_engine(unsigned char *randgen, int i)
     return (unsigned char **)(randgen + (i < RE_RAND_STREAMS ? i * RE_RAND_UNIT_BYTES + RE_RAND_UNIT_ENGINE : RE_RANDGEN_SPARE));
 }
 
-void re_business_streams_seed(re_streams *keep, unsigned char *randgen, void *seed_fn, unsigned long long seed)
+void re_business_streams_reseed(unsigned char *randgen, void *seed_fn, unsigned long long seed)
 {
     typedef void(__thiscall *engine_seed_fn)(void *engine, const unsigned *seed);
+    for (int i = 0; i < RE_RAND_STREAMS; i++) {
+        unsigned stream_seed = re_business_stream_seed(seed, i);
+        ((engine_seed_fn)seed_fn)(*unit_engine(randgen, i), &stream_seed);
+    }
+}
+
+void re_business_streams_seed(re_streams *keep, unsigned char *randgen, void *seed_fn, unsigned long long seed)
+{
     keep->randgen = randgen;
     memcpy(keep->unit, randgen, sizeof keep->unit);
     keep->spare = *unit_engine(randgen, RE_RAND_STREAMS);
     for (int i = 0; i < RE_RAND_ENGINES; i++)
         memcpy(keep->engine[i], *unit_engine(randgen, i), RE_RAND_ENGINE_BYTES);
-    for (int i = 0; i < RE_RAND_STREAMS; i++) {
-        unsigned stream_seed = re_business_stream_seed(seed, i);
-        ((engine_seed_fn)seed_fn)(*unit_engine(randgen, i), &stream_seed);
-    }
+    re_business_streams_reseed(randgen, seed_fn, seed);
 }
 
 int re_business_streams_restore(const re_streams *keep, unsigned drawn[RE_RAND_STREAMS])

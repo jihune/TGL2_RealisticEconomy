@@ -4,7 +4,9 @@
  * The game's listing function FUN_005362a0 keeps doing the work. Nine of its operands are changed in place by
  * re_main, and two of its calls are redirected to the hooks below:
  *   0x00536783  call 0x53cb50   the twelve price steps before the listing. Afterwards `re_ipo_steps_done` may
- *                               change the price. Runs for the IPO window's preview as well.
+ *                               change the price. Runs for the IPO window's preview as well. The steps draw from
+ *                               the game's random streams: `re_ipo_steps_draws` is called with 0 just before them
+ *                               and with 1 just after, before `re_ipo_steps_done` (note m37 Q4).
  *   0x00536e2c  call 0x542920   the listing fee. Just before it `re_ipo_before_fee` is told, and can pay the founder.
  * Both callbacks get the frame pointer of FUN_005362a0, whose locals hold the share counts and the company.
  */
@@ -15,6 +17,8 @@
 
 typedef void (*re_ipo_steps_fn)(const BYTE *frame, long long *price, long long offer, long long earnings_per_share);
 typedef void (*re_ipo_fee_fn)(const BYTE *frame, void *finance);
+typedef void (*re_ipo_draws_fn)(int drawn);
+extern re_ipo_draws_fn re_ipo_steps_draws;
 extern re_ipo_steps_fn re_ipo_steps_done;
 extern re_ipo_fee_fn re_ipo_before_fee;
 extern void *re_ipo_steps, *re_ipo_change_money; /* the two calls' own targets */

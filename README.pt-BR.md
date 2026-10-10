@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.0.0 do mod. Não é do desenvolvedor do jogo.
+Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.1.0 do mod. Não é do desenvolvedor do jogo.
 
 Outros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -55,6 +55,7 @@ A aba de contratação mostra primeiro quem faz o mesmo trabalho por menos (paga
 Cada uma pode ser desligada no arquivo de configurações.
 
 - Bloqueio de negociação de ações e futuros depois de carregar um jogo salvo anterior
+- O crescimento econômico, os preços das ações, o preço de abertura e os imóveis à venda de um mês continuam os mesmos depois de carregar
 - Cassino: aposta e chances fixas, cada jogo uma vez por mês
 - Os candidatos de um mês continuam os mesmos depois de carregar
 - Um aviso quando um imóvel está à venda bem abaixo do valor

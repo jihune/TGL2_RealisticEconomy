@@ -15,12 +15,14 @@
  * T7  checks every entry of the wording table against the game's Korean language file, and rewrites sample texts.
  * T8  puts the three trade hooks on stand-ins shaped like the game's buy function, futures function and sell handler,
  *     and checks that an allowed trade runs unchanged and a refused one does not run, with registers, stack and xmm3
- *     intact both ways.
+ *     intact both ways. Then the two calls of a stand-in month end: the callback is told before the first and after
+ *     the second, and both run as they did; and the one call of a stand-in month start, told on both sides.
  * T9  the load guard's arithmetic: no lock on the newest save, a lock up to the farthest month end, the cap, the
  *     stream move beyond the cap, and the same answer when the same save is loaded again.
  * T10 the listing: an instruction that reads a field of an object is re-pointed at a number of the plugin, and the
  *     two redirected calls of a stand-in listing function (frame laid out like the game's) hand the callbacks the
- *     frame's share counts and company, let them move the price, and leave registers, stack and xmm3 intact.
+ *     frame's share counts and company, let them move the price, and leave registers, stack and xmm3 intact. The
+ *     callback for the price steps' draws is told before the steps and after them, before the price is moved.
  * T11 the board: a stand-in election calls a stand-in score function (company in ecx, two stack words the callee
  *     removes); the redirected call lets the callback raise the totals of the household's first nominees, as many
  *     as the holding guarantees, with different values, and leaves the others, the registers, the stack and xmm3.
@@ -574,6 +576,96 @@ __asm__(".intel_syntax noprefix\n"
         "  ret\n"
         ".att_syntax prefix\n");
 
+unsigned g_month_trail;
+void fake_month(void);
+void fake_economy(void);
+void fake_stocks(void);
+void fake_economy_site(void);
+void fake_stocks_site(void);
+void fake_property(void);
+void fake_property_site(void);
+void fake_site_data(void);
+void fake_sale_site(void);
+void fake_rent_site(void);
+void fake_offers_site(void);
+
+/* Stand-ins for what a month end draws. fake_month is shaped like the part of 0x00695020 that calls the economy's
+ * month and then the listed companies': ecx only at both calls, and both functions end in a plain `ret`. Each of the
+ * two writes its digit behind g_month_trail (the economy 1, the companies 2) and adds [ecx] to g_trade_sum; the
+ * companies' function returns 7 in eax, which fake_month adds as well.
+ * fake_property_site is the month-start routine's call of the property market's month start, shaped the same: the
+ * function writes 7 behind the trail, adds [ecx] and returns 9, which the routine adds. */
+__asm__(".intel_syntax noprefix\n"
+        ".text\n"
+        ".globl _fake_economy\n"
+        "_fake_economy:\n"
+        "  imul eax, dword ptr [_g_month_trail], 10\n"
+        "  add eax, 1\n"
+        "  mov dword ptr [_g_month_trail], eax\n"
+        "  mov eax, [ecx]\n"
+        "  add dword ptr [_g_trade_sum], eax\n"
+        "  ret\n"
+        ".globl _fake_stocks\n"
+        "_fake_stocks:\n"
+        "  imul eax, dword ptr [_g_month_trail], 10\n"
+        "  add eax, 2\n"
+        "  mov dword ptr [_g_month_trail], eax\n"
+        "  mov eax, [ecx]\n"
+        "  add dword ptr [_g_trade_sum], eax\n"
+        "  mov eax, 7\n"
+        "  ret\n"
+        ".globl _fake_month\n"
+        "_fake_month:\n"
+        "  push esi\n"
+        "  mov esi, ecx\n"
+        ".globl _fake_economy_site\n"
+        "_fake_economy_site:\n"
+        "  call _fake_economy\n"
+        "  mov ecx, esi\n"
+        ".globl _fake_stocks_site\n"
+        "_fake_stocks_site:\n"
+        "  call _fake_stocks\n"
+        "  add dword ptr [_g_trade_sum], eax\n"
+        "  pop esi\n"
+        "  ret\n"
+        ".globl _fake_property\n"
+        "_fake_property:\n"
+        "  imul eax, dword ptr [_g_month_trail], 10\n"
+        "  add eax, 7\n"
+        "  mov dword ptr [_g_month_trail], eax\n"
+        "  mov eax, [ecx]\n"
+        "  add dword ptr [_g_trade_sum], eax\n"
+        "  mov eax, 9\n"
+        "  ret\n"
+        ".globl _fake_property_site\n"
+        "_fake_property_site:\n"
+        "  call _fake_property\n"
+        "  add dword ptr [_g_trade_sum], eax\n"
+        "  ret\n"
+        /* the first call for a site in the two walks, and the call before the offers: each of the three stand-in
+         * call sites calls fake_site_data, which writes 8 behind the trail and adds [ecx] */
+        ".globl _fake_site_data\n"
+        "_fake_site_data:\n"
+        "  imul eax, dword ptr [_g_month_trail], 10\n"
+        "  add eax, 8\n"
+        "  mov dword ptr [_g_month_trail], eax\n"
+        "  mov eax, [ecx]\n"
+        "  add dword ptr [_g_trade_sum], eax\n"
+        "  ret\n"
+        ".globl _fake_sale_site\n"
+        "_fake_sale_site:\n"
+        "  call _fake_site_data\n"
+        "  ret\n"
+        ".globl _fake_rent_site\n"
+        "_fake_rent_site:\n"
+        "  call _fake_site_data\n"
+        "  ret\n"
+        ".globl _fake_offers_site\n"
+        "_fake_offers_site:\n"
+        "  call _fake_site_data\n"
+        "  ret\n"
+        ".att_syntax prefix\n");
+
 unsigned g_steps_runs, g_fee_runs, g_fee_tag;
 void fake_keep(void);
 unsigned call_keep(void *fn, void *object);
@@ -701,9 +793,19 @@ static long long g_listing_seen[4], g_listing_cash; /* all shares, founder's sha
 static const void *g_listing_company;
 static void *g_listing_finance;
 static int g_listing_floor;
+static unsigned g_draws_seen[2]; /* how often the price steps had run when the callback was told: before them, after them */
+static int g_draws_told, g_draws_told_at_done;
+
+static void test_steps_draws(int drawn)
+{
+    g_draws_seen[drawn] = g_steps_runs;
+    g_draws_told++;
+    __asm__("pxor %xmm3, %xmm3");
+}
 
 static void test_steps_done(const BYTE *frame, long long *price, long long offer, long long earnings_per_share)
 {
+    g_draws_told_at_done = g_draws_told;
     g_listing_seen[0] = *(const long long *)(frame + RE_IPO_FRAME_SHARES);
     g_listing_seen[1] = *(const long long *)(frame + RE_IPO_FRAME_FOUNDER);
     g_listing_seen[2] = offer;
@@ -835,6 +937,26 @@ static int test_blocked(int trade)
     g_blocked_trade = trade;
     __asm__("pxor %xmm3, %xmm3");
     return g_block;
+}
+
+/* writes 3 behind the trail before the month end's draws and 4 after them, 5 and 6 for the property market's, 7
+ * before the offers */
+static void test_month_draws(int moment)
+{
+    g_month_trail = g_month_trail * 10 + 3 + (unsigned)moment;
+    __asm__("pxor %xmm3, %xmm3");
+}
+
+static int g_site_rent;
+static const unsigned char *g_site_node;
+
+/* writes 9 behind the trail and remembers which walk and which node it was told */
+static void test_site_draws(int rent, const unsigned char *node)
+{
+    g_month_trail = g_month_trail * 10 + 9;
+    g_site_rent = rent;
+    g_site_node = node;
+    __asm__("pxor %xmm3, %xmm3");
 }
 
 static int close_to(float a, double b)
@@ -2679,6 +2801,66 @@ int main(int argc, char **argv)
             break;
         }
     }
+    /* What a month end draws: the callback is told before the economy's month and after the listed companies', both
+     * get their ecx, and what the second returns reaches the routine. The control: as if the callback were never set. */
+    for (int phase = 0; phase < 2; phase++) {
+        if (phase == 1) {
+            re_guard_economy_month = fake_economy;
+            re_guard_stocks_month = fake_stocks;
+            re_guard_property_month = fake_property;
+            re_guard_site_data = re_guard_own_values = fake_site_data;
+            re_guard_month_draws = control ? NULL : test_month_draws;
+            re_guard_site_draws = control ? NULL : test_site_draws;
+            installed = re_patch_call((BYTE *)fake_economy_site, (BYTE *)fake_economy, re_guard_economy_hook) &&
+                        re_patch_call((BYTE *)fake_stocks_site, (BYTE *)fake_stocks, re_guard_stocks_hook) &&
+                        re_patch_call((BYTE *)fake_property_site, (BYTE *)fake_property, re_guard_property_hook) &&
+                        re_patch_call((BYTE *)fake_sale_site, (BYTE *)fake_site_data, re_guard_sale_site_hook) &&
+                        re_patch_call((BYTE *)fake_rent_site, (BYTE *)fake_site_data, re_guard_rent_site_hook) &&
+                        re_patch_call((BYTE *)fake_offers_site, (BYTE *)fake_site_data, re_guard_offers_hook);
+            printf("  T8 month hooks installed=%d\n", installed);
+            g_failures += !installed;
+        }
+        unsigned trail_want = phase ? 3124 : 12;
+        g_month_trail = g_trade_sum = 0;
+        intact = 0;
+        call_trade(fake_month, market, nothing, 0, &intact);
+        ok = intact == 1 && g_month_trail == trail_want && g_trade_sum == 2007;
+        g_failures += !ok;
+        printf("  T8 month    %-18s                    order=%u/%u sum=%u/2007 intact=%u %s\n", phase ? "hooks in" : phases[0],
+               g_month_trail, trail_want, g_trade_sum, intact, ok ? "ok" : "FAIL");
+        /* the property market's month start: told before and after the one call */
+        trail_want = phase ? 576 : 7;
+        g_month_trail = g_trade_sum = 0;
+        intact = 0;
+        call_trade(fake_property_site, market, nothing, 0, &intact);
+        ok = intact == 1 && g_month_trail == trail_want && g_trade_sum == 1009;
+        g_failures += !ok;
+        printf("  T8 property %-18s                    order=%u/%u sum=%u/1009 intact=%u %s\n", phase ? "hooks in" : phases[0],
+               g_month_trail, trail_want, g_trade_sum, intact, ok ? "ok" : "FAIL");
+        /* inside it: a site of the walk for sale (node in esi, which call_trade sets to 0x22222222), one of the walk
+         * for rent (edi, 0x33333333), and the call before the offers */
+        static const struct {
+            const char *name;
+            void *site;
+            unsigned trail, node;
+            int rent;
+        } inside[3] = {{"site for sale", fake_sale_site, 98, 0x22222222u, 0},
+                       {"site for rent", fake_rent_site, 98, 0x33333333u, 1},
+                       {"before the offers", fake_offers_site, 78, 0, 0}};
+        for (int i = 0; i < 3; i++) {
+            g_month_trail = g_trade_sum = 0;
+            g_site_rent = -1;
+            g_site_node = NULL;
+            intact = 0;
+            call_trade(inside[i].site, market, nothing, 0, &intact);
+            int told = !phase || i == 2 || (g_site_rent == inside[i].rent && g_site_node == (const unsigned char *)(UINT_PTR)inside[i].node);
+            trail_want = phase ? inside[i].trail : 8;
+            ok = intact == 1 && g_month_trail == trail_want && g_trade_sum == 1000 && told;
+            g_failures += !ok;
+            printf("  T8 %-17s %-18s               order=%u/%u sum=%u/1000 node_and_walk_as_told=%d intact=%u %s\n", inside[i].name,
+                   phase ? "hooks in" : phases[0], g_month_trail, trail_want, g_trade_sum, told, intact, ok ? "ok" : "FAIL");
+        }
+    }
 
     /* T9: the load guard's arithmetic. A month has 728 hours; the routine that ends month n runs at hour 728 n - 1,
      * and a save carrying that hour was made before it. */
@@ -2778,6 +2960,7 @@ int main(int argc, char **argv)
     printf("  T10 calls redirected=%d\n", installed);
     g_failures += !installed;
     g_listing_floor = !control;
+    re_ipo_steps_draws = control ? NULL : test_steps_draws; /* the control: as if nothing were told about the steps' draws */
     intact = 0;
     fake_listing(finance, &listing_price, earning, listed, &intact);
     ok = intact == 1 && listing_price == 5000 && finance[0] == 600 && g_steps_runs == 2 && g_fee_runs == 2 &&
@@ -2787,6 +2970,10 @@ int main(int argc, char **argv)
     printf("  T10 earning business: price held at the offer   price=%lld/5000 cash=%lld/%lld frame_seen=%d company_seen=%d intact=%u %s\n",
            listing_price, g_listing_cash, 55000LL * 5000, g_listing_seen[0] == 100000 && g_listing_seen[1] == 45000,
            g_listing_company == (const void *)listed, intact, ok ? "ok" : "FAIL");
+    ok = g_draws_seen[0] == 1 && g_draws_seen[1] == 2 && g_draws_told_at_done == 2;
+    g_failures += !ok;
+    printf("  T10 the steps' draws: told before and after     steps_run_then=%u,%u/1,2 told_before_the_price_callback=%d/2 %s\n",
+           g_draws_seen[0], g_draws_seen[1], g_draws_told_at_done, ok ? "ok" : "FAIL");
     intact = 0;
     fake_listing(finance, &listing_price, losing, listed, &intact);
     ok = intact == 1 && listing_price == 2500 && finance[0] == 400 && g_listing_seen[3] == -1 && g_listing_cash == 55000LL * 2500;

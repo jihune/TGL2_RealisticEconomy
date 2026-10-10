@@ -170,6 +170,8 @@ typedef struct {
  * game's own function (`seed_fn`: ecx = an engine, a pointer to the 32-bit seed on the stack, which it removes).
  * The caller has checked that the object and its thirteen engines can be read. */
 void re_business_streams_seed(re_streams *keep, unsigned char *randgen, void *seed_fn, unsigned long long seed);
+/* The seeding alone, for streams that are kept already: the twelve engines start again from `seed`. */
+void re_business_streams_reseed(unsigned char *randgen, void *seed_fn, unsigned long long seed);
 /* Puts everything back. `drawn[i]` gets how many draws stream i gave in between. Returns 1 when the streams, read
  * again afterwards, are what was kept: every engine byte for byte and every call counter. 0 when not; an engine
  * that is not where it was is left alone. */
