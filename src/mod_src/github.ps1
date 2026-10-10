@@ -1,15 +1,16 @@
 # Puts what goes to GitHub into one folder. PowerShell 7. Opens no window. Uploads nothing.
 #   pwsh -NoProfile -File mod_src/github.ps1 [-Control]
 # Run mod_src/build.ps1 and mod_src/package.ps1 first. Output under mod_src/_build/github/:
-#   repo/      the repository's content: README.md and one README a language, LICENSE, docs/ (the two full
-#              descriptions), src/ (the plugin's source with its tests, the files of the package, the build scripts)
+#   repo/      the repository's content: README.md and one README a language, img/ (their pictures), LICENSE, docs/
+#              (the two full descriptions), src/ (the plugin's source with its tests, the files of the package, the
+#              build scripts)
 #   release/   the zip to attach to the release, and a text file with its SHA256
 # No file of the game and no save goes in: only the sources named below are copied.
 # `repo` may be the clone that is pushed: its .git stays as it is and everything else in it is made anew, so that
 # `git -C mod_src/_build/github/repo status` shows what a new version changes.
 # The last line is `github=<folder> readmes=<n> source_files=<n> zip=<name> leaks=<n> verdict=PASS|FAIL`.
-# -Control puts a file with a home path into the copy, and reads the German README with one percentage changed and
-# a link to a file that is not there: it must give FAIL with leaks=1, readmes_complete=False and dead_links=1. The
+# -Control puts a file with a home path into the copy, and reads the German README with one percentage more and a
+# link to a file that is not there: it must give FAIL with leaks=1, readmes_complete=False and dead_links=1. The
 # folder it leaves is not for upload.
 param([switch]$Control)
 $ErrorActionPreference = 'Stop'
@@ -45,7 +46,7 @@ foreach ($name in $names) {
     $source = Join-Path $PSScriptRoot "github\$name"
     if (-not (Test-Path -LiteralPath $source)) { "missing: $source"; $readmesOk = $false; continue }
     $text = [IO.File]::ReadAllText($source)
-    if ($Control -and $name -eq 'README.de.md') { $text = $text.Replace('103', '130') + '[x](docs/not_there.txt)' }
+    if ($Control -and $name -eq 'README.de.md') { $text = $text + ' 99 %' + '[x](docs/not_there.txt)' }
     $others = @($names | Where-Object { $_ -ne $name -and -not $text.Contains("($_)") })
     if (-not $text.Contains($version)) { "$name does not name version $version"; $readmesOk = $false }
     if ($others.Count) { "$name has no link to: $($others -join ', ')"; $readmesOk = $false }
@@ -54,6 +55,12 @@ foreach ($name in $names) {
     $links += @([regex]::Matches($text, '\]\(([^)]+)\)') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch '^(\.\./|https?:)' } | ForEach-Object { "$name -> $_" })
     Copy-Item -LiteralPath $source (Join-Path $repo $name)
 }
+# the READMEs' pictures: captures of the game copy, one folder a language (mod_src/tools/scenarios/readme_shots.txt).
+# What a picture shows is looked at by eye before it is put there; no script reads the pixels.
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'github\img') (Join-Path $repo 'img') -Recurse
+$pictures = @(Get-ChildItem -LiteralPath (Join-Path $repo 'img') -Recurse -File)
+$unused = @($pictures | Where-Object { $path = $_.FullName.Substring($repo.Length + 1).Replace('\', '/'); -not ($links -like "* -> $path") })
+$unused | ForEach-Object { "picture that no README shows: $($_.FullName.Substring($repo.Length + 1))" }
 
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'dist\licenses\RealisticEconomy-LICENSE.txt') (Join-Path $repo 'LICENSE')
 [IO.File]::WriteAllText((Join-Path $repo '.gitattributes'), "# Files are stored byte for byte: no end-of-line conversion on any path.`n* -text`n", $utf8)
@@ -71,7 +78,7 @@ foreach ($script in 'build.ps1', 'package.ps1', 'github.ps1') {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $script) (Join-Path $src "mod_src\$script")
 }
 New-Item -ItemType Directory -Force (Join-Path $src 'mod_src\github') | Out-Null
-Copy-Item -Path (Join-Path $PSScriptRoot 'github\*') -Destination (Join-Path $src 'mod_src\github')
+Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'github') -File | Copy-Item -Destination (Join-Path $src 'mod_src\github') # the pictures are at the top once
 Copy-Item -LiteralPath (Join-Path $root 'analysis\scripts\lang_placeholders.py') (Join-Path $src 'analysis\scripts\lang_placeholders.py')
 
 Copy-Item -LiteralPath $zip (Join-Path $release (Split-Path -Leaf $zip))
@@ -88,21 +95,22 @@ $gitUser = (& git -C $root config user.name 2>$null)
 foreach ($person in $env:USERNAME, $gitUser) {
     if ($person -and $person.Length -ge 4) { $patterns += '(?i)\b' + [regex]::Escape($person) }
 }
-foreach ($file in Get-Copied $repo) {
+foreach ($file in Get-Copied $repo | Where-Object { $_.Extension -ne '.png' }) {
     $text = [IO.File]::ReadAllText($file.FullName)
     foreach ($pattern in $patterns) {
         if ($text -match $pattern) { $leaks++; "leak: $($file.FullName.Substring($repo.Length + 1)) has '$($Matches[0])'" }
     }
 }
-$gameFiles = @(Get-Copied $out | Where-Object { $_.Name -match '^(TGL2\.exe|.*\.sav|misc\.txt)$' -or $_.Extension -in '.png', '.dll', '.exe', '.asi' })
+$pictureFolder = (Join-Path $repo 'img') + '\'
+$gameFiles = @(Get-Copied $out | Where-Object { $_.Name -match '^(TGL2\.exe|.*\.sav|misc\.txt)$' -or $_.Extension -in '.dll', '.exe', '.asi' -or ($_.Extension -eq '.png' -and -not $_.FullName.StartsWith($pictureFolder)) })
 
 $deadLinks = @($links | Where-Object { -not (Test-Path -LiteralPath (Join-Path $repo ($_ -replace '^.* -> ', ''))) })
 $deadLinks | ForEach-Object { "link to a file that is not in the repository: $_" }
 
 $sourceFiles = @(Get-Copied $src).Count
 $readmes = @(Get-ChildItem -LiteralPath $repo -File -Filter 'README*.md').Count
-$ok = $readmesOk -and $readmes -eq $names.Count -and $deadLinks.Count -eq 0 -and $leaks -eq 0 -and $gameFiles.Count -eq 0 -and $sourceFiles -gt 0
+$ok = $readmesOk -and $readmes -eq $names.Count -and $deadLinks.Count -eq 0 -and $unused.Count -eq 0 -and $leaks -eq 0 -and $gameFiles.Count -eq 0 -and $sourceFiles -gt 0
 if ($gameFiles.Count) { $gameFiles | ForEach-Object { "not for upload: $($_.FullName.Substring($out.Length + 1))" } }
-"version=$version readmes_complete=$readmesOk links=$($links.Count) dead_links=$($deadLinks.Count) binaries_or_game_files=$($gameFiles.Count)"
+"version=$version readmes_complete=$readmesOk links=$($links.Count) dead_links=$($deadLinks.Count) pictures=$($pictures.Count) pictures_unused=$($unused.Count) binaries_or_game_files=$($gameFiles.Count)"
 "github=$out readmes=$readmes source_files=$sourceFiles zip=$(Split-Path -Leaf $zip) leaks=$leaks verdict=$(if ($ok) { 'PASS' } else { 'FAIL' })"
 exit ([int](-not $ok))
