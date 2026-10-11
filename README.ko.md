@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.1.1. 게임 제작사가 만든 것이 아닙니다.
+This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.1.2. 게임 제작사가 만든 것이 아닙니다.
 
 다른 언어: [English](README.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 

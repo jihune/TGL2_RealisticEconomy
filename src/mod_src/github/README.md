@@ -1,6 +1,6 @@
 # Realistic Economy
 
-A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.1.1. Not made by the game's developer.
+A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.1.2. Not made by the game's developer.
 
 Other languages: [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 

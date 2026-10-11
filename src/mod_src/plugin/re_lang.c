@@ -329,6 +329,17 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     [RE_MSG_ASSET_TICK_BUY] = {"Missing assets bought: %d for %s", "모자란 자산 %d개 구매: %s", NULL, NULL, NULL, NULL},
     [RE_MSG_ASSET_TICK_DEBT] = {" (debt %s, due in 3 months)", " (부채 %s, 석 달 안에 갚아야 합니다)", NULL, NULL, NULL, NULL},
     [RE_MSG_ASSET_REPLACED] ={"%s: a new one bought, %s", "%s: 새것으로 구매, %s", NULL, NULL, NULL, NULL},
+    [RE_MSG_ASSET_TIP_DEBT] = {"\nMod: with this on, the mod also buys the assets a job is short of. What the cash does not cover "
+                               "becomes a debt, due at the third month end.",
+                               "\n모드: 켜 두면 직무에 모자란 자산도 삽니다. 현금이 모자라면 모자란 만큼은 석 달째 월말에 갚는 부채가 "
+                               "됩니다.",
+                               NULL, NULL, NULL, NULL},
+    [RE_MSG_ASSET_TIP_CASH] = {"\nMod: with this on, the mod also buys the assets a job is short of, when the cash covers them and "
+                               "what the month end takes.",
+                               "\n모드: 켜 두면 직무에 모자란 자산도 삽니다. 월말에 나갈 돈을 남기고 현금으로 살 수 있을 때만 삽니다.",
+                               NULL, NULL, NULL, NULL},
+    [RE_MSG_ASSET_TIP_PAID] = {"\nMod: a worn-out asset bought again is paid for. The game paid you its price instead.",
+                               "\n모드: 낡은 자산을 다시 살 때 값을 냅니다. 게임은 거꾸로 그 값을 줬습니다.", NULL, NULL, NULL, NULL},
     /* short lines: the game cuts a hover text of these buttons off at the window's left edge, the third button's
      * after sixteen Latin letters (run 144) */
     [RE_MSG_SORT_CHEAP] = {"Sort by\nundervalued\n(researched)", "저평가순으로 정렬\n(조사한 회사만)", NULL, NULL, NULL, NULL},

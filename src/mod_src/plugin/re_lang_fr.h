@@ -162,6 +162,11 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_ASSET_TICK_BUY] = "Actifs manquants achetés : %d pour %s",
     [RE_MSG_ASSET_TICK_DEBT] = " (dette %s, due sous 3 mois)",
     [RE_MSG_ASSET_REPLACED] = "%s : un neuf acheté, %s",
+    [RE_MSG_ASSET_TIP_DEBT] = "\nMod : activé, le mod achète aussi les actifs qui manquent à un emploi. Ce que les liquidités ne "
+                              "couvrent pas devient une dette, due à la troisième fin de mois.",
+    [RE_MSG_ASSET_TIP_CASH] = "\nMod : activé, le mod achète aussi les actifs qui manquent à un emploi, si les liquidités suffisent "
+                              "pour eux et pour la fin du mois.",
+    [RE_MSG_ASSET_TIP_PAID] = "\nMod : un actif usé racheté est payé. Le jeu vous versait son prix au lieu de le prélever.",
     [RE_MSG_SORT_CHEAP] = "Trier par\nsous-évaluées\n(recherchées)",
     [RE_MSG_SORT_DEAR] = "Trier par\nsurévaluées\n(recherchées)",
     [RE_MSG_SORT_CHANGE] = "Par variation\nsur un mois",

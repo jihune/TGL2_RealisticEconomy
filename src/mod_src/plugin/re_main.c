@@ -68,7 +68,7 @@
 #include "re_wording.h"
 #include "re_xp.h"
 
-#define PLUGIN_VERSION "1.1.1"
+#define PLUGIN_VERSION "1.1.2"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -168,6 +168,9 @@ static int g_auto_whole = 1, g_auto_whole_patched; /* business: a click on a row
 /* business: the adverts of a business the player has handed over are switched by the mod, on while the awareness is
  * below what the target needs, off once it is there (adverts_keep) */
 static int g_ads_keep = 1, g_ads_keep_hooked;
+/* business: what the mod does where the game's box "buy worn-out assets again" is on; set with their rules further
+ * down, named here for the box's hover text */
+static int g_asset_fill_hooked, g_asset_debt, g_asset_charge, g_asset_charge_hooked;
 /* business: the contracts of a business the player has handed over are signed by the mod at a month start, one a
  * month, when the business can carry it (contracts_sign); the premises of one handed over whole are made larger
  * when its floor space is short (premises_grow) */
@@ -401,6 +404,7 @@ static void panel_line(void *main_obj, const char *prefix, const char *text, con
 #define KEY_CHART_ALL_PRICES "allSharePriceChartTitle" /* the title of the chart of all share prices */
 #define KEY_ADVERT_TIP "clickToActivateDeactivate" /* the last sentence in the hover text of a bought advert's icon */
 #define KEY_XP_TIP "chartEffectivenessDecayTip"  /* the experience window's "?": experience decays by a share every month */
+#define KEY_ASSET_TIP "firmAutoAsset"            /* the hover text of a business window's box "buy worn-out assets again" */
 
 enum {
     TEXT_GRADED_RATE = 1,
@@ -425,6 +429,7 @@ enum {
     TEXT_CHART_YEARS_OPEN, /* the same button when a chart opens: its window is used again and may still show six months */
     TEXT_CHART_INDEX, /* the title of the chart of all share prices says what its numbers are */
     TEXT_XP_TIP, /* under the game's sentence about the monthly decay of experience: what the mod keeps */
+    TEXT_ASSET_TIP, /* under the game's sentence about buying worn-out assets again: what the box does with the mod */
     TEXT_WORDING /* + the entry of the wording table */
 };
 
@@ -620,6 +625,10 @@ static int text_want(const char *key, unsigned len, unsigned caller, const re_te
         return advert_tip_firm(regs) > 0 ? TEXT_ADVERT_TIP : 0;
     if (g_xp_hooked && len == sizeof KEY_XP_TIP - 1 && memcmp(key, KEY_XP_TIP, len) == 0)
         return TEXT_XP_TIP;
+    /* the game fetches this text for that hover text alone (two functions, both of the box) */
+    if (g_on_business && (g_asset_fill_hooked || (g_asset_charge && g_asset_charge_hooked)) && len == sizeof KEY_ASSET_TIP - 1 &&
+        memcmp(key, KEY_ASSET_TIP, len) == 0)
+        return TEXT_ASSET_TIP;
     if (g_sort_hooked && from - RE_VA_STOCK_BUTTONS < RE_STOCK_BUTTONS_SIZE) {
         /* "Sort by company type", "by market capitalisation", "by earnings a share (%)", "by listing date": the
          * orders the mod replaces, the last only when its jump was redirected */
@@ -1918,11 +1927,13 @@ static unsigned text_edit(int want, char *text, unsigned len, unsigned cap, cons
         text[n] = '\n';
         return (unsigned)n + 1 + len;
     }
-    if (want == TEXT_FUT_TIP || want == TEXT_AUTO_TIP || want == TEXT_ADVERT_TIP || want == TEXT_XP_TIP) {
+    if (want == TEXT_FUT_TIP || want == TEXT_AUTO_TIP || want == TEXT_ADVERT_TIP || want == TEXT_XP_TIP || want == TEXT_ASSET_TIP) {
         /* under "Asset Inflation Rate": what the number behind the rate is. Under the game's text about its automatic
          * staff management, which says that every wage demand is accepted: what the mod makes of that. Under "Click
          * to activate / deactivate" of an advert: how to hand the adverts of the business to the mod, or that it has
-         * them and how to take them back. Under "experience decays by 1% every month": what does not. */
+         * them and how to take them back. Under "experience decays by 1% every month": what does not. Under "buy new
+         * assets when they expire": that a missing asset is bought too and how it is paid, and that the replacement
+         * costs money. */
         char both[1000];
         const char *tip = T(want == TEXT_XP_TIP ? RE_MSG_XP_TIP : RE_MSG_FUT_TIP);
         if (want == TEXT_ADVERT_TIP) {
@@ -1940,6 +1951,17 @@ static unsigned text_edit(int want, char *text, unsigned len, unsigned cap, cons
             if (g_fill_hooked && at >= 0 && (size_t)at < sizeof both)
                 snprintf(both + at, sizeof both - (size_t)at, "%s", T(RE_MSG_AUTO_TIP_FILL));
             tip = both;
+        }
+        if (want == TEXT_ASSET_TIP) {
+            static int told;
+            snprintf(both, sizeof both, "%s%s", g_asset_fill_hooked ? T(g_asset_debt ? RE_MSG_ASSET_TIP_DEBT : RE_MSG_ASSET_TIP_CASH) : "",
+                     g_asset_charge && g_asset_charge_hooked ? T(RE_MSG_ASSET_TIP_PAID) : "");
+            tip = both;
+            if (!told++)
+                re_log("business: the hover text of the box \"buy worn-out assets again\" is asked for: the mod's lines go under it "
+                       "(a missing asset is bought too: %s; the replacement is paid for: %s)",
+                       !g_asset_fill_hooked ? "no" : g_asset_debt ? "yes, on debt when the cash is short" : "yes, out of the cash alone",
+                       g_asset_charge && g_asset_charge_hooked ? "yes" : "no");
         }
         unsigned n = (unsigned)strlen(tip);
         if (len + 1 + n >= cap) {
@@ -3659,6 +3681,29 @@ static void contracts_trace(void *main_obj, const char *when)
         if (re_game_firm_reputation(firms, own[f].id, &reputation, &influence))
             re_log("business (trace, %s): '%s' (firm %d) in month %d: reputation %.4f, its influence operation is %s; the business is %s",
                    when, own[f].name, own[f].id, month, reputation, influence ? "on" : "off", own[f].open ? "open" : "closed");
+        /* the month's 20 hours of an employee for the game's automatic purchasing (note b19 "C2"): the game takes them
+         * off that person's hours left, which is the number staff_fill counts a job's hands with (REQUEST.md [64]) */
+        BYTE *first = NULL;
+        void *jobs = re_game_jobs(firms);
+        int count = re_game_firm_staff(firms, own[f].id, &first), types[4], records = 0, auto_buy = 0, taken = 0, all = 0, less = 0;
+        char who[300] = "";
+        at = 0;
+        re_game_firm_asset_types(firms, own[f].id, types, 4, &records, &auto_buy, &taken);
+        for (int i = 0; i < count && jobs != NULL; i++) {
+            re_staff_read m;
+            if (!re_game_staff_read(jobs, first + (SIZE_T)i * RE_STAFF_BYTES, &m))
+                continue;
+            all += m.left == m.hours;
+            if (m.hours - m.left != 20)
+                continue;
+            less++;
+            if ((size_t)at < sizeof who - 80)
+                at += snprintf(who + at, sizeof who - (size_t)at, " employee %d of job %d, %d of %d hours left;", m.id, m.job, m.left, m.hours);
+        }
+        re_log("business (trace, %s): '%s' (firm %d): automatic purchasing: inventory %s, worn-out assets %s, the month's 20 staff hours "
+               "for it %s; of %d employee(s) %d have all the month's hours left and %d have 20 fewer:%s",
+               when, own[f].name, own[f].id, re_game_firm_auto_stock(firms, own[f].id) > 0 ? "on" : "off", auto_buy ? "on" : "off",
+               taken ? "taken" : "not taken", count, all, less, who);
     }
 }
 

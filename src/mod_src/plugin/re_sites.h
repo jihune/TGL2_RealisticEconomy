@@ -837,6 +837,7 @@ enum {
 #define RE_ASSET_NODE_TYPE 0x24
 #define RE_ASSET_NODE_BYTES 0x60 /* the head of a node, the key, a record of 0x48 bytes */
 #define RE_FIRM_AUTO_ASSET 0x1b5
+#define RE_FIRM_AUTO_STOCK 0x1b4 /* the box next to it, "buy inventory" (0x004f5398 cmp byte ptr [edi + 0x1b4], 0); read for the trace only */
 /* a click that switches it on (FUN_005d78d0, 0x005d7a16) calls FUN_004f5380 next (ecx = the business; plain ret):
  * while the month's 20 staff hours for the purchases are not taken yet, they are taken from somebody of the job
  * that does them who has more than 20 left */

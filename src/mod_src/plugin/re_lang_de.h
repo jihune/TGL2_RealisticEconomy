@@ -161,6 +161,12 @@ static const char *const LANG_DE[RE_MSG_COUNT] = {
     [RE_MSG_ASSET_TICK_BUY] = "Vermögenswerte nachgekauft: %d für %s",
     [RE_MSG_ASSET_TICK_DEBT] = " (Schulden %s, 3 Monate)",
     [RE_MSG_ASSET_REPLACED] = "%s: neu gekauft, %s",
+    [RE_MSG_ASSET_TIP_DEBT] = "\nMod: ist das an, kauft der Mod auch Vermögenswerte, die einer Arbeit fehlen. Was das Bargeld nicht "
+                              "deckt, wird zu Schulden, fällig am dritten Monatsende.",
+    [RE_MSG_ASSET_TIP_CASH] = "\nMod: ist das an, kauft der Mod auch Vermögenswerte, die einer Arbeit fehlen, wenn das Bargeld dafür "
+                              "und für das Monatsende reicht.",
+    [RE_MSG_ASSET_TIP_PAID] = "\nMod: ein abgenutzter Vermögenswert wird beim Neukauf bezahlt. Das Spiel zahlte dir stattdessen den "
+                              "Preis aus.",
     [RE_MSG_SORT_CHEAP] = "Sortieren:\nunterbewertet\n(recherchiert)",
     [RE_MSG_SORT_DEAR] = "Sortieren:\nüberbewertet\n(recherchiert)",
     [RE_MSG_SORT_CHANGE] = "Nach Änderung\nzum Vormonat",

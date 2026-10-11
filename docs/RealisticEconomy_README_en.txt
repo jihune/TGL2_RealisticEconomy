@@ -37,7 +37,7 @@ text of the thing you click (as the game's own Ctrl-click is).
        everybody of that business. Staff with it on also get the mod's staff automation (9 below).
      - A business's "buy worn-out assets again": while it is on the mod buys missing assets too, and what your
        cash does not cover becomes a debt ("Missing assets bought" in 9 below). The hover text of this switch
-       is the game's own and does not say what the mod does.
+       says so under the game's own sentence, in lines that begin with "Mod:" (from 1.1.2 on).
      - A save from before the mod: in it you switched these two on for what the game does with them. So the
        first time the mod loads that playthrough it switches both off in every business and says so in the
        monthly summary: "A save from before the mod: ...". The line across the top of the screen points
@@ -585,6 +585,9 @@ What it does
        during the month as soon as it sees a job short of hands whose assets are short ("Staff filled in" above).
          · The switch is the game's own: the business's "buy worn-out assets again" (the switch that takes 20
            staff hours a month). The mod buys only for a business that has it on, and charges nothing itself.
+           Those 20 hours are the game's: at a month start it takes them off the month of one employee of the
+           base job, once for this box and "buy inventory" together (20 with both on, none with both off). The
+           mod's hiring counts a job's people by the hours they have left, so those 20 are out of its sum too.
          · What it buys, where several wares bring the same asset (a coffee maker, a fridge and a billiards
            table; an electric plane and a fuel plane), in this order:
              1) a kind the business has already. You chose it.

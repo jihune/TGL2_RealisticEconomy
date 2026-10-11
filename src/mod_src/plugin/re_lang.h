@@ -227,6 +227,12 @@ enum {
     /* the ticker line after the game has bought a worn-out asset again; the game's own is empty. %s the business,
      * %s the amount */
     RE_MSG_ASSET_REPLACED,
+    /* under the game's hover text of the box "buy worn-out assets again" of a business window (REQUEST.md [64]): what
+     * the box does with the mod. _DEBT or _CASH: a missing asset is bought too, on debt or out of the cash alone;
+     * _PAID: the game's own replacement is paid for */
+    RE_MSG_ASSET_TIP_DEBT,
+    RE_MSG_ASSET_TIP_CASH,
+    RE_MSG_ASSET_TIP_PAID,
     /* the hover texts of four sort buttons of the stock window's list, whose orders the mod replaces: in this
      * order, as RE_STOCK_BY_CHEAP, _DEAR, _CHANGE and _CAP of re_stock.h */
     RE_MSG_SORT_CHEAP,

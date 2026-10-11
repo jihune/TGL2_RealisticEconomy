@@ -237,6 +237,9 @@ int re_game_firm_advert_costs(void *firms, int firm, int *keys, long long *amoun
  * many asset records there are, `*auto_buy` and `*hours_taken` the two switches the game's own replacement of a
  * worn-out asset asks for. Returns how many types were written, -1 when the business cannot be read. Reads only. */
 int re_game_firm_asset_types(void *firms, int firm, int *types, int cap, int *records, int *auto_buy, int *hours_taken);
+/* trace (REQUEST.md [64]): 1 when the business's box "buy inventory automatically" is on, 0 when off, -1 when the
+ * business cannot be read. With either box on the game takes 20 hours a month from an employee of the base job. */
+int re_game_firm_auto_stock(void *firms, int firm);
 /* trace (note b23): the game's own function for an asset of that type that has worn out - its notice, and with both
  * switches on a new unit and the cash movement for it. Nothing wears out or is removed by the call. */
 void re_game_asset_replace(void *firms, int firm, int type);

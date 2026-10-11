@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.1.1。不是游戏开发商制作的。
+This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.1.2。不是游戏开发商制作的。
 
 其他语言：[English](README.md)、[한국어](README.ko.md)、[Deutsch](README.de.md)、[Español](README.es.md)、[Français](README.fr.md)、[Português (Brasil)](README.pt-BR.md)、[日本語](README.ja.md)
 

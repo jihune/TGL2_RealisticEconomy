@@ -175,6 +175,10 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_ASSET_TICK_BUY] = "不足資産を%d個購入: %s",
     [RE_MSG_ASSET_TICK_DEBT] = " (負債 %s、3か月以内に返済)",
     [RE_MSG_ASSET_REPLACED] = "%s: 新品を購入、%s",
+    [RE_MSG_ASSET_TIP_DEBT] = "\nMOD: オンにすると、仕事に足りない資産もMODが購入する。現金が足りない分は負債になり、3か月目の月末に"
+                              "返済する。",
+    [RE_MSG_ASSET_TIP_CASH] = "\nMOD: オンにすると、仕事に足りない資産もMODが購入する。月末に必要な現金を残して買える時だけ購入する。",
+    [RE_MSG_ASSET_TIP_PAID] = "\nMOD: 古くなった資産の買い替えには代金を支払う。ゲーム本来は逆に代金分を受け取っていた。",
     [RE_MSG_SORT_CHEAP] = "割安順に並べる\n(調査済みのみ)",
     [RE_MSG_SORT_DEAR] = "割高順に並べる\n(調査済みのみ)",
     [RE_MSG_SORT_CHANGE] = "前月比で\n上昇順に並べる",

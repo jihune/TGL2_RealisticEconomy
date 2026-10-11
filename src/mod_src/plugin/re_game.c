@@ -1070,6 +1070,12 @@ int re_game_firm_asset_types(void *firms, int firm, int *types, int cap, int *re
     return c.count;
 }
 
+int re_game_firm_auto_stock(void *firms, int firm)
+{
+    const BYTE *stack = own_firm(firms, firm);
+    return stack == NULL ? -1 : stack[RE_FIRM_AUTO_STOCK] != 0;
+}
+
 typedef struct {
     int type, units;
 } units_ctx;
