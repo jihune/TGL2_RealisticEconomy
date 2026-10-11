@@ -194,6 +194,23 @@ enum {
     /* business: a click on a control of a business handed over whole, which the lock does not pass on (ticker); %s
      * the business */
     RE_MSG_LOCKED,
+    /* business: the line of the monthly summary after a load that names what is handed to the mod (REQUEST.md [58]).
+     * The prefix, then for each business one of the four, %s the business; more of them: RE_MSG_HELD_MORE behind.
+     * _NONE, %s the prefix: what a line that the save carries says when nothing is handed over any more */
+    RE_MSG_HANDED_PREFIX,
+    RE_MSG_HANDED_ALL,
+    RE_MSG_HANDED_ADVERTS,
+    RE_MSG_HANDED_CONTRACTS,
+    RE_MSG_HANDED_BOTH,
+    RE_MSG_HANDED_NONE,
+    /* the ticker's own short lines where the summary has a long one (REQUEST.md [60]): the ticker's band holds about
+     * 960 pixels of text at 1600x900 and a longer line runs out of it on both sides (analysis/scripts/ticker_fit.py).
+     * _ADOPT_TICK: no conversion. The three of the premises as their long ones: %s the prefix, and %s the amount in
+     * _GROW_TICK and _OWNED_TICK */
+    RE_MSG_ADOPT_TICK,
+    RE_MSG_PREMISES_GROW_TICK,
+    RE_MSG_PREMISES_MOST_TICK,
+    RE_MSG_PREMISES_OWNED_TICK,
     /* business: the month's lines about assets a business was short of. What was bought: the prefix, then for
      * each ware RE_MSG_ASSET_BUY_ITEM, RE_MSG_HELD_MORE when there are more, RE_MSG_ASSET_BUY_TOTAL behind. What
      * could not be bought: the other prefix, then for each ware one of the three */

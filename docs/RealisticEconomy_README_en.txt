@@ -40,11 +40,13 @@ text of the thing you click (as the game's own Ctrl-click is).
        is the game's own and does not say what the mod does.
      - A save from before the mod: in it you switched these two on for what the game does with them. So the
        first time the mod loads that playthrough it switches both off in every business and says so in the
-       monthly summary and in the ticker: "A save from before the mod: ...". Switch on again the businesses
-       you want the mod to look after. A save you write after that keeps its switches. An older save, from
-       before that first load, is switched off again whenever it is loaded. To keep the switches as the save
-       has them, set switchesOffOnFirstLoad=0 under [business] in the settings file. A playthrough played with
-       an earlier version of this mod is left as it is.
+       monthly summary: "A save from before the mod: ...". The line across the top of the screen points
+       there: "A save from before the mod: the mod changed things. See the Monthly Summary". Switch on again
+       the businesses you want the mod to look after. A save you write after that keeps its switches. An older save, from
+       before that first load, is switched off again whenever it is loaded (a business you have handed over
+       whole since then is left out). To keep the switches as the save has them, set switchesOffOnFirstLoad=0
+       under [business] in the settings file. A playthrough played with an earlier version of this mod is left
+       as it is.
 
    A button that does something else now (a plain click)
      - The second, third, fourth and fifth sort button above the stock window's company list: the largest
@@ -310,8 +312,8 @@ What it does
                already (one you subscribed and ended this month, or one you researched yourself with "Research
                Stock") costs nothing when you switch it on; its fee starts with the next month.
              - When your cash is less than what would be due at once, nothing is switched: no research, no
-               fee, and the top of the screen says "Research subscription: not switched on, your cash does not
-               cover the fee of $6,406,080.00".
+               fee, and the top of the screen says "Research subscription: not on, your cash is short of the
+               fee ($6,406,080.00)".
              - Switching off: no fee from the next month. This month's fee is not given back and this month's
                research stays.
              - Whether a company is subscribed is written on the screen. In the list its name is followed by
@@ -435,8 +437,9 @@ What it does
        after the loaded save are then forgotten (a lost game can be undone by loading). Stakes and chances stay.
      - A save from before the mod with a casino game in the action queue: the first time the mod loads that
        save it takes the game out of the queue. The game's own way has no stake and gives the result when the
-       game begins, which is not the mod's rule. The monthly summary and the ticker say so: "A save from before
-       the mod: ... 2 casino game(s) taken out of the action queue ...".
+       game begins, which is not the mod's rule. The monthly summary says so: "A save from before the mod: ...
+       2 casino game(s) taken out of the action queue ...", and the line across the top of the screen points
+       at the summary.
          · A game that has not begun: it is gone from the queue. Queue it again if you want it; the mod's stake
            and rules apply then.
          · A game that had begun: its result is what the game gave when it began (it is in your cash already).
@@ -615,7 +618,7 @@ What it does
          · Two places say what happened. The monthly summary: "Missing assets bought: S-Con Excavator x1
            ($240,433.74 in all, $2,482.15 of it as a debt)", and for what was not bought "Assets not bought:
            S-Con Excavator (no floor space)". The line across the top of the screen: "Missing assets bought: 1
-           for $240,433.74 ($2,482.15 of it is a debt, due in three months)". That line shows its messages one
+           for $240,433.74 (debt $2,482.15, due in 3 months)". That line shows its messages one
            after the other, so at a month change it can come late; its hover text lists the last twenty at once
            (the game's own feature). What was not bought is named every month until it can be bought.
          · If you do not want any of this, switch the business's switch off or set missingAssetsBought=0.
@@ -734,11 +737,23 @@ What it does
            and the signing are yours again; the adverts stay as the mod last set them.
          · Handing over costs nothing by itself. A hiring, an advert that is on and a contract signed cost what
            they cost when handed over one by one.
+         · A save loaded later: the hand-over is kept with the playthrough, in RealisticEconomy.state, not in a
+           save. So a business handed over whole is still handed over when you load an older save. Where that
+           save has the automatic management or "buy worn-out assets again" off, the load switches them on again
+           (before 1.1.1 they stayed off, and the lock of the business kept you from switching them on). The
+           rule for a save from before the mod, which switches both off, leaves such a business out. What you
+           handed over part by part, the adverts or the signing, is kept the same way: adverts handed over days
+           ago are still the mod's when you load an old save, with their orange icons.
+         · Where you see what is handed over: the monthly summary right after a load has a line like "Handed to
+           the mod: S-Law (contracts), S-Bro (adverts), S-Con (all of it)". A business is listed with all of it,
+           adverts, contracts, or "adverts, contracts". With nothing handed over there is no such line. When you
+           hand something over or take it back in that month the line is put right at once, and with everything
+           taken back it reads "Handed to the mod: nothing any more". The line goes with the month and comes
+           again at the next load.
          · The lock: in a business handed over whole the clicks that change it do nothing. What you change by
            hand there the mod would put back at its next look (somebody let go is hired again, an asset sold is
            bought again), or its sums would go wrong. A locked click changes nothing, and the line at the top
-           says "S-Con: the mod runs this business, so this is locked. Take it back first: Ctrl+Shift-click an
-           advert icon".
+           says "S-Con: locked (the mod runs it). Ctrl+Shift-click an advert icon takes it back".
              · Locked: the hire window of a job (the icon at the right of its row), the staff tab (where people
                are let go), the asset shop, the right click that sells an asset or an inventory item, a job's
                outsourcing box, the star of the floor space, the box "buy worn-out assets again", the month's
@@ -772,15 +787,17 @@ What it does
            of the month. When the floor space is short - a missing asset does not fit, or an offered contract
            needs more room than there is and twice the room would do - the mod does this:
              · rented premises: it switches the star on. The rent rises by what the game charges. The summary
-               and the line at the top say "Floor space (S-Con): it doubles at the end of this month, and the
-               rent rises by $10,135.38 a month. The business is short of floor space, so the mod switched the
-               star on". When a contract was the reason, that contract is signed in the same month.
+               says "Floor space (S-Con): it doubles at the end of this month, and the rent rises by $10,135.38
+               a month. The business is short of floor space, so the mod switched the star on". When a contract
+               was the reason, that contract is signed in the same month.
              · premises you own: it leaves the star alone, because making them larger takes a large sum at
                once. It says "Floor space (S-Car): short of it. The premises are owned, so the mod did not make
                them larger: that costs $5,065,041.79 at once. Switch the star on yourself if you want it" (once
                a month).
              · premises that are the largest of their kind: it says "Floor space (S-Air): short of it, and
                these premises cannot be made larger. The business has to move" (once a month).
+           Those three are the lines of the monthly summary. The line across the top of the screen has each in
+           short, "Floor space (S-Con): doubles at month end, rent up $10,135.38 a month" for example.
            To switch this off: [business] premisesGrow=0.
          · A business without an advert icon cannot be handed over this way. Use the staff and asset switches
            and the Contracts icon one by one there.
@@ -792,7 +809,7 @@ What it does
          · No asset is bought, no contract signed, the star is left alone. The paid adverts the mod has are
            switched off the moment you close.
          · When you close, the line at the top says "S-Con: closed. The mod's automation rests until you open it
-           again ..."; when you open, "S-Con: open again. The mod's automation goes on" (only for a business the
+           again"; when you open, "S-Con: open again. The mod's automation goes on" (only for a business the
            mod does something for). What was handed over stays handed over, and from the next look on (every 91
            hours) everything runs as before.
          · A business handed over whole, and so locked, can still be closed, opened and moved: those three are

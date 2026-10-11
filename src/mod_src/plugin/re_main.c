@@ -68,7 +68,7 @@
 #include "re_wording.h"
 #include "re_xp.h"
 
-#define PLUGIN_VERSION "1.1.0"
+#define PLUGIN_VERSION "1.1.1"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -4383,6 +4383,50 @@ static void advert_paint_all(void *firms, int firm)
 
 static void business_all(void *firms, int firm, const char *name, int now);
 
+/* The line of the monthly summary after a load that names what is handed to the mod, business by business
+ * (REQUEST.md [58], D-116, note m40). What is handed over is kept by playthrough and not in a save: an older save
+ * shows adverts, or a whole business, as the mod's that were handed over days later, and nothing on the screen
+ * says so before a business window is opened. With `add` 0 - after a click that hands something over or takes it
+ * back - a line that is in the month's list is put right and none is added. With nothing handed over, a line that
+ * the save carries is made to say so. */
+#define HANDED_NAMED 6
+static int g_trace_handed_unseen; /* trace: a load as before it looked at what is handed over */
+
+static void handed_over_line(void *main_obj, int add)
+{
+    static re_firm_fit own[OWN_FIRMS];
+    const char *prefix = T(RE_MSG_HANDED_PREFIX);
+    char text[480];
+    if (!g_on_business || g_trace_handed_unseen || g_playthrough[0] == 0)
+        return;
+    int owned = re_game_firm_fits(main_obj, own, OWN_FIRMS), handed = 0, len = snprintf(text, sizeof text, "%s", prefix);
+    for (int f = 0; f < owned; f++) {
+        int all = g_contracts_hooked && business_kept("all", own[f].id), adverts = g_ads_keep_hooked && adverts_kept(own[f].id);
+        int contracts = g_contracts_hooked && business_kept("contracts", own[f].id);
+        if (!all && !adverts && !contracts)
+            continue;
+        if (handed++ >= HANDED_NAMED)
+            continue;
+        if (handed > 1 && (size_t)len < sizeof text)
+            len += snprintf(text + len, sizeof text - (size_t)len, ", ");
+        if ((size_t)len < sizeof text)
+            len += snprintf(text + len, sizeof text - (size_t)len,
+                            T(all                    ? RE_MSG_HANDED_ALL
+                              : adverts && contracts ? RE_MSG_HANDED_BOTH
+                              : adverts              ? RE_MSG_HANDED_ADVERTS
+                                                     : RE_MSG_HANDED_CONTRACTS),
+                            own[f].name);
+    }
+    if (handed > HANDED_NAMED && (size_t)len < sizeof text)
+        snprintf(text + len, sizeof text - (size_t)len, T(RE_MSG_HELD_MORE), handed - HANDED_NAMED);
+    if (handed == 0)
+        snprintf(text, sizeof text, T(RE_MSG_HANDED_NONE), prefix);
+    if (handed > 0 && add)
+        panel_line(main_obj, prefix, text, "UIIconFirmContract", 1);
+    else if (g_can_text && re_game_replace_event(main_obj, prefix, text) == 1)
+        re_log("summary panel (line replaced): %s", text);
+}
+
 __attribute__((force_align_arg_pointer)) static int __fastcall advert_on_wrapper(void *firms, void *unused, int firm, int advert)
 {
     (void)unused;
@@ -4438,6 +4482,7 @@ __attribute__((force_align_arg_pointer)) static int __fastcall advert_on_wrapper
             snprintf(text, sizeof text, T(now ? RE_MSG_ALL_KEPT : RE_MSG_ALL_BACK), name);
             re_game_post_message(g_main_obj, text);
         }
+        handed_over_line(g_main_obj, 0);
         g_advert_click_kept = 1;
         g_advert_orange = g_advert_look_hooked && advert_is_kept(firms, firm, advert);
         return !on;
@@ -4637,7 +4682,14 @@ static int premises_grow(void *main_obj, void *firms, int firm, const char *name
     else
         snprintf(text, sizeof text, T(RE_MSG_PREMISES_OWNED), prefix, money(main_obj, p.cost, amount));
     panel_line(main_obj, prefix, text, "UIIconRestateUpgrade", 1);
-    re_game_post_urgent(main_obj, 1, text);
+    /* the ticker has its own short line: the summary's runs out of the ticker's band on both sides (REQUEST.md [60]) */
+    if (grows)
+        snprintf(text, sizeof text, T(RE_MSG_PREMISES_GROW_TICK), prefix, amount);
+    else if (p.next == 0)
+        snprintf(text, sizeof text, T(RE_MSG_PREMISES_MOST_TICK), prefix);
+    else
+        snprintf(text, sizeof text, T(RE_MSG_PREMISES_OWNED_TICK), prefix, amount);
+    re_log("premises: ticker line %s: '%s'", g_can_text && re_game_post_urgent(main_obj, 1, text) ? "posted" : "NOT posted", text);
     re_log("premises: '%s' (firm %d), %s: '%s' (property %d of type %d, %s, floor space %.2f): %s; the month end would charge %lld cents",
            name, firm, why, p.address, p.house, p.type, p.owned ? "owned" : "rented", p.space,
            grows         ? "the star is switched on, it grows at this month's end"
@@ -4817,6 +4869,7 @@ __attribute__((force_align_arg_pointer)) static void __fastcall offers_window_wr
         re_game_post_message(g_main_obj, text);
         re_log("contracts: '%s' (firm %d): Shift-click on the icon of its contracts: signing them is %s", name, firm,
                now ? "the mod's from now on" : "the player's again");
+        handed_over_line(g_main_obj, 0);
     }
     ((window_fn)AT(RE_VA_OFFERS_WINDOW))(window, first, second, firm);
 }
@@ -5476,6 +5529,29 @@ static int free_money_trace(void *main_obj)
 #define ADOPT_WAITING (-2) /* seen by this build, with nothing in force that gives a switch more to do */
 static int g_adopt_switches = 1;
 
+/* A business handed over whole keeps the game's two switches that the hand-over switched on (REQUEST.md [58], note
+ * m40). The hand-over is in the plugin's record of the playthrough, the two switches are in the save: a save from
+ * before the hand-over has them as they were then, and one from before the mod gets them switched off at every load
+ * (adopt_switches, which leaves such a business out for that reason). The business would be locked and orange with
+ * none of the mod's rules for staff, assets and contracts at work in it, and the lock keeps the player from the
+ * switches. So at a load both are switched on where the save has them off, as the click of the hand-over did. */
+static void handed_over_hold(void *main_obj)
+{
+    static re_firm_fit own[OWN_FIRMS];
+    void *firms = re_game_firms(main_obj);
+    if (!g_contracts_hooked || g_trace_handed_unseen || g_playthrough[0] == 0 || firms == NULL)
+        return;
+    int owned = re_game_firm_fits(main_obj, own, OWN_FIRMS);
+    for (int f = 0; f < owned; f++) {
+        if (!business_kept("all", own[f].id))
+            continue;
+        int staff = re_game_firm_manage(firms, own[f].id), assets = re_game_firm_auto_assets_on(firms, own[f].id);
+        re_log("business (load): '%s' (firm %d) is handed over whole: the save has %d of its employee(s) outside the automatic "
+               "management and \"buy worn-out assets again\" %s; both are on now, as the hand-over left them",
+               own[f].name, own[f].id, staff, assets > 0 ? "on" : assets == 0 ? "off" : "unreadable");
+    }
+}
+
 /* The casino games in the queues of a save from before the mod (REQUEST.md [45] and [48], note m27). The game books a
  * casino game's result in its first hour; with the mod a game has a stake, its result comes in its last hour and
  * stays when a save is loaded. A game queued under the first rule was not chosen under the second: it is taken out
@@ -5586,8 +5662,15 @@ static int adopt_switches(void *main_obj, long long now, char *text, size_t size
     if (!for_assets && !for_staff)
         return 0; /* an older save, and nothing in force now */
     void *firms = re_game_firms(main_obj);
-    int owned = re_game_firm_fits(main_obj, own, OWN_FIRMS), assets = 0, staff = 0;
+    int owned = re_game_firm_fits(main_obj, own, OWN_FIRMS), assets = 0, staff = 0, whole = 0;
     for (int f = 0; f < owned; f++) {
+        if (g_contracts_hooked && !g_trace_handed_unseen && business_kept("all", own[f].id)) {
+            /* handed over in this playthrough: the player chose the mod's meaning for it (handed_over_hold) */
+            re_log("adopt: '%s' (firm %d) is handed over whole: its two switches are the hand-over's and are not looked at", own[f].name,
+                   own[f].id);
+            whole++;
+            continue;
+        }
         int was = for_assets ? re_game_firm_auto_assets_off(firms, own[f].id) : 0;
         int managed = for_staff ? re_game_firm_unmanage(firms, own[f].id) : 0;
         assets += was > 0;
@@ -5597,7 +5680,7 @@ static int adopt_switches(void *main_obj, long long now, char *text, size_t size
     }
     re_log("adopt: a save from before the mod (hour %lld of the playthrough, the plugin's first load of it was at hour %lld): %d "
            "business(es), %d with the asset switch on, %d employee(s) under automatic management; all off now%s",
-           now, at, owned, assets, staff,
+           now, at, owned - whole, assets, staff,
            for_assets && for_staff ? ""
            : for_assets            ? "; the staff's switch is not looked at and left alone (settings)"
                                    : "; the asset switch is not looked at and left alone (settings)");
@@ -5625,7 +5708,9 @@ static void adopt_save(void *main_obj)
     int n = adopt_casino(main_obj, now, known, text, switches, sizeof text);
     if (n > 0) {
         panel_line(main_obj, T(RE_MSG_ADOPT_PREFIX), text, switches > 0 ? "UIIconFurnishings" : "ActionGamblingSlots", 1);
-        re_game_post_urgent(main_obj, 1, text);
+        /* the ticker points at the summary: the summary's line is two to three times the ticker's band (REQUEST.md [60]) */
+        re_log("adopt: ticker line %s: '%s'", g_can_text && re_game_post_urgent(main_obj, 1, T(RE_MSG_ADOPT_TICK)) ? "posted" : "NOT posted",
+               T(RE_MSG_ADOPT_TICK));
     }
 }
 
@@ -5660,8 +5745,10 @@ static void after_game_step(void *main_obj, const char *why, int why_is_load)
     static re_household h; /* too large for the game's stack */
     snapshot(main_obj, &h);
     memcpy(g_playthrough, h.playthrough, sizeof g_playthrough);
-    if (why_is_load)
+    if (why_is_load) {
         adopt_save(main_obj); /* before anything of this load writes into the plugin's record of the playthrough */
+        handed_over_hold(main_obj);
+    }
     if (why_is_load && g_on_trace && free_money_trace(main_obj))
         snapshot(main_obj, &h); /* the cash account changed */
     if (why_is_load && g_on_trace && g_on_business)
@@ -5704,6 +5791,8 @@ static void after_game_step(void *main_obj, const char *why, int why_is_load)
         assets_fill(main_obj, 0, 0);
     if (why_is_load && g_on_business && g_business_fit)
         fit_alert(main_obj, "load");
+    if (why_is_load)
+        handed_over_line(main_obj, 1);
     if (why_is_load && g_on_property)
         property_alert(main_obj, "load"); /* the saved list may have a property the saved line does not know of */
     if (why_is_load && g_can_text)
@@ -6296,6 +6385,9 @@ static void load_settings(void)
     g_trace_contracts_unseen = g_on_trace && re_ini_int("trace", "signedContractsUnseen", 0);
     if (g_trace_contracts_unseen)
         re_log("business: TEST SETTING: who is one too many leaves whatever contract was signed in the month");
+    g_trace_handed_unseen = g_on_trace && re_ini_int("trace", "handedOverUnseen", 0);
+    if (g_trace_handed_unseen)
+        re_log("business: TEST SETTING: a load does not look at what is handed over");
     if (g_on_trace)
         re_ini_doubles("trace", "roomMost", &g_trace_room, 1);
     if (g_on_trace)

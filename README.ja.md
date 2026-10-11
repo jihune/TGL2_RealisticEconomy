@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョンは 1.1.0 です。ゲームの開発元が作ったものではありません。
+This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョンは 1.1.1 です。ゲームの開発元が作ったものではありません。
 
 ほかの言語: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [简体中文](README.zh-CN.md)
 
