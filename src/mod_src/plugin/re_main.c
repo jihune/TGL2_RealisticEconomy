@@ -43,6 +43,7 @@
  */
 #include <windows.h>
 #include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -50,6 +51,7 @@
 #include "re_business.h"
 #include "re_casino.h"
 #include "re_credit.h"
+#include "re_data.h"
 #include "re_font.h"
 #include "re_futures.h"
 #include "re_game.h"
@@ -68,7 +70,7 @@
 #include "re_wording.h"
 #include "re_xp.h"
 
-#define PLUGIN_VERSION "1.1.2"
+#define PLUGIN_VERSION "1.2.0"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -176,6 +178,15 @@ static int g_asset_fill_hooked, g_asset_debt, g_asset_charge, g_asset_charge_hoo
  * when its floor space is short (premises_grow) */
 static int g_contracts_keep = 1, g_contracts_hooked;
 static double g_contract_hours = 10.0; /* what a signing costs: hours of a store manager at the standard wage */
+static int g_data_fix[RE_DATA_COUNT];  /* the corrections of the game's data files that are wanted (re_data.h) */
+/* balance (note m48): numbers of the game's economy that the mod sets. The two trading fees and the savings account's
+ * rate are the game's data, corrected as it is read (re_data.h); the interest on the cash is the mod's own, paid
+ * before a month end (cash_interest). */
+static int g_on_balance;
+static double g_stock_fee = 0.02, g_futures_fee = 0.10, g_savings_rate = 0.8, g_cash_rate = 0.5;
+static int g_rent_market = 1; /* a renewed lease takes the market's rent, lower as well as higher */
+static double g_start_awareness = 0.25; /* the awareness of a business the player starts; the game's is 0 */
+static int g_fee_label; /* the futures fee's label is put in the mod's words (text_want) */
 static int g_premises_grow = 1;
 static int g_lock = 1, g_locks; /* a business handed over whole is locked: the click handlers the lock stands in */
 static double g_ads_upto = 1.03;  /* the awareness at which the mod switches a business's adverts off, 1 = 100% */
@@ -201,6 +212,7 @@ static LONG g_trace_lines, g_getter_reads;
  * premium = fixedPremium + fixedReversion x (baseInterestRate - central-bank rate). `g_fixed_now` is what the game's
  * two instructions read; it is refreshed after every load and month end. */
 static double g_fixed_factor = 1.0, g_fixed_premium = 0.005, g_fixed_reversion = 0.5, g_fixed_now = 0.005;
+static int g_mortgage_approved = 1; /* a mortgage is never larger than its approval; the rest of the price is paid in cash */
 static int g_new_fixed_id; /* a fixed mortgage created a moment ago, to be priced once the purchase has settled */
 
 /* What the month-end routine moved through the cash function, by kind, in cents. Outflows are stored positive.
@@ -405,6 +417,7 @@ static void panel_line(void *main_obj, const char *prefix, const char *text, con
 #define KEY_ADVERT_TIP "clickToActivateDeactivate" /* the last sentence in the hover text of a bought advert's icon */
 #define KEY_XP_TIP "chartEffectivenessDecayTip"  /* the experience window's "?": experience decays by a share every month */
 #define KEY_ASSET_TIP "firmAutoAsset"            /* the hover text of a business window's box "buy worn-out assets again" */
+#define KEY_TRADING_FEE "stockTradingFee"        /* "10% trading fee": under the buttons of the shares and of the futures */
 
 enum {
     TEXT_GRADED_RATE = 1,
@@ -430,6 +443,7 @@ enum {
     TEXT_CHART_INDEX, /* the title of the chart of all share prices says what its numbers are */
     TEXT_XP_TIP, /* under the game's sentence about the monthly decay of experience: what the mod keeps */
     TEXT_ASSET_TIP, /* under the game's sentence about buying worn-out assets again: what the box does with the mod */
+    TEXT_FUT_FEE, /* the label of the futures fee says what it is a part of: the margin */
     TEXT_WORDING /* + the entry of the wording table */
 };
 
@@ -626,8 +640,9 @@ static int text_want(const char *key, unsigned len, unsigned caller, const re_te
     if (g_xp_hooked && len == sizeof KEY_XP_TIP - 1 && memcmp(key, KEY_XP_TIP, len) == 0)
         return TEXT_XP_TIP;
     /* the game fetches this text for that hover text alone (two functions, both of the box) */
-    if (g_on_business && (g_asset_fill_hooked || (g_asset_charge && g_asset_charge_hooked)) && len == sizeof KEY_ASSET_TIP - 1 &&
-        memcmp(key, KEY_ASSET_TIP, len) == 0)
+    if (g_fee_label && from == RE_VA_CALL_FUT_FEE + 5 && len == sizeof KEY_TRADING_FEE - 1 && memcmp(key, KEY_TRADING_FEE, len) == 0)
+        return TEXT_FUT_FEE;
+    if (g_on_business && g_asset_fill_hooked && len == sizeof KEY_ASSET_TIP - 1 && memcmp(key, KEY_ASSET_TIP, len) == 0)
         return TEXT_ASSET_TIP;
     if (g_sort_hooked && from - RE_VA_STOCK_BUTTONS < RE_STOCK_BUTTONS_SIZE) {
         /* "Sort by company type", "by market capitalisation", "by earnings a share (%)", "by listing date": the
@@ -1901,6 +1916,23 @@ static unsigned text_edit(int want, char *text, unsigned len, unsigned cap, cons
         memcpy(text + at, more, n);
         return at + n;
     }
+    if (want == TEXT_FUT_FEE) {
+        /* the game's "10% trading fee" in the mod's words. The number is the value the call came with for PERCENT
+         * (the text here has it in already; run1300 showed a name put into the text now is not replaced any more) */
+        static int told;
+        const char *percent = NULL;
+        char label[160];
+        for (int i = 0; i < values->count && percent == NULL; i++)
+            if (strcmp(values->name[i], "PERCENT") == 0)
+                percent = values->value[i];
+        int n = percent != NULL ? snprintf(label, sizeof label, T(RE_MSG_FUT_FEE), percent) : 0;
+        if (n <= 0 || (unsigned)n >= sizeof label || (unsigned)n >= cap)
+            return len;
+        memcpy(text, label, (size_t)n);
+        if (!told++)
+            re_log("balance: the label of the futures fee is asked for: it says that the fee is a part of the margin ('%s')", label);
+        return (unsigned)n;
+    }
     if ((want >= TEXT_SORT_CHEAP && want <= TEXT_SORT_CAP) || want == TEXT_FUT_SORT) { /* the button says what its order is now */
         const char *label = want == TEXT_FUT_SORT ? T(RE_MSG_FUT_SORT) : T(RE_MSG_SORT_CHEAP + (want - TEXT_SORT_CHEAP));
         unsigned n = (unsigned)strlen(label);
@@ -1937,33 +1969,43 @@ static unsigned text_edit(int want, char *text, unsigned len, unsigned cap, cons
         char both[1000];
         const char *tip = T(want == TEXT_XP_TIP ? RE_MSG_XP_TIP : RE_MSG_FUT_TIP);
         if (want == TEXT_ADVERT_TIP) {
+            /* not handed over: how to, with the fee, and how to hand the whole business over; the adverts handed over:
+             * what the mod does and how to take them back; the whole business handed over: that, and how to take it
+             * back (a Shift-click is refused there). Two lines of Korean each (D-120) */
             char fee[64];
-            int at = snprintf(both, sizeof both, T(adverts_kept(advert_tip_firm(regs)) ? RE_MSG_ADVERTS_TIP_ON : RE_MSG_ADVERTS_TIP),
-                              100.0 * g_ads_upto, money(g_main_obj, job_fee(g_main_obj, RE_JOB_PR_SPECIALIST, g_ads_hours), fee));
-            if (g_contracts_hooked && at >= 0 && (size_t)at < sizeof both)
-                snprintf(both + at, sizeof both - (size_t)at, "%s", T(RE_MSG_ADVERTS_TIP_ALL));
+            int firm = advert_tip_firm(regs);
+            money(g_main_obj, job_fee(g_main_obj, RE_JOB_PR_SPECIALIST, g_ads_hours), fee);
+            if (g_contracts_hooked && business_kept("all", firm))
+                snprintf(both, sizeof both, "%s", T(RE_MSG_ADVERTS_TIP_WHOLE));
+            else if (adverts_kept(firm))
+                snprintf(both, sizeof both, T(RE_MSG_ADVERTS_TIP_ON), 100.0 * g_ads_upto, fee);
+            else {
+                int at = snprintf(both, sizeof both, T(RE_MSG_ADVERTS_TIP), fee);
+                if (g_contracts_hooked && at >= 0 && (size_t)at < sizeof both)
+                    snprintf(both + at, sizeof both - (size_t)at, "%s", T(RE_MSG_ADVERTS_TIP_ALL));
+            }
             tip = both;
         }
-        if (want == TEXT_AUTO_TIP) { /* what the click does with the mod, then what the management does with it */
-            int at = snprintf(both, sizeof both, "%s%s", g_auto_whole_patched ? T(RE_MSG_AUTO_TIP_ALL) : "", g_wage_hooked ? T(RE_MSG_AUTO_TIP) : "");
-            if (g_spare_months > 0 && at >= 0 && (size_t)at < sizeof both)
-                at += snprintf(both + at, sizeof both - (size_t)at, T(RE_MSG_AUTO_TIP_SPARE), g_spare_months);
-            if (g_fill_hooked && at >= 0 && (size_t)at < sizeof both)
-                snprintf(both + at, sizeof both - (size_t)at, "%s", T(RE_MSG_AUTO_TIP_FILL));
+        if (want == TEXT_AUTO_TIP) { /* a sentence for each rule that is on: the click, the pay demands, the staffing */
+            int staffed = g_spare_months > 0 || g_fill_hooked;
+            if (g_auto_whole_patched || g_wage_hooked || staffed)
+                snprintf(both, sizeof both, "%s%s%s%s", T(RE_MSG_MOD), g_auto_whole_patched ? T(RE_MSG_AUTO_TIP_ALL) : "",
+                         g_wage_hooked ? T(RE_MSG_AUTO_TIP) : "", staffed ? T(RE_MSG_AUTO_TIP_STAFF) : "");
+            else
+                both[0] = 0;
             tip = both;
         }
         if (want == TEXT_ASSET_TIP) {
             static int told;
-            snprintf(both, sizeof both, "%s%s", g_asset_fill_hooked ? T(g_asset_debt ? RE_MSG_ASSET_TIP_DEBT : RE_MSG_ASSET_TIP_CASH) : "",
-                     g_asset_charge && g_asset_charge_hooked ? T(RE_MSG_ASSET_TIP_PAID) : "");
-            tip = both;
+            tip = T(g_asset_debt ? RE_MSG_ASSET_TIP_DEBT : RE_MSG_ASSET_TIP_CASH);
             if (!told++)
-                re_log("business: the hover text of the box \"buy worn-out assets again\" is asked for: the mod's lines go under it "
-                       "(a missing asset is bought too: %s; the replacement is paid for: %s)",
-                       !g_asset_fill_hooked ? "no" : g_asset_debt ? "yes, on debt when the cash is short" : "yes, out of the cash alone",
-                       g_asset_charge && g_asset_charge_hooked ? "yes" : "no");
+                re_log("business: the hover text of the box \"buy worn-out assets again\" is asked for: the mod's line goes under it "
+                       "(a missing asset is bought too, %s)",
+                       g_asset_debt ? "on debt when the cash is short" : "out of the cash alone");
         }
         unsigned n = (unsigned)strlen(tip);
+        if (n == 0) /* no rule of this place is on: nothing is put under the game's text */
+            return len;
         if (len + 1 + n >= cap) {
             static int told; /* run 123: a fourth paragraph did not fit and all four were gone without a word */
             if (!told++)
@@ -2197,7 +2239,23 @@ static void loan_created(unsigned *record, void *debt_manager, unsigned return_a
         re_log("education loan: fixed at %.2f%% a year, the central-bank rate now; $%.2f over %u months, first payment after "
                "%u month(s)",
                100.0 * rate, dollars(principal), record[5], record[12]);
-    } else if (record[1] != 0) {
+        return;
+    }
+    /* The purchase: the game makes the price less the deposit the loan, whatever amount was approved, and takes no
+     * cash at all (note m46: a deposit of 1% of the cash, $1.2M approved, and a property of $6.35M came with a loan
+     * of $6.05M, run1222). The loan is what was approved; the rest is paid, as the purchase without a mortgage pays. */
+    long long approved = (long long)(((unsigned long long)record[RE_DEBT_RECORD_APPROVED / 4 + 1] << 32) | record[RE_DEBT_RECORD_APPROVED / 4]);
+    if (g_mortgage_approved && approved > 0 && principal > approved) {
+        long long rest = principal - approved;
+        record[6] = (unsigned)approved;
+        record[7] = (unsigned)(approved >> 32);
+        ((money_fn)AT(RE_VA_CHANGE_MONEY))((BYTE *)debt_manager - RE_PFM_DEBTINV, (unsigned)-rest, (int)(-rest >> 32), RE_TAG_PROPERTY, 0, 0, 0);
+        re_log("mortgage: the purchase would make a loan of $%.2f of an approval of $%.2f: the loan is the approved amount, $%.2f is "
+               "paid in cash",
+               dollars(principal), dollars(approved), dollars(rest));
+        principal = approved;
+    }
+    if (record[1] != 0) {
         float quoted;
         memcpy(&quoted, &record[1], 4);
         g_new_fixed_id = re_game_next_debt_id(debt_manager);
@@ -2513,6 +2571,39 @@ static int guard_blocked(int trade)
     return 1;
 }
 
+/* ---- the monthly auto transfer: a rule that buys shares (note m47)
+ * The game's rule buys its shares whatever the cash is: the window's slider is not held to the cash either, and what
+ * the cash does not cover the game books as its own kind of debt, without interest, due at the third month end
+ * (run1227: a rule of $5.98 million bought shares for $7.21 million with $1.90 million in cash; $5.31 million and
+ * the fee became debt). The rule for the savings account is all or nothing with the cash. The call of the purchase
+ * inside the routine of the rules comes here: the price as the purchase itself works it out, with its fee, and no
+ * purchase when the cash does not cover it. */
+static int g_transfer_cash = 1, g_transfer_sites, g_transfer_hooked, g_transfer_skipped;
+
+__attribute__((force_align_arg_pointer)) static void __fastcall transfer_buy_wrapper(void *market, void *unused, int stock, int quantity)
+{
+    typedef long long(__thiscall * price_fn)(void *market, int stock, int quantity, int buying);
+    typedef void(__thiscall * buy_fn)(void *market, int stock, int quantity);
+    const BYTE *m = (const BYTE *)market;
+    const BYTE *finance = re_readable(m, RE_MARKET_DATA + 4) ? *(const BYTE *const *)(m + RE_MARKET_FINANCE) : NULL;
+    (void)unused;
+    if (quantity > 0 && re_readable(finance, RE_PFM_CASH + 8)) {
+        long long cash = *(const long long *)(finance + RE_PFM_CASH);
+        long long price = ((price_fn)AT(RE_VA_STOCK_PRICE))(market, stock, quantity, 1) * quantity;
+        double fee = re_business_data_number(AT(RE_VA_DATA_NUMBER), *(void *const *)(m + RE_MARKET_DATA), AT(RE_VA_STR_ASSIGN), "stockMarket",
+                                             11, "stockTradingFee", 15);
+        long long cost = price + (long long)((double)price * (fee > 0.0 ? fee : 0.0));
+        if (cost > cash) {
+            g_transfer_skipped++;
+            re_log("transfers: a rule would buy %d share(s) of company %d for $%.2f with a fee of %.2f%%; the cash is $%.2f: nothing is "
+                   "bought (the game would buy, and book what the cash does not cover as a debt)",
+                   quantity, stock, dollars(cost), 100.0 * fee, dollars(cash));
+            return;
+        }
+    }
+    ((buy_fn)AT(RE_VA_STOCK_BUY))(market, stock, quantity);
+}
+
 /* The summary line of a running lock is saved with the game like every line of the panel, so a save written while a
  * lock was running carries it: 1 when the loaded panel has such a line, 0 when it has none, -1 when that cannot be
  * told. The line may be in another language than the game is set to now. */
@@ -2722,7 +2813,7 @@ static int ipo_install(void)
  * more nominees than guaranteed seats, those who are elected anyway keep their seats and the guarantee goes to the
  * others (REQUEST.md [29]); for that the totals of all nominees with nothing forced are taken once per pass, when
  * the first of the household's nominees comes by. The experience part of the score is left alone. */
-static void board_scored(BYTE *company, BYTE *score, int person, unsigned return_address)
+static void board_forced(BYTE *company, BYTE *score, int person, unsigned return_address)
 {
     static struct {
         const BYTE *company;
@@ -2809,6 +2900,53 @@ static void board_scored(BYTE *company, BYTE *score, int person, unsigned return
                election ? "election" : "tab", id, person, 100.0 * fraction, seats, mine, place + 1, own,
                rank >= 0 ? "raised above all others" : "left as it is",
                mine <= seats ? "" : natural == NULL ? " (the other totals could not be asked for)" : " (by the totals with nothing forced)");
+}
+
+/* test knobs: the second nominee of a pass is given the first one's total (a tie the game makes by itself only for
+ * two members of one household with no experience, note b11), and the rule below that undoes a tie is off */
+static int g_trace_board_tie, g_trace_board_tie_kept;
+
+/* Equal totals share one of the five places, and the election seats everybody of a place: a sixth director, for
+ * whom the board tab has no room (note b11, "What can go wrong" 1 and 2; note m45). So no two nominees of a
+ * pass leave here with the same total: one that an earlier nominee of the list has already is lowered by the least
+ * a float can be lowered, until it is nobody's. The earlier of the list keeps the place; incumbents come first there. */
+static void board_scored(BYTE *company, BYTE *score, int person, unsigned return_address)
+{
+    static struct {
+        const BYTE *company;
+        unsigned site;
+        int count;
+        float totals[32];
+    } given; /* the totals handed back in the pass that is running */
+    int nominees[32];
+    board_forced(company, score, person, return_address);
+    if (!re_readable(company, RE_COMPANY_BOARD_NOTICE + 4) || !re_readable(score, RE_SCORE_BYTES))
+        return;
+    int count = re_board_nominees(company, nominees, 32);
+    if (count <= 0)
+        return;
+    if (person == nominees[0] || given.company != company || given.site != return_address) {
+        given.company = company;
+        given.site = return_address;
+        given.count = 0;
+    }
+    float *total = (float *)(score + RE_SCORE_TOTAL);
+    if (g_trace_board_tie && given.count == 1)
+        *total = given.totals[0];
+    float was = *total;
+    for (int k = 0; !g_trace_board_tie_kept && k < given.count; k++)
+        if (given.totals[k] == *total) {
+            *total = nextafterf(*total, -INFINITY);
+            k = -1;
+        }
+    if (*total != was || (g_trace_board_tie && given.count == 1))
+        re_log("board: %s, company %d, person %d: its total %.6f is the total of a nominee before it in the list%s: %s",
+               (BYTE *)return_address == AT(RE_VA_CALL_BOARD_ELECT) + 5 ? "election" : "tab", *(int *)(company + RE_COMPANY_ID), person, was,
+               g_trace_board_tie ? " (made so by the test setting)" : "",
+               *total != was ? "lowered to the next smaller number, so that the two do not share one of the five places"
+                             : "left so (test setting)");
+    if (given.count < 32)
+        given.totals[given.count++] = *total;
 }
 
 /* The election first: with only the tab redirected the tab would promise a seat the election does not give. */
@@ -3637,6 +3775,8 @@ static int months_running(const char *what, int month, int firm, int job, int ho
 #define SIZING_LOOKS 2 /* jobs of one whose candidates are looked at in one month end */
 #define SIGNED_MAX 32
 static int g_trace_contracts_unseen; /* a test knob: the rule below as it was before it looked at contracts */
+static int g_trace_first_unseen;     /* a test knob: staff_fill and contracts_sign as before they knew a job without people */
+static int g_trace_sign_not_whole;   /* a test knob: contracts_sign looks at an offer's jobs as where only the signing is handed over */
 
 /* The contracts a business signed in the running month (REQUEST.md [47], note m32). The game gives a month its work
  * at the month start, from the contracts signed by then: what was signed since is in none of this month's hours and
@@ -3667,6 +3807,20 @@ static void contracts_trace(void *main_obj, const char *when)
             at += snprintf(line + at, sizeof line - (size_t)at, " %d of type %d, signed in month %d for %d months, %d hours a month;",
                            s[i].id, s[i].type, s[i].start, s[i].months, s[i].hours);
         re_log("business (trace, %s): '%s' (firm %d) in month %d: %d signed contract(s):%s", when, own[f].name, own[f].id, month, n, line);
+        /* the month's offers and the hours each lists by job: the game makes them from its data files (note m44) */
+        re_offered offer[8];
+        const BYTE *shown = NULL;
+        int offers = re_game_firm_offers(firms, own[f].id, offer, 8, &shown);
+        for (int i = 0; i < offers; i++) {
+            re_coming job[16]; /* the data gives a contract at most five jobs */
+            int type = 0, jobs = re_game_contract_jobs(offer[i].contract, &type, job, 16);
+            line[0] = 0;
+            at = 0;
+            for (int k = 0; k < jobs && (size_t)at < sizeof line; k++)
+                at += snprintf(line + at, sizeof line - (size_t)at, " job %d %d hours;", job[k].job, job[k].hours);
+            re_log("business (trace, %s): '%s' (firm %d) in month %d: offer %d of type %d lists %d job(s):%s", when, own[f].name, own[f].id,
+                   month, offer[i].id, type, jobs, line);
+        }
         re_premises p;
         double used = 0.0, most = 0.0, reputation = 0.0;
         int influence = 0;
@@ -3976,7 +4130,7 @@ static void staff_fill(void *main_obj, void *firms, int firm)
     }
     re_game_firm_name(firms, firm, name, sizeof name);
     re_coming coming[FILL_JOBS];
-    int comings = re_game_firm_coming(firms, firm, month, coming, FILL_JOBS);
+    int comings = re_game_firm_coming(firms, firm, month, coming, FILL_JOBS), whole = business_kept("all", firm);
     /* a business can keep one job of the game's data under more than one number of its own: the hours are added up,
      * each entry's work that is done counting for no more than that entry was given */
     int distinct = 0;
@@ -4013,7 +4167,12 @@ static void staff_fill(void *main_obj, void *firms, int firm)
                            job[j].job, todo, given, able, 100.0 * factor, people, under, job[j].outsourced ? ", outsourced" : "");
         if (j == kinds - 1 && g_on_trace)
             re_log("business: '%s' (firm %d), %d game hours left in the month:%s", name, firm, clock, seen);
-        if (under == 0 || job[j].outsourced)
+        /* a job nobody is employed for has no switch to look at. In a business handed over whole the work a signed
+         * contract lists for such a job is the mod's like the rest: the hire window is locked there, and a contract can
+         * bring a job the business never had (REQUEST.md [68], note m44). Anywhere else, and for work no contract
+         * lists (a job a member of the household works alone), the first person is the player's to hire. */
+        int first_of_job = people == 0 && whole && !g_trace_first_unseen && re_game_firm_listed(firms, firm, job[j].job) > 0;
+        if ((under == 0 && !first_of_job) || job[j].outsourced)
             continue;
         /* hiring ahead (REQUEST.md [49]): what the business's contracts add to this job's work from the next month
          * on, looked at once for a month and an amount */
@@ -4794,10 +4953,32 @@ static void contracts_sign(void *main_obj)
         int spaced = re_game_firm_space(firms, firm, &used, &most), read_ok[CONTRACT_OFFERS], out[CONTRACT_OFFERS], least = -1, floor = 0;
         int larger = g_premises_grow && business_kept("premises", firm) && re_game_firm_premises(firms, firm, &place) && !place.owned &&
                      (place.next != 0 || place.growing != 0);
-        int signed_here = 0;
+        int signed_here = 0, unstaffed[CONTRACT_OFFERS];
+        /* the jobs the mod staffs here (staff_fill): one with somebody under the automatic management, and in a
+         * business handed over whole every job. An outsourced job needs nobody. */
+        static re_job_hours kind[FILL_JOBS];
+        BYTE *staff = NULL;
+        void *jobs = re_game_jobs(firms);
+        int people = re_game_firm_staff(firms, firm, &staff), kinds = re_game_firm_jobs(firms, firm, kind, FILL_JOBS);
+        int whole = (business_kept("all", firm) && !g_trace_sign_not_whole) || g_trace_first_unseen;
         most = room_most(firm, most);
         for (int i = 0; i < offers; i++) {
             re_offer_value value;
+            re_coming listed[16];
+            int type = 0, lists = re_game_contract_jobs(offer[i].contract, &type, listed, 16);
+            unstaffed[i] = 0;
+            for (int k = 0; k < lists && !whole && unstaffed[i] == 0; k++) {
+                int kept = listed[k].hours <= 0;
+                for (int j = 0; j < kinds && !kept; j++)
+                    kept = kind[j].job == listed[k].job && kind[j].outsourced;
+                for (int p = 0; p < people && !kept && jobs != NULL; p++) {
+                    re_staff_read m;
+                    kept = re_game_staff_read(jobs, staff + (SIZE_T)p * RE_STAFF_BYTES, &m) && m.job == listed[k].job &&
+                           re_game_staff_auto(firms, firm, m.id);
+                }
+                if (!kept)
+                    unstaffed[i] = listed[k].job;
+            }
             read_ok[i] = re_game_offer(main_obj, shown, offer[i].contract, &read[i]) && re_business_offer_value(&read[i].terms, &value);
             hours_of[i] = read_ok[i] ? read[i].terms.hours + read[i].terms.induced : 0.0;
             premium_of[i] = read_ok[i] ? value.premium : 0.0;
@@ -4830,6 +5011,8 @@ static void contracts_sign(void *main_obj)
             double need = work > 0 ? used * (work + added + hours_of[best]) / work : used;
             const char *why = !read_ok[best]               ? "its numbers cannot be read"
                               : premium_of[best] <= 0.0    ? "it pays no more than its work costs"
+                              : unstaffed[best] != 0       ? "a job it lists has nobody under the game's automatic management here and is "
+                                                             "not outsourced: nobody would be hired for that work"
                               : work <= 0 && best != least ? "the business had no work last month to measure by, only its smallest offer is "
                                                              "looked at"
                               : !spaced                    ? "the floor space cannot be read"
@@ -5943,6 +6126,12 @@ __attribute__((force_align_arg_pointer)) static void __fastcall postload_wrapper
                "+ %g x (neutral rate - central-bank rate))",
                g_edu_fixed ? "installed" : "NOT installed", purchase ? "installed" : "NOT installed",
                premium ? "installed" : "NOT installed", 100.0 * g_fixed_premium, g_fixed_reversion);
+        re_log("mortgage: a loan for a purchase is never larger than its approval, the rest of the price is paid in cash: %s",
+               !g_mortgage_approved ? "off (settings)" : purchase ? "on" : "NOT on (the purchase hook is not installed)");
+        g_transfer_hooked = g_transfer_cash && g_transfer_sites &&
+                            re_patch_call(AT(RE_VA_CALL_TRANSFER_BUY), AT(RE_VA_STOCK_BUY), transfer_buy_wrapper);
+        re_log("transfers: a rule of the monthly auto transfer buys shares only when the cash covers them: %s",
+               !g_transfer_cash ? "off (settings)" : g_transfer_hooked ? "the rule's purchase redirected" : "NOT redirected");
     }
     if ((g_on_forecast || g_on_credit || (g_on_trace && g_trace_money)) && !g_money_installed) {
         re_trace_money_sink = money_sink_timed;
@@ -5952,7 +6141,8 @@ __attribute__((force_align_arg_pointer)) static void __fastcall postload_wrapper
     }
     /* every feature that changes a text the game fetches (text_want); with one of them missing here that feature works
      * and says nothing when it is the only one switched on (the casino's line of chances, the experience window's) */
-    if ((g_on_credit || g_on_forecast || g_on_wording || g_on_ipo || g_on_stocks || g_on_business || g_on_casino || g_on_experience) &&
+    if ((g_on_credit || g_on_forecast || g_on_wording || g_on_ipo || g_on_stocks || g_on_business || g_on_casino || g_on_experience ||
+         g_on_balance) &&
         g_can_text && !g_text_installed) {
         re_text_want = text_want_timed;
         re_text_edit = text_edit_timed;
@@ -6153,12 +6343,34 @@ __attribute__((force_align_arg_pointer)) static void __fastcall postload_wrapper
     time_report("a load", re_game_period(main_obj));
 }
 
+/* Interest on the cash (note m48). The game pays none: money earns only in a savings account, which takes a visit to
+ * the bank to fill and another to empty. The cash a household has when a month ends earns a twelfth of the
+ * central-bank rate times `cashInterest`. It is taxable income under the tag of interest, as a savings account's
+ * interest is in the game (FUN_004d0df0 books that in the statement the yearly tax is worked out from). It is paid
+ * before the game's month end: the payments of that month end have not been taken yet, so the amount is what the
+ * household kept through the month's last hour, and it is the same after every load. */
+static void cash_interest(void *main_obj)
+{
+    BYTE *finance = re_game_finance(main_obj);
+    double rate = re_game_reserve_rate(main_obj);
+    if (!g_on_balance || !(g_cash_rate > 0.0) || !re_readable(finance, RE_PFM_CASH + 8) || !(rate > 0.0))
+        return;
+    long long cash = *(const long long *)(finance + RE_PFM_CASH);
+    long long interest = (long long)((double)cash * rate * g_cash_rate / 12.0);
+    if (interest <= 0)
+        return;
+    ((money_fn)AT(RE_VA_CHANGE_MONEY))(finance, (unsigned)interest, (int)(interest >> 32), RE_TAG_INTEREST, 1, 0, 0);
+    re_log("balance: interest on the cash: $%.2f on $%.2f (the central-bank rate %.2f%% a year, times %.2f, a twelfth of it)",
+           dollars(interest), dollars(cash), 100.0 * rate, g_cash_rate);
+}
+
 __attribute__((force_align_arg_pointer)) static void __fastcall monthend_wrapper(void *main_obj)
 {
     re_log("month end: start");
     long long since = time_now();
     memset(g_flow_now, 0, sizeof g_flow_now);
     g_guard_auto_refused = 0;
+    g_transfer_skipped = 0;
     g_main_obj = main_obj;
     g_refresh_due = 0;
     static re_fut_economy before, after; /* too large for the game's stack */
@@ -6177,6 +6389,7 @@ __attribute__((force_align_arg_pointer)) static void __fastcall monthend_wrapper
         month_work_note(main_obj);
     if (g_on_trace && g_on_business)
         asset_replace_trace(main_obj);
+    cash_interest(main_obj); /* after the fees above: they are paid from the month's cash */
     g_month_ended = re_game_period(main_obj);
     g_in_monthend = 1;
     time_add(TIME_MONTH_END, since); /* its two parts, before and after the game's, count as two */
@@ -6193,6 +6406,12 @@ __attribute__((force_align_arg_pointer)) static void __fastcall monthend_wrapper
     if (g_on_business && g_business_tried)
         wage_places(main_obj);
     after_game_step(main_obj, "after month end", 0);
+    if (g_transfer_skipped > 0) {
+        /* a line of its own beside the trade lock's about the same rules: the whole text is what it is found by */
+        char text[200];
+        snprintf(text, sizeof text, T(RE_MSG_AUTO_NO_CASH), T(RE_MSG_AUTO_PREFIX), g_transfer_skipped);
+        panel_line(main_obj, text, text, "UIIconStockMarket", 0);
+    }
     time_add(TIME_MONTH_END, since);
 }
 
@@ -6236,6 +6455,17 @@ __attribute__((force_align_arg_pointer)) static void __fastcall monthstart_wrapp
                    dollars(now.debts_due), dollars(g_shown_due));
             forecast_update(main_obj, &now, 0);
         }
+    }
+    if (g_on_trace && g_on_board) {
+        /* the boards after the month's elections: the game seats everybody whose total is one of the five best */
+        static BYTE *listed[LISTED_COMPANIES];
+        void *market = re_game_market(main_obj);
+        int companies = market != NULL ? re_game_companies(market, listed, LISTED_COMPANIES) : -1, most = 0, members[32];
+        for (int i = 0; i < companies && i < LISTED_COMPANIES; i++) {
+            int seats = re_board_members(listed[i], members, 32);
+            most = seats > most ? seats : most;
+        }
+        re_log("board (trace, month start): %d listed companies, the largest board has %d director(s)", companies, most);
     }
     time_add(TIME_MONTH_START, since);
     time_report("a month has started", re_game_period(main_obj));
@@ -6400,6 +6630,18 @@ static void load_settings(void)
     g_contracts_keep = re_ini_int("business", "contractsKeep", 1);
     re_ini_doubles("business", "contractFeeHours", &g_contract_hours, 1);
     g_contract_hours = g_contract_hours < 0.0 ? 0.0 : g_contract_hours;
+    g_data_fix[RE_DATA_CONTRACT_ENGINEER] = re_ini_int("business", "constructionContractFixed", 1);
+    g_on_balance = re_ini_int("features", "balance", 1);
+    re_ini_doubles("balance", "stockFee", &g_stock_fee, 1);
+    re_ini_doubles("balance", "futuresFee", &g_futures_fee, 1);
+    re_ini_doubles("balance", "savingsRate", &g_savings_rate, 1);
+    re_ini_doubles("balance", "cashInterest", &g_cash_rate, 1);
+    g_data_fix[RE_DATA_HYDROPONICS] = re_ini_int("balance", "hydroponics", 1);
+    g_data_fix[RE_DATA_COMMUNICATIONS] = re_ini_int("balance", "communicationsDegree", 1);
+    g_rent_market = re_ini_int("balance", "rentFollowsMarket", 1);
+    re_ini_doubles("balance", "newBusinessAwareness", &g_start_awareness, 1);
+    g_start_awareness = g_start_awareness < 0.0 ? 0.0 : g_start_awareness > 1.0 ? 1.0 : g_start_awareness;
+    g_cash_rate = g_cash_rate < 0.0 ? 0.0 : g_cash_rate > 1.0 ? 1.0 : g_cash_rate; /* above 1 the cash would beat a loan's base */
     g_premises_grow = re_ini_int("business", "premisesGrow", 1);
     g_property_gap = g_property_gap < 0.0 ? 0.0 : g_property_gap; /* 0 = that test is off; both 0 would name every property */
     g_property_amount = g_property_amount < 0.0 ? 0.0 : g_property_amount;
@@ -6416,6 +6658,13 @@ static void load_settings(void)
         re_ini_doubles("trace", "boardTotal", &top, 1);
     g_board_top = (float)top;
     g_board_prepass = g_on_trace && re_ini_int("trace", "boardAskAll", 0);
+    g_trace_board_tie = g_on_trace && re_ini_int("trace", "boardTie", 0);
+    g_trace_board_tie_kept = g_on_trace && re_ini_int("trace", "boardTieKept", 0);
+    if (g_trace_board_tie)
+        re_log("board: TEST SETTING: the second nominee of a list is given the total of the first%s", g_trace_board_tie_kept
+                                                                                                       ? ", and equal totals are "
+                                                                                                         "left equal"
+                                                                                                       : "");
     g_wage_refuse_all = g_on_trace && re_ini_int("trace", "refuseWageDemands", 0); /* test runs: the rule says no to every demand */
     g_trace_replace_asset = g_on_trace ? re_ini_int("trace", "replaceAsset", 0) : 0;
     if (g_on_trace)
@@ -6433,6 +6682,15 @@ static void load_settings(void)
     g_trace_handed_unseen = g_on_trace && re_ini_int("trace", "handedOverUnseen", 0);
     if (g_trace_handed_unseen)
         re_log("business: TEST SETTING: a load does not look at what is handed over");
+    g_trace_first_unseen = g_on_trace && re_ini_int("trace", "firstOfJobUnseen", 0);
+    if (g_trace_first_unseen)
+        re_log("business: TEST SETTING: a job nobody is employed for is never the mod's to staff, and an offer that lists one is signed "
+               "like any other");
+    /* which kinds of contract a month offers is the game's draw, and a business handed over whole is the one case
+     * that has brought "Supply Construction Site" in every run so far: the test of the other case borrows it */
+    g_trace_sign_not_whole = g_on_trace && re_ini_int("trace", "signAsNotWhole", 0);
+    if (g_trace_sign_not_whole)
+        re_log("business: TEST SETTING: the jobs an offer lists are looked at as in a business whose signing alone is handed over");
     if (g_on_trace)
         re_ini_doubles("trace", "roomMost", &g_trace_room, 1);
     if (g_on_trace)
@@ -6457,6 +6715,8 @@ static void load_settings(void)
     re_ini_doubles("credit", "mortgageSpread", g_credit_cfg.mortgage_spread, RE_GRADE_COUNT);
     re_ini_doubles("credit", "ltvBounds", g_credit_cfg.ltv_bound, 4);
     re_ini_doubles("credit", "ltvSpread", g_credit_cfg.ltv_spread, 5);
+    g_mortgage_approved = re_ini_int("credit", "mortgageUpToApproval", 1);
+    g_transfer_cash = re_ini_int("credit", "transferNeedsCash", 1);
     re_ini_doubles("credit", "fixedPremium", &g_fixed_premium, 1);
     re_ini_doubles("credit", "fixedReversion", &g_fixed_reversion, 1);
     g_fixed_now = g_fixed_premium;
@@ -6587,6 +6847,51 @@ __attribute__((force_align_arg_pointer)) static void __fastcall archive_string_w
     time_add(TIME_SAVE_STRING, since);
 }
 
+/* The renewal of a lease stores its new rent through here (note m48). The game stores the larger of the market's rent
+ * and the old one, so a rent never comes down: with `rentFollowsMarket` the comparison is patched away and what
+ * arrives here is the market's. The line says what the renewal did, with the rule or without. */
+__attribute__((force_align_arg_pointer)) static void __fastcall renew_store_wrapper(BYTE *lease, void *unused, unsigned low, int high)
+{
+    typedef void(__thiscall * store_fn)(BYTE *lease, unsigned low, int high);
+    long long was = re_readable(lease, RE_LEASE_RENT + 8) ? *(const long long *)(lease + RE_LEASE_RENT) : -1;
+    long long now = (long long)(((unsigned long long)(unsigned)high << 32) | low);
+    (void)unused;
+    ((store_fn)AT(RE_VA_RENT_STORE))(lease, low, high);
+    re_log("lease: renewed: the rent was $%.2f a month and is $%.2f now (%s)", dollars(was), dollars(now),
+           now < was ? "lower" : now > was ? "higher" : "the same");
+}
+
+/* A business the player starts is made through here (note m48). The game gives it no awareness, and the customers a
+ * business gets go by 5% + 95% of its awareness: a new one works at a twentieth of its market until adverts have
+ * raised it, while its wages and its rent run in full. It starts with `newBusinessAwareness`. */
+__attribute__((force_align_arg_pointer)) static BYTE *__fastcall new_firm_wrapper(BYTE *firm)
+{
+    typedef BYTE *(__thiscall * ctor_fn)(BYTE *firm);
+    BYTE *made = ((ctor_fn)AT(RE_VA_FIRM_CTOR))(firm);
+    if (re_readable(firm, RE_FIRM_AWARENESS + 4)) {
+        *(float *)(firm + RE_FIRM_AWARENESS) = (float)g_start_awareness;
+        re_log("balance: a new business is made: its awareness starts at %.0f%%", 100.0 * g_start_awareness);
+    }
+    return made;
+}
+
+/* The text of a file the game has just read, before its XML reader gets it: the wanted corrections are made in it. */
+__attribute__((force_align_arg_pointer)) static BYTE *__fastcall xml_text_wrapper(BYTE *text)
+{
+    typedef BYTE *(__fastcall * skip_fn)(BYTE *text);
+    /* said once: the game reads its data again for every game it starts or loads, and a line written in the middle
+     * of a load is taken for the end of that load by whatever waits for the log to stand still (run1184) */
+    static unsigned told;
+    unsigned made = re_data_correct((char *)text, g_data_fix);
+    for (int i = 0; i < RE_DATA_COUNT; i++)
+        if (made >> i & 1 && !(told >> i & 1)) {
+            told |= 1u << i;
+            re_log("data: corrected in a file the game reads, now and whenever it reads its data again: %s: %s", re_data_what(i),
+                   re_data_put(i));
+        }
+    return ((skip_fn)AT(RE_VA_XML_SKIP))(text);
+}
+
 BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
 {
     (void)reserved;
@@ -6629,6 +6934,10 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     int trace = re_sites_verify(g_base, RE_GROUP_TRACE, report_site) == 0;
     int experience = re_sites_verify(g_base, RE_GROUP_EXPERIENCE, report_site) == 0;
     int names = re_sites_verify(g_base, RE_GROUP_NAMES, report_site) == 0;
+    int data = re_sites_verify(g_base, RE_GROUP_DATA, report_site) == 0;
+    /* the fee is read with the data-number function of the business group */
+    g_transfer_sites = re_sites_verify(g_base, RE_GROUP_TRANSFER, report_site) == 0 && business;
+    int balance = re_sites_verify(g_base, RE_GROUP_BALANCE, report_site) == 0;
 
     re_log("  feature credit:   %s", state_of(g_on_credit, core && finance && credit));
     re_log("  feature forecast: %s", state_of(g_on_forecast, core && finance && money));
@@ -6644,6 +6953,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     re_log("  feature memory:   %s", state_of(g_on_memory, memory));
     re_log("  feature property: %s", state_of(g_on_property, core && property));
     re_log("  feature experience: %s", state_of(g_on_experience, experience));
+    re_log("  feature balance:  %s", state_of(g_on_balance, core && finance && money && data));
     /* the letters: no site of the game's file, two functions of libcocos2d.dll; the names: two functions of the game */
     re_log("  feature fonts:    %s; its names in Latin letters: %s", state_of(g_on_fonts, 1), state_of(g_on_fonts, text && names));
     re_log("  feature trace:    %s", state_of(g_on_trace, core && finance && credit && money && trace));
@@ -6665,6 +6975,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     g_on_memory = g_on_memory && memory;
     g_on_property = g_on_property && core && property;
     g_on_experience = g_on_experience && experience;
+    g_on_balance = g_on_balance && core && finance && money && data;
     g_on_trace = g_on_trace && core && finance && credit && money && trace;
     g_trace_getter = g_trace_getter && g_on_trace;
     g_wage_refuse_all = g_wage_refuse_all && g_on_trace;
@@ -6673,7 +6984,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     re_log("  feature wording:  %s", !worded ? "off (no corrections for the game's language)" : state_of(g_on_wording, core && text));
     g_on_wording = g_on_wording && worded && core && text;
     if (!g_on_credit && !g_on_forecast && !g_on_wording && !g_on_guard && !g_on_ipo && !g_on_board && !g_on_stocks && !g_on_casino &&
-        !g_on_business && !g_on_memory && !g_on_property && !g_on_experience && !g_on_fonts && !g_on_trace) {
+        !g_on_business && !g_on_memory && !g_on_property && !g_on_experience && !g_on_balance && !g_on_fonts && !g_on_trace) {
         re_log("  no feature is on, nothing is patched");
         return TRUE;
     }
@@ -6699,6 +7010,41 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     int b = re_patch_call(AT(RE_VA_CALL_MONTHEND), AT(RE_VA_MONTHEND), monthend_wrapper);
     int c = re_patch_call(AT(RE_VA_CALL_MONTHSTART), AT(RE_VA_MONTHSTART), monthstart_wrapper);
     re_log("  call sites redirected: post-load=%d month-end=%d month-start=%d", a, b, c);
+    g_data_fix[RE_DATA_CONTRACT_ENGINEER] = g_data_fix[RE_DATA_CONTRACT_ENGINEER] && g_on_business;
+    g_data_fix[RE_DATA_STOCK_FEE] = g_on_balance && re_data_number(RE_DATA_STOCK_FEE, g_stock_fee);
+    g_data_fix[RE_DATA_FUTURES_FEE] = g_on_balance && re_data_number(RE_DATA_FUTURES_FEE, g_futures_fee);
+    g_data_fix[RE_DATA_SAVINGS_RATE] = g_on_balance && re_data_number(RE_DATA_SAVINGS_RATE, g_savings_rate);
+    g_data_fix[RE_DATA_HYDROPONICS] = g_data_fix[RE_DATA_HYDROPONICS] && g_on_balance;
+    g_data_fix[RE_DATA_COMMUNICATIONS] = g_data_fix[RE_DATA_COMMUNICATIONS] && g_on_balance;
+    if (g_on_balance)
+        re_log("balance: the game's numbers as the settings want them: %s (%s), %s (%s), %s (%s); interest on the cash at a month end: "
+               "%.2f times the central-bank rate, a twelfth of it a month",
+               re_data_what(RE_DATA_STOCK_FEE), g_data_fix[RE_DATA_STOCK_FEE] ? re_data_put(RE_DATA_STOCK_FEE) : "NOT a number that fits",
+               re_data_what(RE_DATA_FUTURES_FEE), g_data_fix[RE_DATA_FUTURES_FEE] ? re_data_put(RE_DATA_FUTURES_FEE) : "NOT a number that fits",
+               re_data_what(RE_DATA_SAVINGS_RATE),
+               g_data_fix[RE_DATA_SAVINGS_RATE] ? re_data_put(RE_DATA_SAVINGS_RATE) : "NOT a number that fits", g_cash_rate);
+    if (g_on_balance) {
+        static const BYTE larger[2] = {0x7f, 0x1d}, always[2] = {0xeb, 0x1d}; /* jg +0x1d, jmp +0x1d */
+        int told = balance && re_patch_call(AT(RE_VA_CALL_RENEW_STORE), AT(RE_VA_RENT_STORE), renew_store_wrapper);
+        re_log("balance: a renewed lease takes the market's rent, lower as well as higher: %s; a renewal's line in this log: %s",
+               !g_rent_market                                                                            ? "off (settings)"
+               : balance && re_patch_bytes(AT(RE_VA_RENEW_RENT_JG), larger, always, sizeof larger) ? "on"
+                                                                                                         : "NOT on",
+               told ? "on" : "NOT on");
+        g_fee_label = balance && text;
+        re_log("balance: the label of the futures fee says that the fee is a part of the margin: %s", g_fee_label ? "on" : "NOT on");
+        re_log("balance: a business the player starts has an awareness of %.0f%% from its first day: %s", 100.0 * g_start_awareness,
+               !(g_start_awareness > 0.0)                                                                           ? "off (settings)"
+               : balance && re_patch_call(AT(RE_VA_CALL_NEW_FIRM), AT(RE_VA_FIRM_CTOR), new_firm_wrapper) ? "on"
+                                                                                                                    : "NOT on");
+    }
+    int corrections = 0;
+    for (int i = 0; i < RE_DATA_COUNT; i++)
+        corrections += g_data_fix[i] != 0;
+    if (corrections > 0) /* here, before the game reads its data */
+        re_log("data: %d correction(s) of the game's data files are made in a file's text before the game reads it: the call %s",
+               corrections,
+               data && re_patch_call(AT(RE_VA_CALL_XML_SKIP), AT(RE_VA_XML_SKIP), xml_text_wrapper) ? "redirected" : "NOT redirected");
     if (g_on_experience) {
         g_xp_hooked = re_patch_call(AT(RE_VA_CALL_XP_DECAY), AT(RE_VA_XP_DECAY), re_xp_decay_hook);
         re_log("experience: a household member's educations are kept up to what requirements ask, work experience decays as in the game: "

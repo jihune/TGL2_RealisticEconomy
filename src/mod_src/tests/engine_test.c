@@ -40,6 +40,7 @@
 #include "../plugin/re_board.h"
 #include "../plugin/re_business.h"
 #include "../plugin/re_casino.h"
+#include "../plugin/re_data.h"
 #include "../plugin/re_font.h"
 #include "../plugin/re_futures.h"
 #include "../plugin/re_getter.h"
@@ -4383,6 +4384,76 @@ int main(int argc, char **argv)
         printf("  T26 a name no font can write                         cases_wrong=%d; %d list(s) of names, %d line(s), %d font file(s): "
                "%d line(s) put in Latin letters, %d line(s) still with a letter no font has %s\n",
                wrong, lists, lines, fonts, changed, left, ok ? "ok" : "FAIL");
+    }
+
+    /* T27: the corrections of the game's data files (re_data.h). Each is looked for in every file of the game's
+     * data folders: its known text has to be there once, a second pass has to find nothing left, and the corrected
+     * file has to be as long as before. The control reads a folder that has none of the texts: as if the game's
+     * files were not the known ones, where nothing is corrected and nothing says so.
+     * The numbers first: one that does not fit its place is refused, a correction takes a number only where it has a
+     * place for one, and a number that is the game's own makes no correction. */
+    {
+        static char xml[1 << 20];
+        const wchar_t *const known[] = {L"business", L"misc", L"activities", L"educations"}, *const other[] = {L"quests"};
+        const wchar_t *const *folders = control ? other : known;
+        size_t folder_count = control ? 1 : 4;
+        int found[RE_DATA_COUNT] = {0}, again = 0, sizes_wrong = 0, lengths_wrong = 0, files = 0, on[RE_DATA_COUNT];
+        char own[] = "<stockMarket stockTradingFee=\"0.01\" futuresTradingFee=\"0.01\">";
+        for (int i = 0; i < RE_DATA_COUNT; i++)
+            on[i] = 1;
+        int numbers_wrong = re_data_number(RE_DATA_STOCK_FEE, 10.0) != 0 || re_data_number(RE_DATA_STOCK_FEE, -0.01) != 0 ||
+                            re_data_number(RE_DATA_SAVINGS_RATE, 9.96) != 0 || re_data_number(RE_DATA_CONTRACT_ENGINEER, 0.5) != 0;
+        numbers_wrong += re_data_correct(own, on) != 0; /* no number given yet: nothing is put */
+        numbers_wrong += re_data_number(RE_DATA_STOCK_FEE, 0.01) != 1 || re_data_correct(own, on) != 0; /* the game's own */
+        numbers_wrong += re_data_number(RE_DATA_STOCK_FEE, 0.02) != 1 || re_data_number(RE_DATA_FUTURES_FEE, 0.1) != 1 ||
+                         re_data_number(RE_DATA_SAVINGS_RATE, 0.7) != 1;
+        numbers_wrong += re_data_correct(own, on) != (1u << RE_DATA_STOCK_FEE | 1u << RE_DATA_FUTURES_FEE) ||
+                         strcmp(own, "<stockMarket stockTradingFee=\"0.02\" futuresTradingFee=\"0.10\">") != 0;
+        for (int i = 0; i < RE_DATA_COUNT; i++) {
+            on[i] = 1;
+            lengths_wrong += strlen(re_data_find(i)) != strlen(re_data_put(i)) || strcmp(re_data_find(i), re_data_put(i)) == 0;
+        }
+        wchar_t file[MAX_PATH];
+        wcsncpy(file, path, MAX_PATH - 1);
+        file[MAX_PATH - 1] = 0;
+        wchar_t *slash = wcsrchr(file, L'\\') ? wcsrchr(file, L'\\') : wcsrchr(file, L'/');
+        for (size_t d = 0; slash != NULL && d < folder_count; d++) {
+            WIN32_FIND_DATAW entry;
+            if ((size_t)(slash - file) + wcslen(folders[d]) + 80 >= MAX_PATH)
+                continue;
+            _snwprintf(slash + 1, 64, L"data\\%ls\\*.xml", folders[d]);
+            HANDLE find = FindFirstFileW(file, &entry);
+            if (find == INVALID_HANDLE_VALUE)
+                continue;
+            do {
+                if (wcslen(entry.cFileName) > 60)
+                    continue;
+                _snwprintf(slash + 1, 140, L"data\\%ls\\%ls", folders[d], entry.cFileName);
+                FILE *f = _wfopen(file, L"rb");
+                if (f == NULL)
+                    continue;
+                size_t size = fread(xml, 1, sizeof xml - 1, f);
+                fclose(f);
+                xml[size] = 0;
+                files++;
+                unsigned made = re_data_correct(xml, on);
+                for (int i = 0; i < RE_DATA_COUNT; i++)
+                    if (made >> i & 1) {
+                        found[i] += strstr(xml, re_data_put(i)) != NULL;
+                        again += re_data_correct(xml, on) != 0;
+                    }
+                sizes_wrong += strlen(xml) != size;
+            } while (FindNextFileW(find, &entry));
+            FindClose(find);
+        }
+        int once = 0;
+        for (int i = 0; i < RE_DATA_COUNT; i++)
+            once += found[i] == 1;
+        int ok = files > 0 && once == RE_DATA_COUNT && again == 0 && sizes_wrong == 0 && lengths_wrong == 0 && numbers_wrong == 0;
+        g_failures += !ok;
+        printf("  T27 corrections of the game's data files            files_read=%d corrections=%d found_once=%d found_again=%d "
+               "file_lengths_changed=%d table_lengths_wrong=%d numbers_wrong=%d %s\n",
+               files, RE_DATA_COUNT, once, again, sizes_wrong, lengths_wrong, numbers_wrong, ok ? "ok" : "FAIL");
     }
 
     printf("failures=%d control=%d verdict=%s\n", g_failures, control, g_failures == 0 ? "PASS" : "FAIL");

@@ -46,12 +46,11 @@ static const char *const LANG_DE[RE_MSG_COUNT] = {
     [RE_MSG_STAFF_TIP] = "%s pro effektive Stunde (Lohn pro Stunde / Arbeitseffizienz %.0f%%)",
     [RE_MSG_OFFER_TIP] = "%+.1f%% über Standardkosten\n%s bleiben pro Stunde",
     [RE_MSG_FUT_EXPECTED] = " (erw. %.2f%%)",
-    [RE_MSG_FUT_TIP] = "Erwartet: der Durchschnitt der Rate bis zum gewählten Ablauf, wenn sie sich nach der Regel des Spiels "
-                       "bewegt. Liegt er über der heutigen Rate, ist ein Kauf im Vorteil, darunter ein Verkauf.",
+    [RE_MSG_FUT_TIP] = "Erwartet: mittlere Inflation bis zum Ablaufmonat. Über der heutigen Rate: kaufen, darunter: verkaufen.",
     [RE_MSG_FUT_ITEM] = " (%+.1f%%/J.)",
     [RE_MSG_FUT_ITEM_AHEAD] = " (%+.1f%% → %+.1f%%)",
-    [RE_MSG_FUT_ROW_TIP] = "Inflation %+.2f%% pro Jahr\nErwartet, 6 Monate: %+.2f%%\nErwartet, 12 Monate: %+.2f%%\nErwartet, 24 "
-                           "Monate: %+.2f%%\nHöher erwartet: Kauf. Tiefer: Verkauf.",
+    [RE_MSG_FUT_ROW_TIP] = "Inflation %+.2f%% pro Jahr\nErwartet 6/12/24 Monate: %.2f/%.2f/%.2f%%",
+    [RE_MSG_FUT_FEE] = "Gebühr %s%% der Marge",
     [RE_MSG_FUT_SORT] = "Sortieren: erwartete Rate\n(12 Monate) minus aktuelle",
     [RE_MSG_CHART_HALF_YEAR] = "6 Monate",
     [RE_MSG_CHART_INDEX] = " (erster gezeigter Monat = 100)",
@@ -96,26 +95,16 @@ static const char *const LANG_DE[RE_MSG_COUNT] = {
     [RE_MSG_FIT_FURNISH] = "%s (Einrichtung %.0f%%)",
     [RE_MSG_FIT_ASSETS] = "%s (Vermögenswerte %.0f%%)",
     [RE_MSG_FIT_NONE] = "%s (eine Arbeit steht still: einer ihrer Vermögenswerte fehlt ganz)",
-    [RE_MSG_XP_TIP] = "\nMod: ein Studium, das ein Mitglied deines Haushalts abgeschlossen hat (Abschluss, Diplom, Zertifikat), "
-                      "fällt nicht unter das, was davon erworben wurde, höchstens bis zum höchsten Wert, den eine Arbeit, ein "
-                      "Studium oder eine Aktivität verlangt. Arbeitserfahrung nimmt wie bisher jeden Monat ab.",
+    [RE_MSG_MOD] = "\nMod:",
+    [RE_MSG_XP_TIP] = "\nMod: Abgeschlossenes Studium bleibt bis zum geforderten Wert erhalten. Arbeitserfahrung sinkt wie bisher.",
     /* The four paragraphs under the game's hover text of the automatic management: kept short. With the first
      * wording the box was taller than a screen of 900 lines and lost the game's first lines at the top (run 524). */
-    [RE_MSG_AUTO_TIP_ALL] = "\nMod: der Schalter gilt für alle Mitarbeiter des Geschäfts.",
-    [RE_MSG_AUTO_TIP_SPARE] = "\nMod: wessen Arbeit die anderen %d Monate lang hätten miterledigen können, wird ohne Abfindung "
-                              "entlassen. Wer allein arbeitet und so lange zur Hälfte untätig ist, wird durch einen Kandidaten "
-                              "mit weniger Stunden ersetzt.",
-    [RE_MSG_AUTO_TIP_FILL] = "\nMod: hat eine Arbeit diesen Monat mehr zu tun, als ihre Leute Stunden haben, wird der Kandidat "
-                             "eingestellt, der das Fehlende am günstigsten erledigt.",
-    [RE_MSG_AUTO_TIP] = "\nMod: eine Lohnforderung wird am Monatsende beantwortet, kurz bevor der Mitarbeiter ginge. Macht ein "
-                        "Kandidat dieselbe Arbeit billiger, wird er eingestellt; sonst gibt es die Erhöhung.",
-    [RE_MSG_ADVERTS_TIP] = "\nMod: Umschalt-Klick übergibt die Werbung dieses Geschäfts an den Mod. Er schaltet jede bezahlte "
-                           "Werbung ein, solange die Bekanntheit unter %.0f%% liegt, und aus, sobald sie erreicht ist. Gebühr am "
-                           "Monatsende: %s für eine Werbung, die den ganzen Monat an war.",
-    [RE_MSG_ADVERTS_TIP_ON] = "\nMod: der Mod kümmert sich um die Werbung dieses Geschäfts. Er schaltet jede bezahlte Werbung ein, "
-                              "solange die Bekanntheit unter %.0f%% liegt, und aus, sobald sie erreicht ist. Gebühr am Monatsende: "
-                              "%s für eine Werbung, die den ganzen Monat an war. Solange die Symbole orange sind, schaltet ein "
-                              "einfacher Klick nichts. Umschalt-Klick holt sie zurück.",
+    [RE_MSG_AUTO_TIP_ALL] = " Gilt für alle Mitarbeiter.",
+    [RE_MSG_AUTO_TIP_STAFF] = " Passt das Personal an die Arbeit an.",
+    [RE_MSG_AUTO_TIP] = " Antwortet auf Lohnforderungen.",
+    [RE_MSG_ADVERTS_TIP] = "\nMod: Umschalt-Klick: Werbung übergeben (je %s/Monat).",
+    [RE_MSG_ADVERTS_TIP_ON] = "\nMod: Werbung an bis %.0f%% Bekanntheit (je %s/Monat). Umschalt-Klick: zurückholen.",
+    [RE_MSG_ADVERTS_TIP_WHOLE] = "\nMod: Der Mod führt das ganze Geschäft. Strg+Umschalt-Klick: zurückholen.",
     [RE_MSG_ADVERTS_KEPT] = "%s: der Mod kümmert sich jetzt um die Werbung",
     [RE_MSG_ADVERTS_BACK] = "%s: die Werbung gehört wieder dir",
     [RE_MSG_ADVERTS_LOCKED] = "%s: diese Werbung schaltet der Mod (Umschalt-Klick holt die Werbung zurück)",
@@ -123,9 +112,7 @@ static const char *const LANG_DE[RE_MSG_COUNT] = {
     [RE_MSG_CONTRACTS_BACK] = "%s: Verträge schließt du wieder selbst ab",
     [RE_MSG_ALL_KEPT] = "%s: der Mod führt jetzt alles",
     [RE_MSG_ALL_BACK] = "%s: alles gehört wieder dir",
-    [RE_MSG_ADVERTS_TIP_ALL] = "\nMod: Strg+Umschalt-Klick übergibt das ganze Geschäft an den Mod (Mitarbeiter, Vermögenswerte, "
-                               "Werbung, Verträge, Grundfläche) und sperrt seine Bedienelemente; noch einmal holt es zurück. Nur "
-                               "die Verträge: Umschalt-Klick auf das Symbol „Verträge“.",
+    [RE_MSG_ADVERTS_TIP_ALL] = " Strg+Umschalt-Klick: alles.",
     [RE_MSG_CONTRACT_PREFIX] = "Vom Mod abgeschlossene Verträge: ",
     [RE_MSG_CONTRACT_ITEM] = "%s%s %d Stunden pro Monat für %d Monate, %s",
     [RE_MSG_CONTRACT_FEE] = " (Gebühr %s)",
@@ -136,7 +123,7 @@ static const char *const LANG_DE[RE_MSG_COUNT] = {
                              "fehlt Grundfläche, deshalb hat der Mod den Stern eingeschaltet",
     [RE_MSG_PREMISES_MOST] = "%ssie reicht nicht, und diese Räume lassen sich nicht vergrößern. Das Geschäft muss umziehen",
     [RE_MSG_PREMISES_OWNED] = "%ssie reicht nicht. Die Räume sind Eigentum, deshalb hat der Mod sie nicht vergrößert: das kostet %s "
-                              "auf einmal. Schalte den Stern selbst ein, wenn du es willst",
+                              "auf einmal, und das Geld wird Wert der Immobilie. Schalte den Stern selbst ein, wenn du es willst",
     [RE_MSG_FIRM_CLOSED] = "%s: geschlossen. Die Automatik des Mods ruht, bis du wieder öffnest",
     [RE_MSG_FIRM_OPENED] = "%s: wieder geöffnet. Die Automatik des Mods läuft weiter",
     [RE_MSG_LOCKED] = "%s: gesperrt (Mod führt es). Zurück: Strg+Umschalt-Klick auf ein Werbesymbol",
@@ -161,12 +148,8 @@ static const char *const LANG_DE[RE_MSG_COUNT] = {
     [RE_MSG_ASSET_TICK_BUY] = "Vermögenswerte nachgekauft: %d für %s",
     [RE_MSG_ASSET_TICK_DEBT] = " (Schulden %s, 3 Monate)",
     [RE_MSG_ASSET_REPLACED] = "%s: neu gekauft, %s",
-    [RE_MSG_ASSET_TIP_DEBT] = "\nMod: ist das an, kauft der Mod auch Vermögenswerte, die einer Arbeit fehlen. Was das Bargeld nicht "
-                              "deckt, wird zu Schulden, fällig am dritten Monatsende.",
-    [RE_MSG_ASSET_TIP_CASH] = "\nMod: ist das an, kauft der Mod auch Vermögenswerte, die einer Arbeit fehlen, wenn das Bargeld dafür "
-                              "und für das Monatsende reicht.",
-    [RE_MSG_ASSET_TIP_PAID] = "\nMod: ein abgenutzter Vermögenswert wird beim Neukauf bezahlt. Das Spiel zahlte dir stattdessen den "
-                              "Preis aus.",
+    [RE_MSG_ASSET_TIP_DEBT] = "\nMod: Kauft auch fehlende Vermögenswerte. Fehlendes Bargeld wird Schuld für drei Monate.",
+    [RE_MSG_ASSET_TIP_CASH] = "\nMod: Kauft auch fehlende Vermögenswerte, wenn das Bargeld sie und das Monatsende deckt.",
     [RE_MSG_SORT_CHEAP] = "Sortieren:\nunterbewertet\n(recherchiert)",
     [RE_MSG_SORT_DEAR] = "Sortieren:\nüberbewertet\n(recherchiert)",
     [RE_MSG_SORT_CHANGE] = "Nach Änderung\nzum Vormonat",

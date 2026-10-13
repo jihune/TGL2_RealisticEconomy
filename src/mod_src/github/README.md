@@ -1,6 +1,6 @@
 # Realistic Economy
 
-A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.1.2. Not made by the game's developer.
+A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.2.0. Not made by the game's developer.
 
 Other languages: [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -49,17 +49,34 @@ The hire tab lists first who does the same work for less (pay per hour ÷ work e
 - The game shutting down after a few dozen loads of a save
 - Wrong translations in several languages
 - Boxes in place of letters in people's names
+- A mortgage larger than the amount the bank approved
+- A monthly auto-transfer rule that bought shares without cash
+- A tie in a board election that ended the game
+- A construction contract that never asked for its civil engineer
+
+## What is a matter of taste, and how to switch it off
+
+These are all the features that change a rule or a number of the game. Set the value to 0 in `RealisticEconomy.ini` in the game folder and that part is the game as it was.
+
+| Feature | What differs from the game | Off |
+|---|---|---|
+| Balance | Share fee 2% (the game: 1%), futures fee 10% of the margin (1%), a higher savings rate and interest on cash, a rent that can come down at a renewal, a new business starts with 25% awareness (0%) | `[features] balance=0` |
+| Trade lock after a load | After you load an earlier save, share and futures trades are refused until that month has passed again. The month's share prices and properties for sale stay the same after a load | `[features] guard=0` |
+| Loan rates by credit grade | A loan's rate follows the household's credit grade | `[features] credit=0` |
+| Listing | You keep 45% and get cash for the rest (the game: 25%, no cash) | `[features] ipo=0` |
+| Board seats | One guaranteed seat for every 20% of the shares | `[features] board=0` |
+| Casino | Set stakes and odds, each game once a month | `[features] casino=0` |
+| Completed education | Its value does not decay | `[features] experience=0` |
+| Business automation | The mod manages staff, assets, adverts and contracts only in a business you hand over. The same click takes it back | `[features] business=0` |
+
+Each number of the balance has its own line under `[balance]`.
 
 ## Other features
 
 Each can be switched off in the settings file.
 
-- Trade lock for shares and futures after you load an earlier save
-- The month's economic growth, share prices, listing price and properties for sale stay the same after a load
-- Casino: set stakes and odds, each game once a month
 - The month's job candidates stay the same after a load
 - A notice when a property is for sale well under its value
-- A completed education keeps its value
 
 ## Install
 

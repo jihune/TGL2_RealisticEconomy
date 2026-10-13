@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.1.2. Nicht vom Entwickler des Spiels.
+Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.2.0. Nicht vom Entwickler des Spiels.
 
 Andere Sprachen: [English](README.md), [한국어](README.ko.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -49,17 +49,34 @@ Der Reiter zum Einstellen nennt zuerst, wer dieselbe Arbeit günstiger macht (Lo
 - Das Spiel beendete sich nach einigen Dutzend Ladevorgängen
 - Falsche Übersetzungen in mehreren Sprachen
 - Kästchen statt Buchstaben in Personennamen
+- Eine Hypothek, die höher ausfiel als der von der Bank genehmigte Betrag
+- Ein monatlicher Dauerauftrag, der Aktien ohne Bargeld kaufte
+- Ein Gleichstand bei einer Wahl des Direktoriums, der das Spiel beendete
+- Ein Bauauftrag, der seinen Bauingenieur nie verlangte
+
+## Geschmackssache, und wie man sie abschaltet
+
+Das sind alle Funktionen, die eine Regel oder eine Zahl des Spiels ändern. Setze den Wert in `RealisticEconomy.ini` im Spielordner auf 0, und dieser Teil ist wieder wie im Spiel.
+
+| Funktion | Was anders ist als im Spiel | Aus |
+|---|---|---|
+| Balance | Aktiengebühr 2% (Spiel: 1%), Gebühr für Termingeschäfte 10% der Marge (1%), höherer Sparzins und Zinsen auf Bargeld, eine Miete, die bei der Verlängerung auch sinken kann, ein neues Geschäft beginnt mit 25% Bekanntheit (0%) | `[features] balance=0` |
+| Handelssperre nach dem Laden | Nach dem Laden eines früheren Spielstands sind Aktien- und Termingeschäfte gesperrt, bis dieser Monat wieder vorbei ist. Aktienkurse und Immobilienangebote des Monats bleiben nach dem Laden dieselben | `[features] guard=0` |
+| Kreditzinsen nach Bonität | Der Zins eines Kredits richtet sich nach der Bonität des Haushalts | `[features] credit=0` |
+| Börsengang | Du behältst 45% und bekommst für den Rest Bargeld (Spiel: 25%, kein Bargeld) | `[features] ipo=0` |
+| Sitze im Direktorium | Je 20% der Aktien ein garantierter Sitz | `[features] board=0` |
+| Casino | Fester Einsatz und feste Chancen, jedes Spiel einmal im Monat | `[features] casino=0` |
+| Abgeschlossene Ausbildung | Ihr Wert sinkt nicht | `[features] experience=0` |
+| Automatisierung der Geschäfte | Der Mod verwaltet Personal, Vermögenswerte, Werbung und Verträge nur in einem Geschäft, das du ihm übergibst. Derselbe Klick holt es zurück | `[features] business=0` |
+
+Jede Zahl der Balance hat ihre eigene Zeile unter `[balance]`.
 
 ## Weitere Funktionen
 
 Jede lässt sich in der Einstellungsdatei abschalten.
 
-- Handelssperre für Aktien und Termingeschäfte nach dem Laden eines früheren Spielstands
-- Wirtschaftswachstum, Aktienkurse, Ausgabekurs und Immobilienangebote eines Monats bleiben nach dem Laden dieselben
-- Casino: fester Einsatz und feste Chancen, jedes Spiel einmal im Monat
 - Die Kandidaten eines Monats bleiben nach dem Laden dieselben
 - Ein Hinweis, wenn eine Immobilie deutlich unter ihrem Wert angeboten wird
-- Eine abgeschlossene Ausbildung behält ihren Wert
 
 ## Installation
 

@@ -49,6 +49,7 @@ enum {
     RE_MSG_LOCK_OVER,      /* %s prefix */
     RE_MSG_AUTO_PREFIX,
     RE_MSG_AUTO_SKIPPED, /* %s prefix, %d purchases */
+    RE_MSG_AUTO_NO_CASH, /* the same, for a rule whose purchase the cash did not cover */
     RE_MSG_HELD_PREFIX,  /* the month's warning about shares held: "prefix" + "Name (state), Name (state)" */
     RE_MSG_HELD_CLOSE,   /* %.1f the fall that reaches the line; a state */
     RE_MSG_HELD_WATCH,   /* the same within six months of an emergency measure */
@@ -92,6 +93,9 @@ enum {
     RE_MSG_FUT_ITEM,    /* behind a ware's name in the futures list: %+.1f its yearly price change, per cent */
     RE_MSG_FUT_ITEM_AHEAD, /* the same with where the rate is expected to be: %+.1f now, %+.1f over twelve months */
     RE_MSG_FUT_ROW_TIP, /* above the hover text of such a row: %+.2f the rate now, then expected until 6, 12 and 24 months */
+    /* the label of the futures fee, in place of the game's "10% trading fee": the fee is a part of the margin (the
+     * game's own word for it, <futuresMargin> of its language file). %s the number */
+    RE_MSG_FUT_FEE,
     RE_MSG_FUT_SORT,    /* the hover text of the list's second sort button, whose order the mod replaces */
     RE_MSG_CHART_HALF_YEAR, /* a chart's time button at six months, where the game's text would say "0 years" */
     RE_MSG_CHART_INDEX,     /* behind the title of the chart of all share prices */
@@ -152,22 +156,25 @@ enum {
     RE_MSG_FIT_FURNISH, /* the name, %.0f */
     RE_MSG_FIT_ASSETS,  /* the name, %.0f */
     RE_MSG_FIT_NONE,    /* the name: a job of it has none of one of its assets, and the game does not work such a job */
+    /* "\nMod:", what the mod's part of a hover text begins with where it is put together from sentences */
+    RE_MSG_MOD,
     /* experience: the line under the game's sentence "experience and education decay by N% every month" */
     RE_MSG_XP_TIP,
-    /* business: the line under the game's hover text of the automatic management's switch in a staff row. What
-     * that management does with a wage demand leaves no line in the monthly summary (REQUEST.md [38]). */
-    RE_MSG_AUTO_TIP,
+    /* business: under the game's hover text of the automatic management's switch in a staff row: RE_MSG_MOD and a
+     * sentence, with a space in front, for each rule that is on. What that management does with a wage demand leaves
+     * no line in the monthly summary (REQUEST.md [38]). */
+    RE_MSG_AUTO_TIP,       /* pay demands are answered */
     RE_MSG_AUTO_TIP_ALL,   /* in front of it: with the mod the switch of a row is the switch of the whole business */
-    RE_MSG_AUTO_TIP_SPARE, /* behind it: %d months; who is let go and who is replaced by a person of fewer hours */
-    RE_MSG_AUTO_TIP_FILL,  /* behind that: a job with more work than hours gets a candidate hired */
+    RE_MSG_AUTO_TIP_STAFF, /* behind it: people are let go, replaced and hired as the work asks */
     /* business: the line under the game's hover text of an advert's icon ("Click to activate / deactivate") */
-    RE_MSG_ADVERTS_TIP,    /* how to hand the business's adverts to the mod; %.0f the awareness they are on up to, %s the fee */
-    RE_MSG_ADVERTS_TIP_ON, /* the mod has them; the same two */
+    RE_MSG_ADVERTS_TIP,    /* how to hand the business's adverts to the mod; %s the fee */
+    RE_MSG_ADVERTS_TIP_ON, /* the mod has them; %.0f the awareness they are on up to, %s the fee */
+    RE_MSG_ADVERTS_TIP_WHOLE, /* the whole business is handed over: a Shift-click is refused there, how to take it back */
     RE_MSG_ADVERTS_KEPT,   /* the ticker line of the Shift-click that hands them over; %s the business */
     RE_MSG_ADVERTS_BACK,   /* ... and of the one that takes them back */
     RE_MSG_ADVERTS_LOCKED, /* the ticker line of a plain click on an advert the mod switches; %s the business */
     /* business: contracts and a whole business handed to the mod (note m33). Four ticker lines, %s the business;
-     * then what goes behind either hover text of an advert icon: how those two hand-overs are made */
+     * then what goes behind RE_MSG_ADVERTS_TIP, with a space in front: how the whole business is handed over */
     RE_MSG_CONTRACTS_KEPT,
     RE_MSG_CONTRACTS_BACK,
     RE_MSG_ALL_KEPT,
@@ -228,11 +235,10 @@ enum {
      * %s the amount */
     RE_MSG_ASSET_REPLACED,
     /* under the game's hover text of the box "buy worn-out assets again" of a business window (REQUEST.md [64]): what
-     * the box does with the mod. _DEBT or _CASH: a missing asset is bought too, on debt or out of the cash alone;
-     * _PAID: the game's own replacement is paid for */
+     * the box does with the mod. _DEBT or _CASH: a missing asset is bought too, on debt or out of the cash alone.
+     * (That the game's own replacement is paid for is in the description only, D-120.) */
     RE_MSG_ASSET_TIP_DEBT,
     RE_MSG_ASSET_TIP_CASH,
-    RE_MSG_ASSET_TIP_PAID,
     /* the hover texts of four sort buttons of the stock window's list, whose orders the mod replaces: in this
      * order, as RE_STOCK_BY_CHEAP, _DEAR, _CHANGE and _CAP of re_stock.h */
     RE_MSG_SORT_CHEAP,

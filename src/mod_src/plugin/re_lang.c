@@ -77,6 +77,11 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     [RE_MSG_AUTO_SKIPPED] = {"%s %d stock purchase(s) skipped (trade lock)", "%s %d건 건너뜀 (거래 잠금)",
                              "%s %d Aktienkauf/-käufe übersprungen (Handelssperre)", "%s %d compra(s) de acciones omitida(s) (bloqueo)",
                              "%s %d achat(s) d'actions ignoré(s) (blocage)", "%s %d compra(s) de ações ignorada(s) (bloqueio)"},
+    [RE_MSG_AUTO_NO_CASH] = {"%s %d stock purchase(s) skipped (not enough cash)", "%s %d건 건너뜀 (현금 부족)",
+                             "%s %d Aktienkauf/-käufe übersprungen (Bargeld fehlt)",
+                             "%s %d compra(s) de acciones omitida(s) (falta efectivo)",
+                             "%s %d achat(s) d'actions ignoré(s) (liquidités insuffisantes)",
+                             "%s %d compra(s) de ações ignorada(s) (falta dinheiro)"},
     [RE_MSG_HELD_PREFIX] = {"Shares held, warning: ", "보유 주식 경고: ", NULL, NULL, NULL, NULL},
     [RE_MSG_HELD_CLOSE] = {"price -%.1f%%: downsizing or new shares at month end", "주가 -%.1f%%면 월말 규모 축소·증자", NULL, NULL, NULL,
                            NULL},
@@ -144,21 +149,16 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     [RE_MSG_OFFER_TIP] = {"%+.1f%% over standard cost\n%s left per hour", "표준 비용 %+.1f%%\n시간당 %s 남음", NULL, NULL, NULL, NULL},
     /* "(expected 5.05%)" ran out of the window on the right (run 181) */
     [RE_MSG_FUT_EXPECTED] = {" (exp. %.2f%%)", " (예상 %.2f%%)", NULL, NULL, NULL, NULL},
-    [RE_MSG_FUT_TIP] = {"Expected: what the rate averages until the chosen expiry if it moves by the game's own rule. "
-                        "Above today's rate a purchase is ahead, below it a sale.",
-                        "예상: 게임 규칙대로 움직일 때 고른 만료 월까지의 평균 인플레이션율. 지금 값보다 높으면 구매가, 낮으면 판매가 "
-                        "유리합니다.",
-                        NULL, NULL, NULL, NULL},
+    [RE_MSG_FUT_TIP] = {"Expected: the average inflation up to the expiry month. Above the rate now: buy; below: sell.",
+                        "예상: 만료 월까지 평균 인플레이션율. 지금보다 높으면 구매, 낮으면 판매.", NULL, NULL, NULL, NULL},
     /* short: a long title is drawn in a smaller type (run 181, " (+8.5% a year)") */
     [RE_MSG_FUT_ITEM] = {" (%+.1f%%/yr)", " (연 %+.1f%%)", NULL, NULL, NULL, NULL},
     /* the rate now and the twelve months' expectation; no words, the hover text of the row has them */
     [RE_MSG_FUT_ITEM_AHEAD] = {" (%+.1f%% → %+.1f%%)", " (%+.1f%% → %+.1f%%)", NULL, NULL, NULL, NULL},
     /* short lines: the hover text is about 38 characters wide */
-    [RE_MSG_FUT_ROW_TIP] = {"Inflation %+.2f%% a year\nExpected, 6 months: %+.2f%%\nExpected, 12 months: %+.2f%%\nExpected, 24 months: "
-                            "%+.2f%%\nExpected higher: buy. Lower: sell.",
-                            "인플레이션율 연 %+.2f%%\n예상 6개월 %+.2f%%\n예상 12개월 %+.2f%%\n예상 24개월 %+.2f%%\n예상이 높으면 구매, "
-                            "낮으면 판매",
-                            NULL, NULL, NULL, NULL},
+    [RE_MSG_FUT_ROW_TIP] = {"Inflation %+.2f%% a year\nExpected 6/12/24 months: %.2f/%.2f/%.2f%%",
+                            "인플레이션율 연 %+.2f%%\n예상 6/12/24개월: %.2f/%.2f/%.2f%%", NULL, NULL, NULL, NULL},
+    [RE_MSG_FUT_FEE] = {"fee %s%% of margin", "마진의 %s%% 수수료", NULL, NULL, NULL, NULL},
     [RE_MSG_FUT_SORT] = {"Sort by expected rate\n(12 months) minus rate now", "12개월 예상 - 지금 비율\n큰 순 정렬", NULL, NULL, NULL, NULL},
     [RE_MSG_CHART_HALF_YEAR] = {"6 months", "6개월", NULL, NULL, NULL, NULL},
     [RE_MSG_CHART_INDEX] = {" (first month shown = 100)", " (그림의 첫 달 = 100)", NULL, NULL, NULL, NULL},
@@ -222,49 +222,25 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     [RE_MSG_FIT_ASSETS] = {"%s (assets %.0f%%)", "%s (자산 %.0f%%)", NULL, NULL, NULL, NULL},
     [RE_MSG_FIT_NONE] = {"%s (a job stands still: one of its assets is missing altogether)",
                          "%s (자산 하나가 아예 없어 일이 멈춘 직무가 있음)", NULL, NULL, NULL, NULL},
-    [RE_MSG_XP_TIP] = {"\nMod: an education a member of your household completed (a degree, a diploma, a certificate) does not go "
-                       "below what was gained of it, up to the highest amount that any job, education or activity asks for. Work "
-                       "experience decays every month as before.",
-                       "\n모드: 가계 구성원이 마친 교육(학위, 졸업장, 인증서)은 얻은 만큼에서 더 줄지 않습니다. 그 교육을 요구하는 "
-                       "직업·교육·활동 가운데 가장 높은 요구치까지만 지킵니다. 일해서 얻은 경험은 전처럼 달마다 줄어듭니다.",
-                       NULL, NULL, NULL, NULL},
-    /* the game's own word for the wage of an employee in its hover text of the automatic management: "급여" */
-    [RE_MSG_AUTO_TIP_ALL] = {"\nMod: this switch is for the whole business. A click on anybody's switches everybody.",
-                             "\n모드: 이 스위치는 사업체 전체에 걸립니다. 누구 것을 눌러도 직원 모두가 같이 켜지고 꺼집니다.", NULL,
-                             NULL, NULL, NULL},
-    [RE_MSG_AUTO_TIP_SPARE] = {"\nMod: an employee whose work the others could have done for %d months running is let go without "
-                               "severance. Somebody alone in a job who is idle half the time for that long is replaced by a "
-                               "candidate of fewer hours, if there is one.",
-                               "\n모드: %d달 연속으로 다른 직원들이 남는 시간에 할 수 있었던 일만 한 직원은 퇴직금 없이 "
-                               "내보냅니다. 직무에 혼자인데 그동안 시간의 절반 이상을 놀았으면, 근무 시간이 더 적은 지원자가 "
-                               "있을 때 그 사람으로 바꿉니다.",
-                               NULL, NULL, NULL, NULL},
-    [RE_MSG_AUTO_TIP_FILL] = {"\nMod: a job that still has more work this month than its people have hours for gets a candidate "
-                              "hired: the one who gets the missing work done for the least money.",
-                              "\n모드: 이번 달 일이 직원들의 남은 시간보다 많은 직무에는 지원자를 한 명 뽑습니다. 모자란 일을 가장 "
-                              "적은 돈으로 해 줄 사람을 고릅니다.",
-                              NULL, NULL, NULL, NULL},
-    /* "that month": the month in which the demand is open. The game makes the demand while it turns the month and
-     * lets the person go when it turns the next one; the mod answers just before that (REQUEST.md [40], [41]). */
-    [RE_MSG_AUTO_TIP] = {"\nMod: a pay rise is answered at the end of that month, just before the employee would leave. If a "
-                         "job candidate of that moment would do the same work for less, that one is hired instead; if not, "
-                         "the rise is given.",
-                         "\n모드: 급여 인상 요구에는 그 달 말, 직원이 나가기 직전에 답합니다. 그때의 지원자 가운데 같은 일을 "
-                         "더 싸게 할 사람이 있으면 그 사람으로 바꾸고, 없으면 올려 줍니다.",
-                         NULL, NULL, NULL, NULL},
-    [RE_MSG_ADVERTS_TIP] = {"\nMod: Shift-click to hand this business's adverts to the mod. It switches every paid advert on while "
-                            "awareness is below %.0f%% and off once it is there. Fee at the month end: %s for an advert that was on "
-                            "all month.",
-                            "\n모드: Shift-클릭하면 이 사업체의 광고를 모드가 맡습니다. 인지도가 %.0f%% 아래면 유료 광고를 모두 켜고 "
-                            "그 이상이면 끕니다. 관리비는 월말에 받습니다: 한 달 내내 켠 광고 하나에 %s.",
-                            NULL, NULL, NULL, NULL},
-    [RE_MSG_ADVERTS_TIP_ON] = {"\nMod: the mod looks after this business's adverts. It switches every paid advert on while awareness "
-                               "is below %.0f%% and off once it is there. Fee at the month end: %s for an advert that was on all "
-                               "month. While the icons are orange a plain click switches nothing. Shift-click to take them back.",
-                               "\n모드: 이 사업체의 광고는 모드가 맡고 있습니다. 인지도가 %.0f%% 아래면 유료 광고를 모두 켜고 그 "
-                               "이상이면 끕니다. 관리비는 월말에 받습니다: 한 달 내내 켠 광고 하나에 %s. 아이콘이 주황색인 동안에는 그냥 "
-                               "클릭으로 켜고 끌 수 없습니다. 그만두려면 Shift-클릭.",
-                               NULL, NULL, NULL, NULL},
+    /* The hover texts below keep to D-120: what the mod adds to one place is two lines in Korean (36 em, a Hangul
+     * letter 1, anything else a half; analysis/scripts/tip_fit.py) and three in another language. What is left out
+     * is in the description (README). */
+    [RE_MSG_MOD] = {"\nMod:", "\n모드:", NULL, NULL, NULL, NULL},
+    [RE_MSG_XP_TIP] = {"\nMod: a completed education is kept up to what is asked for. Work experience decays as before.",
+                       "\n모드: 마친 교육은 요구치까지 지켜집니다. 일 경험은 전처럼 줄어듭니다.", NULL, NULL, NULL, NULL},
+    /* the staff switch: RE_MSG_MOD, then a sentence for each rule that is on, each beginning with a space. The game's
+     * own word for the wage of an employee in its hover text of the automatic management: "급여" */
+    [RE_MSG_AUTO_TIP_ALL] = {" The switch is for all staff.", " 직원 전체에 걸립니다.", NULL, NULL, NULL, NULL},
+    [RE_MSG_AUTO_TIP] = {" Pay demands are answered.", " 급여 요구에 답합니다.", NULL, NULL, NULL, NULL},
+    [RE_MSG_AUTO_TIP_STAFF] = {" Staff is fitted to the work.", " 인원을 일에 맞춥니다.", NULL, NULL, NULL, NULL},
+    /* Korean, Japanese and Chinese are broken letter by letter, a price as well ("$261" / ".50"): there the price
+     * begins a line of its own, short enough that a price of nine letters still fits (18 em a line) */
+    [RE_MSG_ADVERTS_TIP] = {"\nMod: Shift-click: hand the adverts over (%s a month each).",
+                            "\n모드: Shift-클릭: 광고 맡기기\n(월 %s/개)", NULL, NULL, NULL, NULL},
+    [RE_MSG_ADVERTS_TIP_ON] = {"\nMod: adverts are on up to %.0f%% awareness (%s a month each). Shift-click: take back.",
+                               "\n모드: 인지도 %.0f%%까지 광고를 켭니다\n(월 %s/개) Shift-클릭: 되찾기", NULL, NULL, NULL, NULL},
+    [RE_MSG_ADVERTS_TIP_WHOLE] = {"\nMod: the mod runs this whole business. Ctrl+Shift-click: take it back.",
+                                  "\n모드: 사업체 전부를 맡았습니다.\nCtrl+Shift-클릭: 되찾기.", NULL, NULL, NULL, NULL},
     /* the ticker shows about 30 Korean letters and cuts the rest */
     [RE_MSG_ADVERTS_KEPT] = {"%s: the mod looks after the adverts now", "%s: 광고를 모드가 맡습니다", NULL, NULL, NULL, NULL},
     [RE_MSG_ADVERTS_BACK] = {"%s: the adverts are yours again", "%s: 광고를 직접 관리합니다", NULL, NULL, NULL, NULL},
@@ -274,11 +250,8 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     [RE_MSG_CONTRACTS_BACK] = {"%s: signing contracts is yours again", "%s: 계약 체결을 직접 합니다", NULL, NULL, NULL, NULL},
     [RE_MSG_ALL_KEPT] = {"%s: the mod runs all of it now", "%s: 전부 모드가 맡습니다", NULL, NULL, NULL, NULL},
     [RE_MSG_ALL_BACK] = {"%s: all of it is yours again", "%s: 전부 직접 관리합니다", NULL, NULL, NULL, NULL},
-    [RE_MSG_ADVERTS_TIP_ALL] = {"\nMod: Ctrl+Shift-click hands the whole business to the mod (staff, assets, adverts, contracts, floor "
-                                "space) and locks its controls; again takes it back. Contracts alone: Shift-click the Contracts icon.",
-                                "\n모드: Ctrl+Shift-클릭하면 이 사업체를 전부 모드에 맡기고(직원, 자산, 광고, 계약, 면적) 직접 조작을 "
-                                "잠급니다. 다시 하면 되찾습니다. 계약만 맡기려면 계약 아이콘을 Shift-클릭.",
-                                NULL, NULL, NULL, NULL},
+    /* behind RE_MSG_ADVERTS_TIP, on its line: the whole business handed over */
+    [RE_MSG_ADVERTS_TIP_ALL] = {" Ctrl+Shift-click: everything.", " Ctrl+Shift: 전부.", NULL, NULL, NULL, NULL},
     [RE_MSG_CONTRACT_PREFIX] = {"Contracts signed by the mod: ", "모드가 맺은 계약: ", NULL, NULL, NULL, NULL},
     [RE_MSG_CONTRACT_ITEM] = {"%s%s %d hours a month for %d months, %s", "%s%s 달마다 %d시간, %d개월, %s", NULL, NULL, NULL, NULL},
     [RE_MSG_CONTRACT_FEE] = {" (fee %s)", " (수수료 %s)", NULL, NULL, NULL, NULL},
@@ -292,10 +265,12 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
                               NULL},
     [RE_MSG_PREMISES_MOST] = {"%sshort of it, and these premises cannot be made larger. The business has to move",
                               "%s모자라는데 이 부동산은 더 키울 수 없습니다. 더 넓은 곳으로 이사해야 합니다", NULL, NULL, NULL, NULL},
-    [RE_MSG_PREMISES_OWNED] = {"%sshort of it. The premises are owned, so the mod did not make them larger: that costs %s at once. "
-                               "Switch the star on yourself if you want it",
-                               "%s모자랍니다. 소유한 부동산이라 모드가 키우지 않았습니다. 키우려면 %s 가 한 번에 듭니다. 원하면 "
-                               "별표를 직접 켜십시오",
+    /* the cost of making owned premises larger is no expense: the game adds it to what the property cost and books
+     * it as a purchase of property (FUN_0054f150, the branch of an owned one) */
+    [RE_MSG_PREMISES_OWNED] = {"%sshort of it. The premises are owned, so the mod did not make them larger: that costs %s at once, "
+                               "and the money becomes value of the property. Switch the star on yourself if you want it",
+                               "%s모자랍니다. 소유한 부동산이라 모드가 키우지 않았습니다. 키우려면 %s 가 한 번에 들고 그 돈은 부동산 "
+                               "가치가 됩니다. 원하면 별표를 직접 켜십시오",
                                NULL, NULL, NULL, NULL},
     [RE_MSG_FIRM_CLOSED] = {"%s: closed. The mod's automation rests until you open it again",
                             "%s: 닫았습니다. 다시 열 때까지 모드의 자동화는 쉽니다", NULL, NULL, NULL, NULL},
@@ -329,17 +304,10 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     [RE_MSG_ASSET_TICK_BUY] = {"Missing assets bought: %d for %s", "모자란 자산 %d개 구매: %s", NULL, NULL, NULL, NULL},
     [RE_MSG_ASSET_TICK_DEBT] = {" (debt %s, due in 3 months)", " (부채 %s, 석 달 안에 갚아야 합니다)", NULL, NULL, NULL, NULL},
     [RE_MSG_ASSET_REPLACED] ={"%s: a new one bought, %s", "%s: 새것으로 구매, %s", NULL, NULL, NULL, NULL},
-    [RE_MSG_ASSET_TIP_DEBT] = {"\nMod: with this on, the mod also buys the assets a job is short of. What the cash does not cover "
-                               "becomes a debt, due at the third month end.",
-                               "\n모드: 켜 두면 직무에 모자란 자산도 삽니다. 현금이 모자라면 모자란 만큼은 석 달째 월말에 갚는 부채가 "
-                               "됩니다.",
-                               NULL, NULL, NULL, NULL},
-    [RE_MSG_ASSET_TIP_CASH] = {"\nMod: with this on, the mod also buys the assets a job is short of, when the cash covers them and "
-                               "what the month end takes.",
-                               "\n모드: 켜 두면 직무에 모자란 자산도 삽니다. 월말에 나갈 돈을 남기고 현금으로 살 수 있을 때만 삽니다.",
-                               NULL, NULL, NULL, NULL},
-    [RE_MSG_ASSET_TIP_PAID] = {"\nMod: a worn-out asset bought again is paid for. The game paid you its price instead.",
-                               "\n모드: 낡은 자산을 다시 살 때 값을 냅니다. 게임은 거꾸로 그 값을 줬습니다.", NULL, NULL, NULL, NULL},
+    [RE_MSG_ASSET_TIP_DEBT] = {"\nMod: also buys the assets a job is short of. What the cash does not cover is a debt for three months.",
+                               "\n모드: 모자란 자산도 삽니다. 현금이 모자라면 석 달 뒤 갚는 부채가 됩니다.", NULL, NULL, NULL, NULL},
+    [RE_MSG_ASSET_TIP_CASH] = {"\nMod: also buys the assets a job is short of, when the cash covers them and the month end.",
+                               "\n모드: 모자란 자산도 삽니다. 월말에 나갈 돈을 남기고 현금으로 삽니다.", NULL, NULL, NULL, NULL},
     /* short lines: the game cuts a hover text of these buttons off at the window's left edge, the third button's
      * after sixteen Latin letters (run 144) */
     [RE_MSG_SORT_CHEAP] = {"Sort by\nundervalued\n(researched)", "저평가순으로 정렬\n(조사한 회사만)", NULL, NULL, NULL, NULL},

@@ -37,6 +37,7 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_LOCK_OVER] = "%s解除",
     [RE_MSG_AUTO_PREFIX] = "自動振替:",
     [RE_MSG_AUTO_SKIPPED] = "%s 株式購入%d件をスキップ (取引ロック)",
+    [RE_MSG_AUTO_NO_CASH] = "%s 株式購入%d件をスキップ (現金不足)",
     [RE_MSG_HELD_PREFIX] = "保有株式の警告: ",
     [RE_MSG_HELD_CLOSE] = "株価 -%.1f%%で月末に縮小・増資",
     [RE_MSG_HELD_WATCH] = "株価 -%.1f%%で月末に破産",
@@ -70,12 +71,11 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_STAFF_TIP] = "実効1時間あたり %s (時給 ÷ 作業効率 %.0f%%)",
     [RE_MSG_OFFER_TIP] = "標準コスト比 %+.1f%%\n1時間あたり %s 残る",
     [RE_MSG_FUT_EXPECTED] = " (予想 %.2f%%)",
-    [RE_MSG_FUT_TIP] = "予想: ゲームの規則どおりに動いた場合の、選んだ満期までの平均インフレ率。今の率より高ければ買い、"
-                       "低ければ売りが有利。",
+    [RE_MSG_FUT_TIP] = "予想: 満期月までの平均インフレ率。今の率より高ければ買い、低ければ売り。",
     [RE_MSG_FUT_ITEM] = " (年%+.1f%%)",
     [RE_MSG_FUT_ITEM_AHEAD] = " (%+.1f%% → %+.1f%%)",
-    [RE_MSG_FUT_ROW_TIP] = "インフレ率 年%+.2f%%\n予想 6か月: %+.2f%%\n予想 12か月: %+.2f%%\n予想 24か月: %+.2f%%\n予想が高ければ"
-                           "買い、低ければ売り",
+    [RE_MSG_FUT_ROW_TIP] = "インフレ率 年%+.2f%%\n予想 6/12/24か月: %.2f/%.2f/%.2f%%",
+    [RE_MSG_FUT_FEE] = "マージンの%s%%の手数料",
     [RE_MSG_FUT_SORT] = "12か月予想 - 現在の率\n大きい順に並べる",
     [RE_MSG_CHART_HALF_YEAR] = "6か月",
     [RE_MSG_CHART_INDEX] = " (最初の月 = 100)",
@@ -117,21 +117,14 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_FIT_FURNISH] = "%s (家具 %.0f%%)",
     [RE_MSG_FIT_ASSETS] = "%s (資産 %.0f%%)",
     [RE_MSG_FIT_NONE] = "%s (資産が1種類まったく無く、止まっている仕事がある)",
-    [RE_MSG_XP_TIP] = "\nMOD: 世帯のメンバーが修了した教育(学位、卒業証書、認定証)は、得た量より下がらない。守るのは、その教育を"
-                      "求める仕事・教育・アクティビティのうち最も高い要求値まで。仕事で得た経験は今までどおり毎月減る。",
-    [RE_MSG_AUTO_TIP_ALL] = "\nMOD: このスイッチはビジネス全体に効く。誰のものを押しても従業員全員が切り替わる。",
-    [RE_MSG_AUTO_TIP_SPARE] = "\nMOD: %dか月続けて、他の従業員の空き時間で済んだ仕事しかしなかった従業員は、退職金なしで解雇する。"
-                              "仕事に1人だけで、その間ずっと時間の半分以上が空いていた場合は、勤務時間の少ない候補者がいれば"
-                              "その人に替える。",
-    [RE_MSG_AUTO_TIP_FILL] = "\nMOD: 今月の作業が従業員の残り時間より多い仕事には、候補者を1人雇う。足りない作業を最も少ない"
-                             "お金でこなせる人を選ぶ。",
-    [RE_MSG_AUTO_TIP] = "\nMOD: 昇給の要求にはその月の終わり、従業員が辞める直前に答える。その時の候補者に同じ作業をもっと安く"
-                        "こなせる人がいればその人に替え、いなければ昇給する。",
-    [RE_MSG_ADVERTS_TIP] = "\nMOD: Shift+クリックでこのビジネスの広告をMODに任せる。認知度が%.0f%%未満なら有料広告をすべてオン、"
-                           "届いたらオフにする。管理料は月末: 1か月ずっとオンだった広告1つにつき %s。",
-    [RE_MSG_ADVERTS_TIP_ON] = "\nMOD: このビジネスの広告はMODが管理中。認知度が%.0f%%未満なら有料広告をすべてオン、届いたらオフに"
-                              "する。管理料は月末: 1か月ずっとオンだった広告1つにつき %s。アイコンがオレンジの間は普通のクリックで"
-                              "切り替わらない。取り戻すにはShift+クリック。",
+    [RE_MSG_MOD] = "\nMOD:",
+    [RE_MSG_XP_TIP] = "\nMOD: 修了した教育は要求値まで保つ。\n仕事の経験は今までどおり減る。",
+    [RE_MSG_AUTO_TIP_ALL] = " 従業員全員に効く。",
+    [RE_MSG_AUTO_TIP_STAFF] = " 人員を仕事に合わせる。",
+    [RE_MSG_AUTO_TIP] = " 給与の要求に答える。",
+    [RE_MSG_ADVERTS_TIP] = "\nMOD: Shift+クリック: 広告を任せる\n(月%s/個)",
+    [RE_MSG_ADVERTS_TIP_ON] = "\nMOD: 認知度%.0f%%まで広告オン\n(月%s/個)\nShift+クリック: 取り戻す。",
+    [RE_MSG_ADVERTS_TIP_WHOLE] = "\nMOD: 事業全体をMODが任されている。\nCtrl+Shift+クリック: 取り戻す。",
     [RE_MSG_ADVERTS_KEPT] = "%s: 広告をMODに任せた",
     [RE_MSG_ADVERTS_BACK] = "%s: 広告を自分で管理する",
     [RE_MSG_ADVERTS_LOCKED] = "%s: この広告はMODが切り替える (取り戻すにはShift+クリック)",
@@ -139,8 +132,7 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_CONTRACTS_BACK] = "%s: 契約の締結を自分で行う",
     [RE_MSG_ALL_KEPT] = "%s: すべてMODに任せた",
     [RE_MSG_ALL_BACK] = "%s: すべて自分で管理する",
-    [RE_MSG_ADVERTS_TIP_ALL] = "\nMOD: Ctrl+Shift+クリックでこのビジネス全体をMODに任せ(従業員、資産、広告、契約、フロア"
-                               "スペース)、操作をロックする。もう一度で取り戻す。契約だけ任せるなら契約アイコンをShift+クリック。",
+    [RE_MSG_ADVERTS_TIP_ALL] = "\nCtrl+Shift+クリック: 全部。",
     [RE_MSG_CONTRACT_PREFIX] = "MODが結んだ契約: ",
     [RE_MSG_CONTRACT_ITEM] = "%s%s 月%d時間、%dか月、%s",
     [RE_MSG_CONTRACT_FEE] = " (手数料 %s)",
@@ -149,7 +141,7 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_PREMISES_PREFIX] = "フロアスペース (%s): ",
     [RE_MSG_PREMISES_GROW] = "%s今月末に2倍になり、家賃が月 %s 上がる。スペースが足りないのでMODが星をオンにした",
     [RE_MSG_PREMISES_MOST] = "%s足りないが、この物件はこれ以上広げられない。もっと広い所へ移転が必要",
-    [RE_MSG_PREMISES_OWNED] = "%s足りない。所有物件なのでMODは広げなかった。広げるには一度に %s かかる。必要なら自分で星を"
+    [RE_MSG_PREMISES_OWNED] = "%s足りない。所有物件なのでMODは広げなかった。広げるには一度に %s かかり、その金額は物件の価値になる。必要なら自分で星を"
                               "オンにすること",
     [RE_MSG_FIRM_CLOSED] = "%s: 閉店した。再び開くまでMODの自動化は休む",
     [RE_MSG_FIRM_OPENED] = "%s: 再び開いた。MODの自動化を続ける",
@@ -175,10 +167,8 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_ASSET_TICK_BUY] = "不足資産を%d個購入: %s",
     [RE_MSG_ASSET_TICK_DEBT] = " (負債 %s、3か月以内に返済)",
     [RE_MSG_ASSET_REPLACED] = "%s: 新品を購入、%s",
-    [RE_MSG_ASSET_TIP_DEBT] = "\nMOD: オンにすると、仕事に足りない資産もMODが購入する。現金が足りない分は負債になり、3か月目の月末に"
-                              "返済する。",
-    [RE_MSG_ASSET_TIP_CASH] = "\nMOD: オンにすると、仕事に足りない資産もMODが購入する。月末に必要な現金を残して買える時だけ購入する。",
-    [RE_MSG_ASSET_TIP_PAID] = "\nMOD: 古くなった資産の買い替えには代金を支払う。ゲーム本来は逆に代金分を受け取っていた。",
+    [RE_MSG_ASSET_TIP_DEBT] = "\nMOD: 足りない資産も買う。現金が足りなければ3か月の負債になる。",
+    [RE_MSG_ASSET_TIP_CASH] = "\nMOD: 足りない資産も買う。月末の支出を残して現金で買える時だけ。",
     [RE_MSG_SORT_CHEAP] = "割安順に並べる\n(調査済みのみ)",
     [RE_MSG_SORT_DEAR] = "割高順に並べる\n(調査済みのみ)",
     [RE_MSG_SORT_CHANGE] = "前月比で\n上昇順に並べる",

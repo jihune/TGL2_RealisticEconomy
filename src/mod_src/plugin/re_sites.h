@@ -28,6 +28,9 @@ enum {
     RE_GROUP_TRACE,
     RE_GROUP_EXPERIENCE,
     RE_GROUP_NAMES,
+    RE_GROUP_DATA,
+    RE_GROUP_TRANSFER,
+    RE_GROUP_BALANCE,
     RE_GROUP_COUNT
 };
 
@@ -101,6 +104,11 @@ enum {
 #define RE_VA_DEBT_TIP_RECORD 0x0061b366u   /* mov eax, [ebp + 0xc]: the tooltip's debt record, its second argument */
 #define RE_DEBT_TIP_FRAME_RECORD 0xc
 #define RE_DEBT_RECORD_ACTIVITY 0xc /* the loan product the debt was made from */
+/* a mortgage's record as the purchase hands it over (FUN_00439570 around 0x0043ad54, note m46): +0x18 the principal,
+ * +0x40 the deposit paid at the approval, +0x48 the amount approved, 64-bit cents each */
+#define RE_DEBT_RECORD_APPROVED 0x48
+#define RE_TAG_PROPERTY 2081 /* the finance tag "real estate": the price of a property bought or sold */
+#define RE_TAG_INTEREST 2031 /* the finance tag "interest": what the game books a savings account's interest under */
 /* A fixed mortgage rate is variable x 1.1 + 0.03, computed in two places from two shared constants (doubles). */
 #define RE_VA_FIXED_MUL_QUOTE 0x0063acb6u  /* mulsd xmm0, [1.1]: the rate the mortgage window shows */
 #define RE_VA_FIXED_ADD_QUOTE 0x0063acbeu  /* addsd xmm0, [0.03] */
@@ -1101,6 +1109,47 @@ enum {
 #define RE_VA_NAME_PICK_RET 0x0081c83du      /* ret 0x20 */
 #define RE_VA_ARCHIVE_STRING 0x0082b330u
 #define RE_VA_ARCHIVE_STRING_RET 0x0082b407u /* ret 4 */
+
+/* the game's data files (note m44): FUN_0069b820 (tinyxml2's reading of a file by name; FUN_0080fbb0 "Loading doc"
+ * reads every file of data/ with it) has the whole file in a buffer with a NUL after it and calls FUN_00699730
+ * (ecx = the text; eax = the text after its leading white space) before the text is parsed. */
+#define RE_VA_XML_SKIP 0x00699730u
+#define RE_VA_CALL_XML_SKIP 0x0069b91cu
+
+/* the monthly auto transfer (note m47): FUN_00547670 runs the rules at a month end; a rule for shares works out a
+ * quantity, has FUN_00534ef0 hold it to what one holder may own, and calls the purchase (RE_VA_STOCK_BUY) with it.
+ * FUN_00532f40 (ecx = stock market; company, quantity, 1 for a purchase; ret 0xc) gives the price of one share for
+ * that quantity in edx:eax, cents: the purchase itself calls it first and changes nothing before it. */
+#define RE_VA_CALL_TRANSFER_BUY 0x00547d58u
+#define RE_VA_STOCK_PRICE 0x00532f40u
+#define RE_MARKET_FINANCE 0xd0 /* the household's finance object, as the purchase reaches it */
+#define RE_MARKET_DATA 0x11c   /* the game's data, as the purchase's fee reads "stockMarket" "stockTradingFee" from it */
+#define RE_VA_STOCK_FEE_DATA 0x00534e2du /* mov ecx, [esi + 0x11c] in the fee's function FUN_00534db0 */
+#define RE_PFM_CASH 0x228      /* the household's cash, 64-bit cents */
+
+/* the renewal of a lease (notes e11, m48): the month pass of the properties, FUN_0054a730, asks for the market's
+ * rent (RE_VA_HOUSE_PRICE with "rentK"; the result in [ebp - 0x1bc]:esi), reads the rent the lease has (FUN_005097d0:
+ * mov eax, [ecx + 0xa0] / mov edx, [ecx + 0xa4]) and stores the larger of the two with FUN_005097e0 (ecx = the same
+ * part of the record; low, high; ret 8). `jg` made `jmp`: the market's rent is stored, lower or higher. */
+#define RE_VA_RENEW_RENT_CMP 0x0054c412u   /* cmp eax, edx / jg +0x1d / jl +4 / cmp esi, ecx */
+#define RE_VA_RENEW_RENT_JG 0x0054c414u    /* jg 0x54c433: to the store, with the market's rent */
+#define RE_VA_RENEW_RENT_JAE 0x0054c41au   /* jae 0x54c433 */
+#define RE_VA_CALL_RENEW_STORE 0x0054c443u /* call 0x5097e0 */
+#define RE_VA_RENT_STORE 0x005097e0u
+#define RE_LEASE_RENT 0xa0 /* in the part of a property record these two functions get: the rent a month, 64-bit cents */
+
+/* a new business of the player (notes e13, m48): the handler of the windows' events, FUN_00439570, makes it at the
+ * event "NewFirm" with the constructor FUN_004f25c0 (ecx = the object, on the handler's stack; it is registered right
+ * after). The constructor gives it no awareness (RE_FIRM_AWARENESS) and a reputation of 0.25. Of the constructor's 45
+ * call sites this is the one that is a business the player starts; the others read a save or stand in for a
+ * business that is not there. */
+/* the futures tab (FUN_007be860): the fee's label under its two buttons. FUN_00534e50 gives the fee, a part of the
+ * margin, and the text of the key "stockTradingFee" is asked for with it as PERCENT: "10% trading fee", the words of
+ * the share fee, which is a part of the price */
+#define RE_VA_CALL_FUT_FEE 0x007c0050u
+#define RE_VA_CALL_NEW_FIRM 0x0043a123u
+#define RE_VA_FIRM_CTOR 0x004f25c0u
+#define RE_VA_FIRM_CTOR_AWARE 0x004f282cu /* mov dword ptr [edi + 0x208], 0 */
 
 /* property (note b17_property_listings.md): the properties for sale and the two amounts of each */
 #define RE_VA_HOUSE_PRICE 0x0054d190u      /* ecx = RestateM; record, std::string kind by value, flag (ret 0x20); edx:eax, cents */

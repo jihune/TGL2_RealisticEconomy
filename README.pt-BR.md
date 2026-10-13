@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.1.2 do mod. Não é do desenvolvedor do jogo.
+Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.2.0 do mod. Não é do desenvolvedor do jogo.
 
 Outros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -49,17 +49,34 @@ A aba de contratação mostra primeiro quem faz o mesmo trabalho por menos (paga
 - O jogo fechava depois de carregar jogos salvos algumas dezenas de vezes
 - Traduções erradas em vários idiomas
 - Quadradinhos no lugar das letras nos nomes das pessoas
+- Uma hipoteca maior que o valor aprovado pelo banco
+- Uma transferência automática mensal que comprava ações sem dinheiro
+- Um empate em uma eleição do Conselho que fechava o jogo
+- Um contrato de construção que nunca pedia o seu engenheiro civil
+
+## Questão de gosto, e como desligar
+
+Estas são todas as funções que mudam uma regra ou um número do jogo. Coloque o valor 0 em `RealisticEconomy.ini`, na pasta do jogo, e essa parte volta a ser como no jogo.
+
+| Função | O que muda em relação ao jogo | Desligar |
+|---|---|---|
+| Balanceamento | Taxa de ações 2% (jogo: 1%), taxa de futuros 10% da margem (1%), juros maiores na poupança e juros sobre o dinheiro, um aluguel que também pode cair na renovação, uma empresa nova começa com 25% de conscientização (0%) | `[features] balance=0` |
+| Bloqueio de negociação depois de carregar | Depois de carregar um jogo salvo anterior, ações e futuros ficam bloqueados até aquele mês passar de novo. Os preços das ações e os imóveis à venda do mês continuam os mesmos depois de carregar | `[features] guard=0` |
+| Juros pela nota de crédito | Os juros de um empréstimo seguem a nota de crédito da família | `[features] credit=0` |
+| Abertura de capital | Você fica com 45% e recebe dinheiro pelo resto (jogo: 25%, sem dinheiro) | `[features] ipo=0` |
+| Cadeiras no Conselho | Uma cadeira garantida para cada 20% das ações | `[features] board=0` |
+| Cassino | Aposta e chances fixas, cada jogo uma vez por mês | `[features] casino=0` |
+| Formação concluída | O valor não diminui | `[features] experience=0` |
+| Automação das empresas | O mod cuida de funcionários, ativos, anúncios e contratos só em uma empresa que você entrega. O mesmo clique pega de volta | `[features] business=0` |
+
+Cada número do balanceamento tem a sua linha em `[balance]`.
 
 ## Outras funções
 
 Cada uma pode ser desligada no arquivo de configurações.
 
-- Bloqueio de negociação de ações e futuros depois de carregar um jogo salvo anterior
-- O crescimento econômico, os preços das ações, o preço de abertura e os imóveis à venda de um mês continuam os mesmos depois de carregar
-- Cassino: aposta e chances fixas, cada jogo uma vez por mês
 - Os candidatos de um mês continuam os mesmos depois de carregar
 - Um aviso quando um imóvel está à venda bem abaixo do valor
-- Uma formação concluída mantém o valor
 
 ## Instalação
 

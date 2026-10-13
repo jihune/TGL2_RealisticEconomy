@@ -140,6 +140,9 @@ typedef struct {
     int job, hours;
 } re_coming;
 int re_game_firm_coming(void *firms, int firm, int month, re_coming *out, int cap);
+/* The hours a month the business's signed contracts list for one job, 0 when none lists it, -1 when the business
+ * cannot be read. Reads only. */
+int re_game_firm_listed(void *firms, int firm, int job);
 /* The contracts a business is offered this month (note b16 "B6", m33): the id an offer is kept under and the
  * contract, which re_game_offer reads; `shown` gets the business as re_game_offer wants it. Returns how many, -1
  * when the business cannot be read or has more than `cap`. Reads only. */
@@ -148,6 +151,9 @@ typedef struct {
     const BYTE *contract;
 } re_offered;
 int re_game_firm_offers(void *firms, int firm, re_offered *out, int cap, const BYTE **shown);
+/* The kind of a contract (an id of data/contracts) and the hours a month it lists by job. Returns how many jobs were
+ * written, -1 when it cannot be read or lists more than `cap`. Reads only. */
+int re_game_contract_jobs(const BYTE *contract, int *type, re_coming *out, int cap);
 /* How many more contracts the business can hold, by the game's own function: what its type allows less what is
  * signed. -1 when there is no such business. */
 int re_game_firm_places(void *firms, int firm);

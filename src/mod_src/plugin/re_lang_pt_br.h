@@ -46,12 +46,11 @@ static const char *const LANG_PT_BR[RE_MSG_COUNT] = {
     [RE_MSG_STAFF_TIP] = "%s por hora efetiva (pagamento por hora / eficiência no trabalho %.0f%%)",
     [RE_MSG_OFFER_TIP] = "%+.1f%% acima do custo padrão\n%s sobram por hora",
     [RE_MSG_FUT_EXPECTED] = " (esp. %.2f%%)",
-    [RE_MSG_FUT_TIP] = "Esperada: a média da taxa até o vencimento escolhido se ela seguir a regra do jogo. Acima da taxa de "
-                       "hoje, a compra sai na frente; abaixo, a venda.",
+    [RE_MSG_FUT_TIP] = "Esperada: a inflação média até o mês de vencimento. Acima da taxa de hoje: comprar; abaixo: vender.",
     [RE_MSG_FUT_ITEM] = " (%+.1f%%/ano)",
     [RE_MSG_FUT_ITEM_AHEAD] = " (%+.1f%% → %+.1f%%)",
-    [RE_MSG_FUT_ROW_TIP] = "Inflação %+.2f%% ao ano\nEsperada, 6 meses: %+.2f%%\nEsperada, 12 meses: %+.2f%%\nEsperada, 24 "
-                           "meses: %+.2f%%\nEsperada maior: compra. Menor: venda.",
+    [RE_MSG_FUT_ROW_TIP] = "Inflação %+.2f%% ao ano\nEsperada 6/12/24 meses: %.2f/%.2f/%.2f%%",
+    [RE_MSG_FUT_FEE] = "taxa %s%% da margem",
     [RE_MSG_FUT_SORT] = "Ordenar por taxa esperada\n(12 meses) menos a atual",
     [RE_MSG_CHART_HALF_YEAR] = "6 meses",
     [RE_MSG_CHART_INDEX] = " (primeiro mês mostrado = 100)",
@@ -95,26 +94,16 @@ static const char *const LANG_PT_BR[RE_MSG_COUNT] = {
     [RE_MSG_FIT_FURNISH] = "%s (mobiliário %.0f%%)",
     [RE_MSG_FIT_ASSETS] = "%s (ativos %.0f%%)",
     [RE_MSG_FIT_NONE] = "%s (um trabalho está parado: falta por completo um dos seus ativos)",
-    [RE_MSG_XP_TIP] = "\nMod: uma formação que um membro da sua família concluiu (graduação, diploma, certificado) não cai abaixo "
-                      "do que foi obtido nela, até a quantidade mais alta que algum trabalho, formação ou atividade pede. A "
-                      "experiência de trabalho diminui todo mês como antes.",
+    [RE_MSG_MOD] = "\nMod:",
+    [RE_MSG_XP_TIP] = "\nMod: uma formação concluída é mantida até o exigido. A experiência de trabalho diminui como antes.",
     /* The four paragraphs under the game's hover text of the automatic management: kept short, as in German and
      * French, where the first wording made the box taller than a screen of 900 lines. */
-    [RE_MSG_AUTO_TIP_ALL] = "\nMod: este interruptor vale para todos os funcionários da empresa.",
-    [RE_MSG_AUTO_TIP_SPARE] = "\nMod: um funcionário cujo trabalho os outros poderiam ter feito por %d meses é demitido sem "
-                              "indenização. Quem está sozinho e parado metade do tempo é trocado por um candidato de menos "
-                              "horas.",
-    [RE_MSG_AUTO_TIP_FILL] = "\nMod: se um trabalho tem neste mês mais serviço do que horas do seu pessoal, é contratado o "
-                             "candidato que faz o que falta por menos dinheiro.",
-    [RE_MSG_AUTO_TIP] = "\nMod: um pedido de aumento é respondido no fim do mês, pouco antes de o funcionário sair. Se um "
-                        "candidato faz o mesmo trabalho por menos, ele é contratado; se não, o aumento é dado.",
-    [RE_MSG_ADVERTS_TIP] = "\nMod: Shift-clique para entregar os anúncios desta empresa ao mod. Ele liga todos os anúncios pagos "
-                           "enquanto a conscientização estiver abaixo de %.0f%% e desliga quando ela chegar lá. Taxa no fim do "
-                           "mês: %s por um anúncio ligado o mês inteiro.",
-    [RE_MSG_ADVERTS_TIP_ON] = "\nMod: o mod cuida dos anúncios desta empresa. Ele liga todos os anúncios pagos enquanto a "
-                              "conscientização estiver abaixo de %.0f%% e desliga quando ela chegar lá. Taxa no fim do mês: %s "
-                              "por um anúncio ligado o mês inteiro. Enquanto os ícones estiverem laranja, um clique simples não "
-                              "muda nada. Shift-clique para pegar de volta.",
+    [RE_MSG_AUTO_TIP_ALL] = " Vale para toda a equipe.",
+    [RE_MSG_AUTO_TIP_STAFF] = " Ajusta o pessoal ao trabalho.",
+    [RE_MSG_AUTO_TIP] = " Responde a pedidos de aumento.",
+    [RE_MSG_ADVERTS_TIP] = "\nMod: Shift-clique: entregar os anúncios (%s por mês cada).",
+    [RE_MSG_ADVERTS_TIP_ON] = "\nMod: anúncios ligados até %.0f%% de conscientização (%s por mês cada). Shift-clique: pegar de volta.",
+    [RE_MSG_ADVERTS_TIP_WHOLE] = "\nMod: o mod cuida da empresa inteira. Ctrl+Shift-clique: pegar de volta.",
     [RE_MSG_ADVERTS_KEPT] = "%s: o mod cuida dos anúncios agora",
     [RE_MSG_ADVERTS_BACK] = "%s: os anúncios são seus de novo",
     [RE_MSG_ADVERTS_LOCKED] = "%s: o mod controla este anúncio (Shift-clique para pegar os anúncios de volta)",
@@ -122,9 +111,7 @@ static const char *const LANG_PT_BR[RE_MSG_COUNT] = {
     [RE_MSG_CONTRACTS_BACK] = "%s: assinar contratos é com você de novo",
     [RE_MSG_ALL_KEPT] = "%s: o mod cuida de tudo agora",
     [RE_MSG_ALL_BACK] = "%s: tudo é seu de novo",
-    [RE_MSG_ADVERTS_TIP_ALL] = "\nMod: Ctrl+Shift-clique entrega a empresa inteira ao mod (funcionários, ativos, anúncios, "
-                               "contratos, espaço físico) e trava os controles; de novo, pega de volta. Só os contratos: "
-                               "Shift-clique no ícone Contratos.",
+    [RE_MSG_ADVERTS_TIP_ALL] = " Ctrl+Shift-clique: tudo.",
     [RE_MSG_CONTRACT_PREFIX] = "Contratos assinados pelo mod: ",
     [RE_MSG_CONTRACT_ITEM] = "%s%s %d horas por mês durante %d meses, %s",
     [RE_MSG_CONTRACT_FEE] = " (taxa %s)",
@@ -134,7 +121,7 @@ static const char *const LANG_PT_BR[RE_MSG_COUNT] = {
     [RE_MSG_PREMISES_GROW] = "%sele dobra no fim deste mês e o aluguel sobe %s por mês. A empresa está sem espaço, então o mod "
                              "ligou a estrela",
     [RE_MSG_PREMISES_MOST] = "%sestá faltando, e este imóvel não pode ser ampliado. A empresa precisa se mudar",
-    [RE_MSG_PREMISES_OWNED] = "%sestá faltando. O imóvel é próprio, então o mod não o ampliou: isso custa %s de uma vez. Ligue a "
+    [RE_MSG_PREMISES_OWNED] = "%sestá faltando. O imóvel é próprio, então o mod não o ampliou: isso custa %s de uma vez, e esse dinheiro vira valor do imóvel. Ligue a "
                               "estrela você mesmo se quiser",
     [RE_MSG_FIRM_CLOSED] = "%s: fechada. A automação do mod descansa até você abrir de novo",
     [RE_MSG_FIRM_OPENED] = "%s: aberta de novo. A automação do mod continua",
@@ -160,11 +147,8 @@ static const char *const LANG_PT_BR[RE_MSG_COUNT] = {
     [RE_MSG_ASSET_TICK_BUY] = "Ativos que faltavam, comprados: %d por %s",
     [RE_MSG_ASSET_TICK_DEBT] = " (dívida %s, em 3 meses)",
     [RE_MSG_ASSET_REPLACED] = "%s: um novo comprado, %s",
-    [RE_MSG_ASSET_TIP_DEBT] = "\nMod: com isto ligado, o mod compra também os ativos que faltam a um trabalho. O que o dinheiro não "
-                              "cobre vira dívida, que vence no terceiro fim de mês.",
-    [RE_MSG_ASSET_TIP_CASH] = "\nMod: com isto ligado, o mod compra também os ativos que faltam a um trabalho, se o dinheiro der "
-                              "para eles e para o fim do mês.",
-    [RE_MSG_ASSET_TIP_PAID] = "\nMod: o ativo gasto comprado de novo é pago. O jogo pagava o preço a você em vez de cobrar.",
+    [RE_MSG_ASSET_TIP_DEBT] = "\nMod: compra também os ativos que faltam. O que o dinheiro não cobre vira dívida por três meses.",
+    [RE_MSG_ASSET_TIP_CASH] = "\nMod: compra também os ativos que faltam a um trabalho, se o dinheiro cobrir o preço e o fim do mês.",
     [RE_MSG_SORT_CHEAP] = "Ordenar por\nsubvalorizadas\n(pesquisadas)",
     [RE_MSG_SORT_DEAR] = "Ordenar por\nsupervalorizadas\n(pesquisadas)",
     [RE_MSG_SORT_CHANGE] = "Por variação\nno último mês",

@@ -46,12 +46,11 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_STAFF_TIP] = "%s par heure effective (rémunération à l'heure / efficacité du travail %.0f%%)",
     [RE_MSG_OFFER_TIP] = "%+.1f%% au-dessus du coût standard\n%s restent par heure",
     [RE_MSG_FUT_EXPECTED] = " (prév. %.2f%%)",
-    [RE_MSG_FUT_TIP] = "Prévu : la moyenne du taux jusqu'à l'expiration choisie s'il évolue selon la règle du jeu. Au-dessus du "
-                       "taux d'aujourd'hui, un achat est gagnant ; en dessous, une vente.",
+    [RE_MSG_FUT_TIP] = "Prévu : l'inflation moyenne jusqu'à l'expiration. Plus haut que le taux actuel : achat ; plus bas : vente.",
     [RE_MSG_FUT_ITEM] = " (%+.1f%%/an)",
     [RE_MSG_FUT_ITEM_AHEAD] = " (%+.1f%% → %+.1f%%)",
-    [RE_MSG_FUT_ROW_TIP] = "Inflation %+.2f%% par an\nPrévue, 6 mois : %+.2f%%\nPrévue, 12 mois : %+.2f%%\nPrévue, 24 mois : "
-                           "%+.2f%%\nPlus haute : achat. Plus basse : vente",
+    [RE_MSG_FUT_ROW_TIP] = "Inflation %+.2f%% par an\nPrévue 6/12/24 mois : %.2f/%.2f/%.2f%%",
+    [RE_MSG_FUT_FEE] = "frais %s %% de la marge",
     [RE_MSG_FUT_SORT] = "Trier par taux prévu\n(12 mois) moins l'actuel",
     [RE_MSG_CHART_HALF_YEAR] = "6 mois",
     [RE_MSG_CHART_INDEX] = " (premier mois affiché = 100)",
@@ -97,26 +96,16 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_FIT_FURNISH] = "%s (ameublement %.0f%%)",
     [RE_MSG_FIT_ASSETS] = "%s (actifs %.0f%%)",
     [RE_MSG_FIT_NONE] = "%s (un emploi est à l'arrêt : un de ses actifs manque complètement)",
-    [RE_MSG_XP_TIP] = "\nMod : une formation qu'un membre de votre ménage a terminée (diplôme, certificat) ne descend pas sous "
-                      "ce qui en a été acquis, jusqu'au montant le plus élevé qu'un emploi, une formation ou une activité "
-                      "demande. L'expérience de travail diminue chaque mois comme avant.",
+    [RE_MSG_MOD] = "\nMod :",
+    [RE_MSG_XP_TIP] = "\nMod : une formation terminée reste au niveau demandé. L'expérience de travail baisse comme avant.",
     /* The four paragraphs under the game's hover text of the automatic management: kept short. With the first
      * wording the box was taller than a screen of 900 lines and lost the game's first lines at the top (run 525). */
-    [RE_MSG_AUTO_TIP_ALL] = "\nMod : cet interrupteur vaut pour tous les salariés de l'entreprise.",
-    [RE_MSG_AUTO_TIP_SPARE] = "\nMod : un salarié dont les autres auraient pu faire le travail pendant %d mois est renvoyé sans "
-                              "indemnité. Celui qui est seul et inoccupé la moitié du temps est remplacé par un candidat avec "
-                              "moins d'heures.",
-    [RE_MSG_AUTO_TIP_FILL] = "\nMod : si un emploi a ce mois-ci plus de travail que ses salariés n'ont d'heures, le candidat qui "
-                             "fait le travail manquant pour le moins cher est embauché.",
-    [RE_MSG_AUTO_TIP] = "\nMod : une demande d'augmentation reçoit sa réponse en fin de mois, juste avant le départ. Si un "
-                        "candidat fait le même travail pour moins cher, il est embauché ; sinon l'augmentation est accordée.",
-    [RE_MSG_ADVERTS_TIP] = "\nMod : Maj+clic pour confier les publicités de cette entreprise au mod. Il active toutes les "
-                           "publicités payantes tant que la sensibilisation est sous %.0f%% et les désactive une fois atteinte. "
-                           "Frais en fin de mois : %s pour une publicité active tout le mois.",
-    [RE_MSG_ADVERTS_TIP_ON] = "\nMod : le mod s'occupe des publicités de cette entreprise. Il active toutes les publicités "
-                              "payantes tant que la sensibilisation est sous %.0f%% et les désactive une fois atteinte. Frais en "
-                              "fin de mois : %s pour une publicité active tout le mois. Tant que les icônes sont orange, un clic "
-                              "simple ne change rien. Maj+clic pour les reprendre.",
+    [RE_MSG_AUTO_TIP_ALL] = " Vaut pour tout le personnel.",
+    [RE_MSG_AUTO_TIP_STAFF] = " Adapte l'effectif au travail.",
+    [RE_MSG_AUTO_TIP] = " Répond aux demandes de salaire.",
+    [RE_MSG_ADVERTS_TIP] = "\nMod : Maj+clic : confier les publicités (%s par mois chacune).",
+    [RE_MSG_ADVERTS_TIP_ON] = "\nMod : publicités jusqu'à %.0f%% de sensibilisation, %s/mois chacune. Maj+clic : reprendre.",
+    [RE_MSG_ADVERTS_TIP_WHOLE] = "\nMod : le mod gère toute l'entreprise. Ctrl+Maj+clic : la reprendre.",
     [RE_MSG_ADVERTS_KEPT] = "%s : le mod s'occupe maintenant des publicités",
     [RE_MSG_ADVERTS_BACK] = "%s : les publicités sont de nouveau à vous",
     [RE_MSG_ADVERTS_LOCKED] = "%s : le mod gère cette publicité (Maj+clic pour reprendre les publicités)",
@@ -124,9 +113,7 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_CONTRACTS_BACK] = "%s : vous signez de nouveau les contrats",
     [RE_MSG_ALL_KEPT] = "%s : le mod gère tout maintenant",
     [RE_MSG_ALL_BACK] = "%s : tout est de nouveau à vous",
-    [RE_MSG_ADVERTS_TIP_ALL] = "\nMod : Ctrl+Maj+clic confie toute l'entreprise au mod (salariés, actifs, publicités, contrats, "
-                               "surface) et verrouille ses commandes ; une deuxième fois la reprend. Les contrats seuls : "
-                               "Maj+clic sur l'icône Contrats.",
+    [RE_MSG_ADVERTS_TIP_ALL] = " Ctrl+Maj+clic : tout.",
     [RE_MSG_CONTRACT_PREFIX] = "Contrats signés par le mod : ",
     [RE_MSG_CONTRACT_ITEM] = "%s%s %d heures par mois pendant %d mois, %s",
     [RE_MSG_CONTRACT_FEE] = " (frais %s)",
@@ -137,7 +124,7 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
                              "surface, le mod a donc activé l'étoile",
     [RE_MSG_PREMISES_MOST] = "%selle manque, et ces locaux ne peuvent pas être agrandis. L'entreprise doit déménager",
     [RE_MSG_PREMISES_OWNED] = "%selle manque. Les locaux vous appartiennent, le mod ne les a donc pas agrandis : cela coûte %s "
-                              "d'un coup. Activez l'étoile vous-même si vous le voulez",
+                              "d'un coup, et cet argent devient de la valeur du bien. Activez l'étoile vous-même si vous le voulez",
     [RE_MSG_FIRM_CLOSED] = "%s : fermée. L'automatisation du mod se repose jusqu'à la réouverture",
     [RE_MSG_FIRM_OPENED] = "%s : rouverte. L'automatisation du mod reprend",
     [RE_MSG_LOCKED] = "%s : verrouillé (le mod la gère). Reprendre : Ctrl+Maj+clic sur une publicité",
@@ -162,11 +149,8 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_ASSET_TICK_BUY] = "Actifs manquants achetés : %d pour %s",
     [RE_MSG_ASSET_TICK_DEBT] = " (dette %s, due sous 3 mois)",
     [RE_MSG_ASSET_REPLACED] = "%s : un neuf acheté, %s",
-    [RE_MSG_ASSET_TIP_DEBT] = "\nMod : activé, le mod achète aussi les actifs qui manquent à un emploi. Ce que les liquidités ne "
-                              "couvrent pas devient une dette, due à la troisième fin de mois.",
-    [RE_MSG_ASSET_TIP_CASH] = "\nMod : activé, le mod achète aussi les actifs qui manquent à un emploi, si les liquidités suffisent "
-                              "pour eux et pour la fin du mois.",
-    [RE_MSG_ASSET_TIP_PAID] = "\nMod : un actif usé racheté est payé. Le jeu vous versait son prix au lieu de le prélever.",
+    [RE_MSG_ASSET_TIP_DEBT] = "\nMod : achète aussi les actifs manquants. Le manque de liquidités devient une dette sur trois mois.",
+    [RE_MSG_ASSET_TIP_CASH] = "\nMod : achète aussi les actifs manquants si les liquidités couvrent aussi la fin du mois.",
     [RE_MSG_SORT_CHEAP] = "Trier par\nsous-évaluées\n(recherchées)",
     [RE_MSG_SORT_DEAR] = "Trier par\nsurévaluées\n(recherchées)",
     [RE_MSG_SORT_CHANGE] = "Par variation\nsur un mois",

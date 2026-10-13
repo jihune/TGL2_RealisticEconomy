@@ -107,6 +107,55 @@ static BOOL WINAPI not_passed_on(HWND hwnd)
     return TRUE;
 }
 
+/* The game's clock goes by frames: at its fastest speed an hour a frame. A frame ends in SwapBuffers, which waits for
+ * the display's refresh, and with the display switched off (Windows does that after 90 minutes without a key or the
+ * mouse here) the wait is about a second: a month end took more than ten minutes, and every test with one failed
+ * (run1230 to run1237, note m41). So the wait is switched off the first time a frame is shown, and the frames are
+ * held to 60 a second here, the pace of the display the tests were written on (without that the game makes about
+ * 110, run1239, and its clock would run that much faster). TGL2_TEST_VSYNC=keep leaves both as they are (the
+ * control). The frames of the first ten seconds are counted either way. */
+static int g_vsync_keep;
+static BOOL(WINAPI *g_swap)(HDC);
+
+static BOOL WINAPI swap_buffers(HDC dc)
+{
+    typedef BOOL(WINAPI * interval_fn)(int);
+    typedef PROC(WINAPI * address_fn)(LPCSTR);
+    static DWORD first;
+    static int frames, said;
+    static LARGE_INTEGER rate, next;
+    LARGE_INTEGER now;
+    if (frames++ == 0) {
+        HMODULE gl = GetModuleHandleW(L"opengl32.dll");
+        address_fn address = gl != NULL ? (address_fn)(void *)GetProcAddress(gl, "wglGetProcAddress") : NULL;
+        interval_fn interval = address != NULL ? (interval_fn)(void *)address("wglSwapIntervalEXT") : NULL;
+        first = GetTickCount();
+        note("the first frame: the wait for the display's refresh %s", g_vsync_keep        ? "is left as it is (TGL2_TEST_VSYNC=keep)"
+                                                                      : interval == NULL  ? "could NOT be switched off (no wglSwapIntervalEXT)"
+                                                                      : interval(0)       ? "is switched off"
+                                                                                          : "could NOT be switched off (refused)");
+    } else if (!said && GetTickCount() - first >= 10000) {
+        said = 1;
+        note("frames in the first %.1f seconds: %d", (GetTickCount() - first) / 1000.0, frames);
+    }
+    BOOL done = g_swap(dc);
+    if (g_vsync_keep)
+        return done;
+    if (rate.QuadPart == 0) {
+        QueryPerformanceFrequency(&rate);
+        QueryPerformanceCounter(&next);
+    }
+    next.QuadPart += rate.QuadPart / 60;
+    QueryPerformanceCounter(&now);
+    if (now.QuadPart > next.QuadPart)
+        next = now; /* a frame that took longer: the time is not made up */
+    while (now.QuadPart < next.QuadPart) {
+        Sleep((next.QuadPart - now.QuadPart) * 1000 / rate.QuadPart > 2 ? 1 : 0);
+        QueryPerformanceCounter(&now);
+    }
+    return done;
+}
+
 /* The entries of a module's import table that hold `from` get `to`. Returns how many. */
 static int replace_import(HMODULE module, HMODULE user, const char *name, void *to)
 {
@@ -148,8 +197,14 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     int created = replace_import(library, user, "CreateWindowExW", create_window), shown = replace_import(library, user, "ShowWindow", show_window);
     int top = replace_import(library, user, "BringWindowToTop", not_passed_on);
     int foreground = replace_import(library, user, "SetForegroundWindow", not_passed_on);
+    char keep[8] = "";
+    HMODULE gdi = GetModuleHandleW(L"gdi32.dll");
+    g_vsync_keep = GetEnvironmentVariableA("TGL2_TEST_VSYNC", keep, sizeof keep) == 4 && strcmp(keep, "keep") == 0;
+    g_swap = gdi != NULL ? (BOOL(WINAPI *)(HDC))(void *)GetProcAddress(gdi, "SwapBuffers") : NULL;
+    int swapped = g_swap != NULL ? replace_import(library, gdi, "SwapBuffers", swap_buffers) : 0;
     note("TestWindow: TGL2_TEST_WINDOW=%s: imports of libcocos2d.dll replaced: CreateWindowExW %d, ShowWindow %d, BringWindowToTop %d, "
-         "SetForegroundWindow %d%s",
-         want, created, shown, top, foreground, created == 1 && shown == 1 && top == 1 && foreground == 1 ? "" : " (NOT one of each)");
+         "SetForegroundWindow %d%s, SwapBuffers %d",
+         want, created, shown, top, foreground, created == 1 && shown == 1 && top == 1 && foreground == 1 ? "" : " (NOT one of each)",
+         swapped);
     return TRUE;
 }

@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Un mod para This Grand Life 2. Solo para la versión v1.03.22 del juego, versión 1.1.2 del mod. No es del desarrollador del juego.
+Un mod para This Grand Life 2. Solo para la versión v1.03.22 del juego, versión 1.2.0 del mod. No es del desarrollador del juego.
 
 Otros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -49,17 +49,34 @@ La pestaña de contratación muestra primero a quien hace el mismo trabajo por m
 - El juego se cerraba después de cargar partidas unas decenas de veces
 - Traducciones equivocadas en varios idiomas
 - Recuadros en lugar de letras en los nombres de las personas
+- Una hipoteca mayor que la cantidad aprobada por el banco
+- Una transferencia automática mensual que compraba acciones sin efectivo
+- Un empate en una elección del Consejo que cerraba el juego
+- Un contrato de construcción que nunca pedía su ingeniero civil
+
+## Cuestión de gustos, y cómo desactivarla
+
+Estas son todas las funciones que cambian una regla o un número del juego. Pon el valor a 0 en `RealisticEconomy.ini`, en la carpeta del juego, y esa parte vuelve a ser como en el juego.
+
+| Función | Qué cambia respecto al juego | Desactivar |
+|---|---|---|
+| Equilibrio | Comisión de acciones 2% (juego: 1%), comisión de futuros 10% del margen (1%), más interés en la cuenta de ahorros e interés sobre el efectivo, un alquiler que también puede bajar al renovarse, un negocio nuevo empieza con 25% de conciencia (0%) | `[features] balance=0` |
+| Bloqueo de operaciones tras cargar | Después de cargar una partida anterior no se puede operar con acciones ni futuros hasta que ese mes haya pasado otra vez. Las cotizaciones y las propiedades en venta del mes son las mismas después de cargar | `[features] guard=0` |
+| Interés según la calificación crediticia | El interés de un préstamo sigue la calificación crediticia de la familia | `[features] credit=0` |
+| Salida a bolsa | Te quedas con el 45% y recibes efectivo por el resto (juego: 25%, sin efectivo) | `[features] ipo=0` |
+| Puestos en el Consejo | Un puesto garantizado por cada 20% de las acciones | `[features] board=0` |
+| Casino | Apuesta y probabilidades fijas, cada juego una vez al mes | `[features] casino=0` |
+| Educación terminada | Su valor no baja | `[features] experience=0` |
+| Automatización de los negocios | El mod gestiona empleados, activos, anuncios y contratos solo en un negocio que le cedes. El mismo clic lo recupera | `[features] business=0` |
+
+Cada número del equilibrio tiene su propia línea bajo `[balance]`.
 
 ## Otras funciones
 
 Cada una se puede desactivar en el archivo de configuración.
 
-- Bloqueo de operaciones con acciones y futuros después de cargar una partida anterior
-- El crecimiento económico, las cotizaciones, el precio de salida y las propiedades en venta de un mes son los mismos después de cargar
-- Casino: apuesta y probabilidades fijas, cada juego una vez al mes
 - Los candidatos de un mes son los mismos después de cargar
 - Un aviso cuando una propiedad está en venta muy por debajo de su valor
-- Una educación terminada conserva su valor
 
 ## Instalación
 

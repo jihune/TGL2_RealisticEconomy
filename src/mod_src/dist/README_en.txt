@@ -7,6 +7,69 @@ For game version v1.03.22 only (shown at the bottom right of the main menu). On 
 nothing and writes one line to RealisticEconomy.log. Unofficial; not connected with the game's developer.
 
 
+What is a matter of taste, and how to switch it off
+---------------------------------------------------
+
+The mod does three kinds of things: it repairs faults of the game, it shows numbers the game hides, and it changes
+rules or numbers of the game. The first two make the game neither easier nor harder. The third is a matter of
+taste. Everything of that kind is listed here, and each can be switched off; what is off is the game as it was.
+
+How: open RealisticEconomy.ini in the game folder with Notepad, change the value of the line, save, and start the
+game again. "[features] balance=0" means: under the line [features], change balance=1 to balance=0.
+
+   What changes the game's numbers
+     - Balance (14 below). Share fee 2% (the game: 1%), futures fee 10% of the margin (1%), savings rate 0.8 (0.5)
+       of the central-bank rate, interest on cash, a rent that can come down at a renewal, a new business starts
+       with 25% awareness (0%), Hydroponics Farm's income, the price of the degree Communications. The fees make
+       the game harder; the interest on cash and the awareness make it easier.
+          All of it off: [features] balance=0
+          One by one: put the game's number in [balance] (each line names it).
+     - Loan rates by credit grade (1). A good grade borrows cheaper than in the game, a poor one dearer.
+          Off: [features] credit=0
+     - A listing pays cash (4). You keep 45% of the shares and get the money for the rest (the game: 25%, no cash).
+          Off: [features] ipo=0
+     - Board seats (5). Every 20% of a listed company guarantees a seat on its board.
+          Off: [features] board=0
+     - Casino (8). Set stakes and chances, each game once a month (the game: stakes that grow with your net worth,
+       no limit).
+          Off: [features] casino=0
+     - A completed education does not decay (12). The game takes 1% a month off a degree's number too.
+          Off: [features] experience=0
+     - Two loopholes of the game that are closed (1): a mortgage larger than the amount approved, and an
+       auto-transfer rule that buys shares without cash.
+          Back to the game: [credit] mortgageUpToApproval=0, [credit] transferNeedsCash=0
+
+   What keeps a load from changing a result
+     - The trade lock after a load (3). After you load a save from before a month end you have already passed,
+       trades in shares and futures are refused until that month end has passed again. A nuisance for somebody
+       who goes back to earlier saves often.
+          Off: [features] guard=0 (the fixed month end below goes with it)
+          Once: [guard] release=1
+     - The fixed month end (3). The month's growth, share prices, a listing price and the next month's properties
+       for sale are the same after a load.
+          Off: [guard] monthEndFixed=0
+     - Casino results kept (8): [casino] keepResultsOnLoad=0
+     - The month's job candidates kept (9): [business] candidatesFixed=0
+
+   Business automation (9 below)
+     - Until you hand something over, the mod buys, hires and signs nothing in a business. Handing over is done
+       business by business, inside the game:
+          - the game's two switches ("automatic staff management", "buy worn-out assets again"): where they are
+            on, the mod's rules are added (hiring and letting go, buying assets that are missing);
+          - Shift-click on an advert icon: the adverts; Shift-click on the contract icon: signing contracts;
+          - Ctrl+Shift-click on an advert icon: the whole business.
+       The same click takes it back. What is handed over costs a fee (the list near the end, "What the mod does
+       in your place, its switches and what it costs").
+     - A business handed over whole is locked against your own changes (hiring, letting go, assets, contracts)
+       until you take it back.
+          Not locked: [business] lockHandedOver=0
+     - A save from before the mod: at its first load the game's two switches are switched off in every business,
+       and the monthly summary says so. Switch on again what you want the mod to do.
+          Left as they are: [business] switchesOffOnFirstLoad=0
+     - No automation at all: [features] business=0 (all of 9 goes, the cost of an effective hour in the hire tab
+       too). The switches that turn off one kind of automation alone are in that list.
+
+
 How you work the mod inside the game (at a glance)
 --------------------------------------------------
 
@@ -81,6 +144,20 @@ What it does
        Fixing is dear while rates are low and cheap while they are high.
      - A new education loan is fixed at the central-bank rate of the month you enrol.
      - Fixed-rate loans you already have are not touched.
+   Two holes of the game are closed (since 1.2.0).
+     - A mortgage up to its approval ([credit] mortgageUpToApproval): the mortgage window approves a loan of four
+       times the deposit. The purchase then made the whole price less the deposit the loan and took no cash for
+       the price: with a small deposit and cash at hand a property was bought on nearly 100% credit (in the test
+       save a deposit of $303,511 and an approval of $1,214,044 bought a warehouse of $6,350,911 with a loan of
+       $6,047,400, and the cash stayed). With the mod the loan is the approved amount and the rest is paid in cash
+       at the purchase. mortgageUpToApproval=0 leaves the game as it is.
+     - A share rule of the Monthly Auto Transfer needs the cash ([credit] transferNeedsCash): a rule that buys
+       shares (the bank's "Manage Auto Transfers") bought them whatever the cash was, and what the cash did not
+       cover became a debt without interest, due after three months (in the test save $2,324,604 of cash bought
+       shares for $19,025,875, and $16,701,271 became debt). With the mod a rule buys in a month only when the
+       cash covers the price and the fee; when it does not, the monthly summary says "Auto transfer: 1 stock
+       purchase(s) skipped (not enough cash)". A rule for the savings account was skipped by the game already
+       when the cash is short. transferNeedsCash=0 leaves the game as it is.
 
 2. Month-end cash forecast
    The monthly summary panel (the window that opens when the month changes) gets one line at the top:
@@ -170,6 +247,12 @@ What it does
      - A member's experience score is not changed. An inexperienced director makes the company's equity
        write-downs a little more likely, as the game's rules have it.
      - The game holds no board elections before the influence menu is unlocked.
+     - Two nominees with the same score (a bug of the game, closed since 1.2.0): the game seats everybody whose
+       score is one of the five best. Two scores that are equal to the last digit share one place, which makes six
+       directors, and the game ends the moment that company's board tab is opened (it did in the test). Two members
+       of your household without experience, nominated together, have equal scores. The mod lowers the score of
+       the later one of the list by the least a number can be lowered. A save that has a board of six already is
+       not repaired.
 
 6. Ratios in the stock window
    The stock window says what a company's numbers mean. The game's price rules are not changed.
@@ -480,7 +563,9 @@ What it does
            playthrough, the month, the business and the job alone: the same people whenever you look and
            whatever save you load ([business] candidatesFixed). They change when the month changes, as in the
            game.
-     - Apart from that the candidates' skills and wages and the contracts themselves are not changed.
+     - Apart from that the candidates' skills and wages and the contracts themselves are not changed. The one
+       thing changed in a contract is a line of the data that is wrong (see "The civil engineer of a construction
+       contract" below).
      - Work efficiency alert: when the month changes (and right after a load) and a business loses work
        efficiency because assets are short, the summary panel gets a line: "Work efficiency down: S-Air (assets
        80%)". It has the same cause as a red number under 100% next to the furnishings icon of the business
@@ -524,7 +609,10 @@ What it does
            it: "S-Con (a job stands still: one of its assets is missing altogether)".
          · A person hired like this who is one too many in the next month (as under "A staff that fits the work"
            below) is let go at that month end, without the wait of three months and without severance.
-         · A job you have outsourced and a job without an automatically managed employee are left alone.
+         · A job you have outsourced and a job without an automatically managed employee are left alone. One
+           exception (since 1.2.0): in a business handed over whole, a job that a signed contract brings work for
+           and that has no employee at all gets its first person from the mod. The hire window of such a business
+           is locked, so nobody else could hire there.
          · Seen with a save of 2035: one person each for five jobs at first, and no work left undone in any of
            the five businesses in the six months after (before, one business left a tenth of its work every
            month).
@@ -578,6 +666,16 @@ What it does
        assetReplacementCharged): with a business's "buy worn-out assets again" on, the game puts a new unit in the
        place of an asset that has worn out. The game then does not take the price but pays it to you. The mod has
        the price charged, as when you buy by hand. assetReplacementCharged=0 leaves the game as it is.
+     - The civil engineer of a construction contract (a fault of the game's data put right; [business]
+       constructionContractFixed; since 1.2.0): the contract "Supply Construction Site" of a Building Construction
+       business should come with 60 hours of a Civil Engineer next to its 180 hours of a Builder (the same contract
+       gives an electrician's or a plumber's business 240 hours). In the game's data file that line hangs on a
+       wrong number, so the civil engineer's work never came and was never paid. The mod has the game read the
+       line as it should be; the file on the disk stays as it is. Offers made after that list the civil engineer's
+       hours and pay for them (in the test save an offer of 177 hours a month became one of 236, and its payout
+       over 36 months went from $5,502,134 to $5,719,165). A contract signed before stays as it was signed. A
+       business without a civil engineer has to hire one before it takes such an offer (the mod does that for a
+       business handed over whole). constructionContractFixed=0 leaves the game as it is.
      - Missing assets bought (only a business with the game's "buy worn-out assets again" on; [business]
        missingAssetsBought): a business wants so much of every kind of asset, by its jobs, its staff and the work
        it expects (coffee makers, parking spaces, an excavator). With less, its work efficiency drops. The game
@@ -696,6 +794,11 @@ What it does
                 in the hover text of the offer's payout icon is above 0).
              5) The floor space holds it: what is in use now, larger by as much as the work grows, fits the
                 premises - with the contracts signed before it in the same month.
+             6) Every job the offer lists has somebody to work it (since 1.2.0): an employee of that job under
+                the automatic management, or the job is outsourced, or the business is handed over whole. Where
+                only the signing is handed over the mod does not hire the first person of a job, so an offer
+                that lists a job nobody works is not signed. To get such offers signed, hire one person for the
+                job yourself.
            The offers that pass are signed from the one that pays most over its cost down, the longer one first
            where two pay alike. The signing is the game's own function, the one its "Accept Contract" ends in,
            so the result is that of a contract you took.
@@ -907,6 +1010,45 @@ What it does
            save afterwards, the new name is saved.
      - No font file and no list of names of the game is changed or added. Off: [features] fonts=0.
 
+14. Balance: a few of the game's numbers
+   Some numbers of the game's economy that lean to one side are changed. No text is added to the screen. Every
+   number is in [balance] of RealisticEconomy.ini, and a number that is the game's own leaves that item as it is
+   in the game. All of it off: [features] balance=0. The game's data files are not changed (the game reads them
+   with the numbers changed; a line that another mod has changed already is left alone).
+     - Share trading fee 2% (the game: 1%). stockFee
+         The stocks window shows what a share is worth, and the price moves a fifth of the way there every month.
+         Buying what is below its worth and selling it when it is not earned 24 to 35% a year after a fee of 1%,
+         in the price histories of real games. Buying and holding earns 8%, a certificate of deposit 7%. At 2% it
+         earns 15 to 18% (at 3% less than holding). For somebody who buys and holds little changes (8.3% to 8.0%).
+     - Futures fee: 10% of the margin (the game: 1%). futuresFee
+         The margin is a twentieth of the contract, so of the contract it is 0.5% in place of 0.05%. The label
+         under the buttons of the futures tab says so now ("fee 10% of margin"); the game's "10% trading fee"
+         could be read as a tenth of the contract.
+     - The savings account's rate: 0.8 times the central-bank rate (the game: 0.5). savingsRate
+     - Interest on cash: at a month end the cash earns a twelfth of 0.5 times the central-bank rate (the game:
+       nothing). cashInterest
+         In the game money earns only in a savings account, and putting it in and taking it out each cost a visit
+         to the bank, so small sums and money needed soon earned nothing. Now the three make a ladder: cash 0.5
+         (no visit), a savings account 0.8 (two visits, the money can be taken out at any time), a certificate of
+         deposit 0.8 plus one point (one visit, held for its term). The interest is in the game's list of income
+         as "Interest" and counts for the tax, as a savings account's does. It is worked out from the cash just
+         before the month end, so it is the same after a load.
+     - A lease that is renewed can get cheaper. rentFollowsMarket
+         At a renewal the game takes the larger of the market's rent and the rent you pay, so a rent only ever
+         goes up. The mod takes the market's rent, for a home and for business premises alike. (The market's rent
+         has a random part of about 4%, the game's own.)
+     - A business you start has an awareness of 25% (the game: 0%). newBusinessAwareness
+         Customers come by 5% + 95% of the awareness. A new business of the game works at a twentieth of its market
+         until adverts have raised its awareness, while wages and rent run in full. 25% is where the game starts
+         a new business's reputation. Only for a business made with "Get Business Permit" at City Hall.
+     - Hydroponics Farm earns what the other business types do. hydroponics
+         In the game's own table of the business types (data/statsFirm.txt) its income is 119% of its cost, and
+         the other 46 types are at 136 to 142%. The income of an hour of its delivery driver is raised to make
+         it 139.7%.
+     - The degree Communications costs half ($90,000 to $45,000, before the city's and the price index's part).
+       communicationsDegree
+         The four jobs that ask for this degree pay $20.15 to $26.35 an hour.
+
 No window or button is added. Text is added to windows the game already has.
 
 The mod's own texts follow the language of the game, all eight: English, Korean, German, Spanish, French,
@@ -1009,6 +1151,8 @@ feature that is off leaves that part of the game alone. Keep only the ones you l
      property=0    no line about property for sale under its value
      experience=0  completed educations decay every month too, as in the game
      fonts=0       a letter the font does not have is a box again, as in the game
+     balance=0     all of 14 above off: the fees, the interest, the renewal of a lease, a new business's
+                   awareness and the two prices are the game's
      wording=0     no corrected texts
 
 Any mix of them works (each feature alone and each one missing were run through two month ends). A few things to

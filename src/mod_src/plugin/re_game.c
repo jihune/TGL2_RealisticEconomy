@@ -2039,6 +2039,30 @@ int re_game_firm_coming(void *firms, int firm, int month, re_coming *out, int ca
 }
 
 typedef struct {
+    int job, hours;
+} signed_job_ctx;
+
+static int visit_signed_job(const BYTE *n, void *vctx)
+{
+    signed_job_ctx *c = (signed_job_ctx *)vctx;
+    offer_jobs listed = {0};
+    if (map_walk(n + RE_SIGNED_NODE_CONTRACT + RE_CONTRACT_HOURS, 0x18, visit_offer_job, &listed) < 0)
+        return 0;
+    for (int i = 0; i < listed.count; i++)
+        c->hours += listed.job[i] == c->job ? listed.hours[i] : 0;
+    return 1;
+}
+
+int re_game_firm_listed(void *firms, int firm, int job)
+{
+    const BYTE *stack = own_firm(firms, firm);
+    signed_job_ctx c = {job, 0};
+    if (stack == NULL || map_walk(stack + RE_FIRM_SIGNED, RE_SIGNED_NODE_CONTRACT + RE_CONTRACT_BYTES, visit_signed_job, &c) < 0)
+        return -1;
+    return c.hours;
+}
+
+typedef struct {
     re_offered *out;
     int cap, count;
 } offered_ctx;
@@ -2061,6 +2085,20 @@ int re_game_firm_offers(void *firms, int firm, re_offered *out, int cap, const B
         return -1;
     *shown = stack;
     return c.count;
+}
+
+int re_game_contract_jobs(const BYTE *contract, int *type, re_coming *out, int cap)
+{
+    offer_jobs listed = {0};
+    if (!re_readable(contract, RE_CONTRACT_BYTES) || map_walk(contract + RE_CONTRACT_HOURS, 0x18, visit_offer_job, &listed) < 0 ||
+        listed.count > cap)
+        return -1;
+    *type = *(const int *)(contract + RE_CONTRACT_TYPE);
+    for (int i = 0; i < listed.count; i++) {
+        out[i].job = listed.job[i];
+        out[i].hours = listed.hours[i];
+    }
+    return listed.count;
 }
 
 int re_game_firm_places(void *firms, int firm)

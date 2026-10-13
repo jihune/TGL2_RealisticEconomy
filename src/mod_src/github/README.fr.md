@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Un mod pour This Grand Life 2. Uniquement pour la version v1.03.22 du jeu, version 1.1.2 du mod. Il n'est pas du développeur du jeu.
+Un mod pour This Grand Life 2. Uniquement pour la version v1.03.22 du jeu, version 1.2.0 du mod. Il n'est pas du développeur du jeu.
 
 Autres langues : [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -49,17 +49,34 @@ L'onglet d'embauche affiche d'abord celui qui fait le même travail pour moins c
 - Le jeu se fermait après quelques dizaines de chargements de sauvegarde
 - Des traductions fausses dans plusieurs langues
 - Des carrés à la place des lettres dans les noms des personnes
+- Un prêt immobilier supérieur au montant approuvé par la banque
+- Un virement automatique mensuel qui achetait des actions sans liquidités
+- Une égalité lors d'une élection du conseil qui fermait le jeu
+- Un contrat de construction qui ne demandait jamais son ingénieur civil
+
+## Affaire de goût, et comment la désactiver
+
+Voici toutes les fonctions qui changent une règle ou un chiffre du jeu. Mettez la valeur à 0 dans `RealisticEconomy.ini`, dans le dossier du jeu, et cette partie redevient celle du jeu.
+
+| Fonction | Ce qui change par rapport au jeu | Désactiver |
+|---|---|---|
+| Équilibrage | Frais sur les actions 2 % (jeu : 1 %), frais des contrats à terme 10 % de la marge (1 %), un taux d'épargne plus élevé et des intérêts sur les liquidités, un loyer qui peut aussi baisser au renouvellement, une nouvelle entreprise commence avec 25 % de sensibilisation (0 %) | `[features] balance=0` |
+| Blocage des transactions après un chargement | Après le chargement d'une sauvegarde antérieure, les transactions sur actions et contrats à terme sont refusées jusqu'à ce que ce mois soit de nouveau passé. Les cours et les biens en vente du mois restent les mêmes après un chargement | `[features] guard=0` |
+| Taux selon la note de crédit | Le taux d'un prêt suit la note de crédit du foyer | `[features] credit=0` |
+| Introduction en bourse | Vous gardez 45 % et recevez de l'argent pour le reste (jeu : 25 %, pas d'argent) | `[features] ipo=0` |
+| Sièges au conseil | Un siège garanti pour chaque tranche de 20 % des actions | `[features] board=0` |
+| Casino | Mise et chances fixes, chaque jeu une fois par mois | `[features] casino=0` |
+| Formation terminée | Sa valeur ne baisse pas | `[features] experience=0` |
+| Automatisation des entreprises | Le mod gère le personnel, les actifs, les publicités et les contrats seulement dans une entreprise que vous lui confiez. Le même clic la reprend | `[features] business=0` |
+
+Chaque chiffre de l'équilibrage a sa propre ligne sous `[balance]`.
 
 ## Autres fonctions
 
 Chacune peut être désactivée dans le fichier de réglages.
 
-- Blocage des transactions sur actions et contrats à terme après le chargement d'une sauvegarde antérieure
-- La croissance économique, les cours des actions, le prix d'introduction et les biens en vente d'un mois restent les mêmes après un chargement
-- Casino : mise et chances fixes, chaque jeu une fois par mois
 - Les candidats d'un mois restent les mêmes après un chargement
 - Un avis quand un bien est en vente nettement sous sa valeur
-- Une formation terminée garde sa valeur
 
 ## Installation
 
