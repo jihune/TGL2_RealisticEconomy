@@ -1,7 +1,9 @@
 /* Simplified Chinese: every text of the plugin (the table of re_lang.c has no Chinese column). Included by
  * re_lang.c only. The words are the game's own where it has one (modsLanguages/zh_CN): 破产, 知名度, 资产, 楼层空间,
  * 家具, 遣散费, 董事会, 业务, 员工, 候选人, 工作效率, 每小时工资, 研究 (of a stock). Full-width letters are twice
- * as wide: a line of a hover text is at most about 17 of them. */
+ * as wide: a line of a hover text is at most about 17 of them. A line of the month's summary is about 21, and the
+ * game breaks it at any letter, a number too: the research lines run past the first line before the fee, so the
+ * fee starts the next one. */
 static const char *const LANG_ZH_CN[RE_MSG_COUNT] = {
     [RE_MSG_PER_LOSS] = "PER：亏损",
     [RE_MSG_HOVER_YIELD] = "，股息 %.1f%%",
@@ -77,13 +79,18 @@ static const char *const LANG_ZH_CN[RE_MSG_COUNT] = {
     [RE_MSG_CHART_HALF_YEAR] = "6个月",
     [RE_MSG_CHART_INDEX] = "（显示的第一个月 = 100）",
     [RE_MSG_RESEARCH_PREFIX] = "股票研究订阅：",
-    [RE_MSG_RESEARCH_PAID] = "%s重新研究了%d家公司，订阅费 %s",
-    [RE_MSG_RESEARCH_SHORT] = "%s重新研究了%d家公司，订阅费 %s。现金不足，其中 %s 记为债务",
+    [RE_MSG_RESEARCH_PAID] = "%s已重新研究%d家公司。本月应付的订阅费为 %s",
+    [RE_MSG_RESEARCH_SHORT] = "%s已重新研究%d家公司。本月应付的订阅费为 %s。由于手头现金不足，这笔订阅费中的 %s 已记为债务",
     [RE_MSG_RESEARCH_KEPT_PREFIX] = "已付的研究订阅费：",
     [RE_MSG_RESEARCH_KEPT] = "%s读取更早的存档也不会退回。本月付过费的%d家公司已重新研究，再次支付 %s",
     [RE_MSG_RESEARCH_KEPT_SHORT] = "%s读取更早的存档也不会退回。本月付过费的%d家公司已重新研究，再次支付 %s。现金不足，其中 %s "
                                    "记为债务",
     [RE_MSG_RESEARCH_KEPT_TICK] = "读档前付过的研究订阅费已再次支付：%s（%d家公司）",
+    [RE_MSG_RESEARCH_PAID_ONE] = "%s已重新研究%d家公司。本月应付的订阅费为 %s",
+    [RE_MSG_RESEARCH_SHORT_ONE] = "%s已重新研究%d家公司。本月应付的订阅费为 %s。由于手头现金不足，这笔订阅费中的 %s 已记为债务",
+    [RE_MSG_RESEARCH_KEPT_ONE] = "%s读取更早的存档也不会退回。本月付过费的%d家公司已重新研究，再次支付 %s",
+    [RE_MSG_RESEARCH_KEPT_SHORT_ONE] = "%s读取更早的存档也不会退回。本月付过费的%d家公司已重新研究，再次支付 %s。现金不足，其中 %s "
+                                       "记为债务",
     [RE_MSG_RESEARCH_ONE_ON] = "研究订阅：%s 已开启。现在已研究，订阅费 %s（每月）",
     [RE_MSG_RESEARCH_ONE_OFF] = "研究订阅：%s 已关闭。下个月起不再收费",
     [RE_MSG_RESEARCH_ALL_ON] = "研究订阅：全部公司已开启。现在研究了%d家，订阅费 %s",

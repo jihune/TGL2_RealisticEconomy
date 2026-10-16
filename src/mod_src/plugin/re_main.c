@@ -70,7 +70,7 @@
 #include "re_wording.h"
 #include "re_xp.h"
 
-#define PLUGIN_VERSION "1.2.0"
+#define PLUGIN_VERSION "1.2.1"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -985,9 +985,10 @@ static int research_kept(void *main_obj, const char *when, int month)
     const char *prefix = T(RE_MSG_RESEARCH_KEPT_PREFIX);
     char text[400], amount[64], debt[64];
     if (owed > 0)
-        snprintf(text, sizeof text, T(RE_MSG_RESEARCH_KEPT_SHORT), prefix, due, money(main_obj, fee, amount), money(main_obj, owed, debt));
+        snprintf(text, sizeof text, T(due == 1 ? RE_MSG_RESEARCH_KEPT_SHORT_ONE : RE_MSG_RESEARCH_KEPT_SHORT), prefix, due,
+                 money(main_obj, fee, amount), money(main_obj, owed, debt));
     else
-        snprintf(text, sizeof text, T(RE_MSG_RESEARCH_KEPT), prefix, due, money(main_obj, fee, amount));
+        snprintf(text, sizeof text, T(due == 1 ? RE_MSG_RESEARCH_KEPT_ONE : RE_MSG_RESEARCH_KEPT), prefix, due, money(main_obj, fee, amount));
     panel_line(main_obj, prefix, text, "UIIconStockMarket", 1);
     snprintf(text, sizeof text, T(RE_MSG_RESEARCH_KEPT_TICK), money(main_obj, fee, amount), due);
     re_game_post_message(main_obj, text);
@@ -1042,9 +1043,11 @@ static void research_refresh(void *main_obj, const re_household *h)
         const char *prefix = T(RE_MSG_RESEARCH_PREFIX);
         char text[280], amount[64], debt[64];
         if (owed > 0)
-            snprintf(text, sizeof text, T(RE_MSG_RESEARCH_SHORT), prefix, subscribed, money(main_obj, fee, amount), money(main_obj, owed, debt));
+            snprintf(text, sizeof text, T(subscribed == 1 ? RE_MSG_RESEARCH_SHORT_ONE : RE_MSG_RESEARCH_SHORT), prefix, subscribed,
+                     money(main_obj, fee, amount), money(main_obj, owed, debt));
         else
-            snprintf(text, sizeof text, T(RE_MSG_RESEARCH_PAID), prefix, subscribed, money(main_obj, fee, amount));
+            snprintf(text, sizeof text, T(subscribed == 1 ? RE_MSG_RESEARCH_PAID_ONE : RE_MSG_RESEARCH_PAID), prefix, subscribed,
+                     money(main_obj, fee, amount));
         panel_line(main_obj, prefix, text, "UIIconStockMarket", 1);
     }
 }
@@ -6638,6 +6641,8 @@ static void load_settings(void)
     re_ini_doubles("balance", "cashInterest", &g_cash_rate, 1);
     g_data_fix[RE_DATA_HYDROPONICS] = re_ini_int("balance", "hydroponics", 1);
     g_data_fix[RE_DATA_COMMUNICATIONS] = re_ini_int("balance", "communicationsDegree", 1);
+    g_data_fix[RE_DATA_DEGREE_COMPUTING] = g_data_fix[RE_DATA_DEGREE_ART] = g_data_fix[RE_DATA_DEGREE_SCIENCE] =
+        g_data_fix[RE_DATA_DEGREE_BUSINESS] = re_ini_int("balance", "degreePrices", 1);
     g_rent_market = re_ini_int("balance", "rentFollowsMarket", 1);
     re_ini_doubles("balance", "newBusinessAwareness", &g_start_awareness, 1);
     g_start_awareness = g_start_awareness < 0.0 ? 0.0 : g_start_awareness > 1.0 ? 1.0 : g_start_awareness;
@@ -7016,6 +7021,8 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     g_data_fix[RE_DATA_SAVINGS_RATE] = g_on_balance && re_data_number(RE_DATA_SAVINGS_RATE, g_savings_rate);
     g_data_fix[RE_DATA_HYDROPONICS] = g_data_fix[RE_DATA_HYDROPONICS] && g_on_balance;
     g_data_fix[RE_DATA_COMMUNICATIONS] = g_data_fix[RE_DATA_COMMUNICATIONS] && g_on_balance;
+    for (int i = RE_DATA_DEGREE_COMPUTING; i <= RE_DATA_DEGREE_BUSINESS; i++)
+        g_data_fix[i] = g_data_fix[i] && g_on_balance;
     if (g_on_balance)
         re_log("balance: the game's numbers as the settings want them: %s (%s), %s (%s), %s (%s); interest on the cash at a month end: "
                "%.2f times the central-bank rate, a twelfth of it a month",

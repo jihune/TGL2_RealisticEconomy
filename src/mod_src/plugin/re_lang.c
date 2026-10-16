@@ -178,8 +178,22 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
                                     "%s예전 세이브를 불러와도 돌아오지 않습니다. 이번 달에 구독료를 냈던 회사 %d곳을 다시 조사했고 "
                                     "%s 를 다시 냈습니다. 돈이 모자라 부채 %s 추가",
                                     NULL, NULL, NULL, NULL},
-    [RE_MSG_RESEARCH_KEPT_TICK] = {"Research fee paid before this load, taken again: %s (%d companies)",
+    [RE_MSG_RESEARCH_KEPT_TICK] = {"Research fee paid before this load, taken again: %s (companies: %d)",
                                    "불러오기 전에 냈던 조사 구독료를 다시 냈습니다: %s (회사 %d곳)", NULL, NULL, NULL, NULL},
+    [RE_MSG_RESEARCH_PAID_ONE] = {"%s%d company researched again, fee %s", "%s회사 %d곳을 다시 조사했습니다, 구독료 %s", NULL, NULL,
+                                  NULL, NULL},
+    [RE_MSG_RESEARCH_SHORT_ONE] = {"%s%d company researched again, fee %s; your cash was short, so %s of it is now a debt",
+                                   "%s회사 %d곳을 다시 조사했습니다, 구독료 %s. 돈이 모자라 부채 %s 추가", NULL, NULL, NULL, NULL},
+    [RE_MSG_RESEARCH_KEPT_ONE] = {"%sloading an earlier save does not bring it back. %d company paid for this month was researched "
+                                  "again, fee %s",
+                                  "%s예전 세이브를 불러와도 돌아오지 않습니다. 이번 달에 구독료를 냈던 회사 %d곳을 다시 조사했고 %s 를 "
+                                  "다시 냈습니다",
+                                  NULL, NULL, NULL, NULL},
+    [RE_MSG_RESEARCH_KEPT_SHORT_ONE] = {"%sloading an earlier save does not bring it back. %d company paid for this month was "
+                                        "researched again, fee %s; your cash was short, so %s of it is now a debt",
+                                        "%s예전 세이브를 불러와도 돌아오지 않습니다. 이번 달에 구독료를 냈던 회사 %d곳을 다시 조사했고 "
+                                        "%s 를 다시 냈습니다. 돈이 모자라 부채 %s 추가",
+                                        NULL, NULL, NULL, NULL},
     /* the ticker shows a line letter by letter and long ones in full (run 131) */
     [RE_MSG_RESEARCH_ONE_ON] = {"Research subscription: %s on. Researched now, fee %s (every month)",
                                 "조사 구독: %s 켬. 지금 조사했습니다, 구독료 %s (달마다)", NULL, NULL, NULL, NULL},

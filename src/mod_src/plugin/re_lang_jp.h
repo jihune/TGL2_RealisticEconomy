@@ -1,7 +1,8 @@
 /* Japanese: every text of the plugin (the table of re_lang.c has no Japanese column). Included by re_lang.c only.
  * The words are the game's own where it has one (modsLanguages/jp): 破産, 認知度, 資産, フロアスペース, 家具, 退職金,
  * 取締役会, ビジネス, 従業員, 候補者, 作業効率, 時給. Full-width letters are twice as wide: a line of a hover text
- * is at most about 17 of them. */
+ * is at most about 17 of them. A line of the month's summary is about 20, and the game breaks it at any letter,
+ * a number too: the research lines run past the first line before the fee, so the fee starts the next one. */
 static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_PER_LOSS] = "PER: 赤字",
     [RE_MSG_HOVER_YIELD] = "、配当 %.1f%%",
@@ -80,13 +81,18 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_CHART_HALF_YEAR] = "6か月",
     [RE_MSG_CHART_INDEX] = " (最初の月 = 100)",
     [RE_MSG_RESEARCH_PREFIX] = "株式調査の購読: ",
-    [RE_MSG_RESEARCH_PAID] = "%s%d社を再調査、購読料 %s",
-    [RE_MSG_RESEARCH_SHORT] = "%s%d社を再調査、購読料 %s。現金が足りず、%s が負債になった",
+    [RE_MSG_RESEARCH_PAID] = "%s%d社を再調査した。今月の購読料は %s",
+    [RE_MSG_RESEARCH_SHORT] = "%s%d社を再調査した。今月の購読料は %s。現金が足りなかったので、そのうち %s が負債になった",
     [RE_MSG_RESEARCH_KEPT_PREFIX] = "支払い済みの調査購読料: ",
     [RE_MSG_RESEARCH_KEPT] = "%s前のセーブをロードしても戻らない。今月支払った%d社を再調査し、%s を再度支払った",
     [RE_MSG_RESEARCH_KEPT_SHORT] = "%s前のセーブをロードしても戻らない。今月支払った%d社を再調査し、%s を再度支払った。現金が"
                                    "足りず、%s が負債になった",
     [RE_MSG_RESEARCH_KEPT_TICK] = "ロード前に支払った調査購読料を再度支払った: %s (%d社)",
+    [RE_MSG_RESEARCH_PAID_ONE] = "%s%d社を再調査した。今月の購読料は %s",
+    [RE_MSG_RESEARCH_SHORT_ONE] = "%s%d社を再調査した。今月の購読料は %s。現金が足りなかったので、そのうち %s が負債になった",
+    [RE_MSG_RESEARCH_KEPT_ONE] = "%s前のセーブをロードしても戻らない。今月支払った%d社を再調査し、%s を再度支払った",
+    [RE_MSG_RESEARCH_KEPT_SHORT_ONE] = "%s前のセーブをロードしても戻らない。今月支払った%d社を再調査し、%s を再度支払った。現金が"
+                                       "足りず、%s が負債になった",
     [RE_MSG_RESEARCH_ONE_ON] = "調査購読: %s オン。今調査した、購読料 %s (毎月)",
     [RE_MSG_RESEARCH_ONE_OFF] = "調査購読: %s オフ。来月から料金なし",
     [RE_MSG_RESEARCH_ALL_ON] = "調査購読: 全社オン。%d社を今調査した、購読料 %s",

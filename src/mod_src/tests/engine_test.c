@@ -2654,6 +2654,9 @@ int main(int argc, char **argv)
         {RE_LANG_EN, "itemStolen", "??:Custom Part stolen due to lack of floorspace", "Custom Part stolen: no home or premises to keep it in",
          0x005582d0u},
         {RE_LANG_EN, "itemRecovered", ":Tools And Equipment recovered by police", "Tools And Equipment recovered by police", 0x0055c100u},
+        /* the title of the month's summary */
+        {RE_LANG_KO, "endOfMonthSummaryTitle", "10월, 2035 말", "2035년 10월 말", 0},
+        {RE_LANG_FR, "endOfMonthSummaryTitle", "Fin du Octobre, 2035", "Fin Octobre 2035", 0},
     };
     int samples_ok = 0, sample_count = (int)(sizeof samples / sizeof samples[0]);
     for (int i = 0; i < sample_count; i++) {
@@ -2720,6 +2723,9 @@ int main(int argc, char **argv)
          "12 Rua A: o contrato de aluguel do locatário expira este mês", 1, {{"HOUSEADDRESS", "12 Rua A"}}},
         {RE_LANG_ZH_CN, "isBorn", "名字 出生！", "Li Wei 出生了！", 1, {{"NAME", "Li Wei"}}},
         {RE_LANG_ZH_CN, "itemRecovered", "：Custom Part被警方追回", "Custom Part被警方追回", 1, {{"LOCATIONNAME", ""}, {"ITEMNAME", "Custom Part"}}},
+        {RE_LANG_DE, "endOfMonthSummaryTitle", "Beenden von Oktober, 2035", "Ende Oktober 2035", 1, {{"MONTH", "Oktober"}, {"YEAR", "2035"}}},
+        {RE_LANG_JP, "endOfMonthSummaryTitle", "2035年10月月末", "2035年10月末", 1, {{"MONTH", "10月"}, {"YEAR", "2035"}}},
+        {RE_LANG_ZH_CN, "endOfMonthSummaryTitle", "2035年十月月底", "2035年十月底", 1, {{"MONTH", "十月"}, {"YEAR", "2035"}}},
     };
     int called_ok = 0, called_count = (int)(sizeof called / sizeof called[0]);
     for (int i = 0; i < called_count; i++) {

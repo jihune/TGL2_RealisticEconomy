@@ -62,7 +62,13 @@ static const char *const LANG_PT_BR[RE_MSG_COUNT] = {
                              "novo, taxa %s",
     [RE_MSG_RESEARCH_KEPT_SHORT] = "%scarregar um jogo salvo anterior não a devolve. %d empresas pagas neste mês foram "
                                    "pesquisadas de novo, taxa %s; faltou dinheiro, então %s agora é uma dívida",
-    [RE_MSG_RESEARCH_KEPT_TICK] = "Taxa de pesquisa cobrada de novo após carregar: %s (%d empresas)",
+    [RE_MSG_RESEARCH_KEPT_TICK] = "Taxa de pesquisa cobrada de novo após carregar: %s (empresas: %d)",
+    [RE_MSG_RESEARCH_PAID_ONE] = "%s%d empresa pesquisada de novo, taxa %s",
+    [RE_MSG_RESEARCH_SHORT_ONE] = "%s%d empresa pesquisada de novo, taxa %s; faltou dinheiro, então %s agora é uma dívida",
+    [RE_MSG_RESEARCH_KEPT_ONE] = "%scarregar um jogo salvo anterior não a devolve. %d empresa paga neste mês foi pesquisada de "
+                                 "novo, taxa %s",
+    [RE_MSG_RESEARCH_KEPT_SHORT_ONE] = "%scarregar um jogo salvo anterior não a devolve. %d empresa paga neste mês foi "
+                                       "pesquisada de novo, taxa %s; faltou dinheiro, então %s agora é uma dívida",
     [RE_MSG_RESEARCH_ONE_ON] = "Assinatura: %s ligada. Pesquisada agora, taxa %s (todo mês)",
     [RE_MSG_RESEARCH_ONE_OFF] = "Assinatura: %s desligada. Sem taxa a partir do próximo mês",
     [RE_MSG_RESEARCH_ALL_ON] = "Assinatura: todas as empresas ligadas. %d pesquisadas agora, taxa %s",

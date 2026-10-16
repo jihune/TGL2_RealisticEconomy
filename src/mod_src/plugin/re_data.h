@@ -21,6 +21,14 @@ enum {
     /* the degree Communications: $90,000 in the game, and the four jobs that ask for it pay $20.15 to $26.35 an hour
      * (data/jobs/careerCommunications.xml; note e13); $45,000 */
     RE_DATA_COMMUNICATIONS,
+    /* four degrees that cost more than 21 months of the pay of the jobs they open, where 25 of the other 30 courses
+     * with jobs cost 13 months or less (note e15): each at a year of that pay. A price one digit shorter than the
+     * game's is followed by one space more, which the game's reader takes between attributes (data/misc/
+     * defaultData.xml has two) */
+    RE_DATA_DEGREE_COMPUTING, /* Computer Science: $113,000 in the game; $53,800 */
+    RE_DATA_DEGREE_ART,       /* Art and Design: $107,300; $51,200 */
+    RE_DATA_DEGREE_SCIENCE,   /* Science and Engineering: $115,000; $63,000 */
+    RE_DATA_DEGREE_BUSINESS,  /* Business and Finance: $125,000; $56,500 */
     RE_DATA_COUNT
 };
 

@@ -64,6 +64,14 @@ static const char *const LANG_DE[RE_MSG_COUNT] = {
                                    "Unternehmen wurden neu recherchiert, Gebühr %s; dein Bargeld reichte nicht, %s davon sind "
                                    "jetzt Schulden",
     [RE_MSG_RESEARCH_KEPT_TICK] = "Recherchegebühr nach dem Laden erneut abgebucht: %s (%d Unternehmen)",
+    [RE_MSG_RESEARCH_PAID_ONE] = "%s%d Unternehmen neu recherchiert, Gebühr %s",
+    [RE_MSG_RESEARCH_SHORT_ONE] = "%s%d Unternehmen neu recherchiert, Gebühr %s; dein Bargeld reichte nicht, %s davon sind jetzt "
+                                  "Schulden",
+    [RE_MSG_RESEARCH_KEPT_ONE] = "%sdas Laden eines früheren Spielstands bringt sie nicht zurück. %d in diesem Monat bezahltes "
+                                 "Unternehmen wurde neu recherchiert, Gebühr %s",
+    [RE_MSG_RESEARCH_KEPT_SHORT_ONE] = "%sdas Laden eines früheren Spielstands bringt sie nicht zurück. %d in diesem Monat bezahltes "
+                                       "Unternehmen wurde neu recherchiert, Gebühr %s; dein Bargeld reichte nicht, %s davon sind "
+                                       "jetzt Schulden",
     [RE_MSG_RESEARCH_ONE_ON] = "Recherche-Abo: %s an. Jetzt recherchiert, Gebühr %s (jeden Monat)",
     [RE_MSG_RESEARCH_ONE_OFF] = "Recherche-Abo: %s aus. Ab nächstem Monat keine Gebühr",
     [RE_MSG_RESEARCH_ALL_ON] = "Recherche-Abo: alle Unternehmen an. %d jetzt recherchiert, Gebühr %s",

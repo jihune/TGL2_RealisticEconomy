@@ -64,7 +64,15 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_RESEARCH_KEPT_SHORT] = "%scharger une sauvegarde antérieure ne les rend pas. %d entreprises payées ce mois-ci ont "
                                    "été recherchées à nouveau, frais %s ; vos liquidités manquaient, donc %s sont maintenant une "
                                    "dette",
-    [RE_MSG_RESEARCH_KEPT_TICK] = "Frais de recherche prélevés à nouveau au chargement : %s (%d entreprises)",
+    [RE_MSG_RESEARCH_KEPT_TICK] = "Frais de recherche prélevés à nouveau au chargement : %s (entreprises : %d)",
+    [RE_MSG_RESEARCH_PAID_ONE] = "%s%d entreprise recherchée à nouveau, frais %s",
+    [RE_MSG_RESEARCH_SHORT_ONE] = "%s%d entreprise recherchée à nouveau, frais %s ; vos liquidités manquaient, donc %s sont "
+                                  "maintenant une dette",
+    [RE_MSG_RESEARCH_KEPT_ONE] = "%scharger une sauvegarde antérieure ne les rend pas. %d entreprise payée ce mois-ci a été "
+                                 "recherchée à nouveau, frais %s",
+    [RE_MSG_RESEARCH_KEPT_SHORT_ONE] = "%scharger une sauvegarde antérieure ne les rend pas. %d entreprise payée ce mois-ci a "
+                                       "été recherchée à nouveau, frais %s ; vos liquidités manquaient, donc %s sont maintenant une "
+                                       "dette",
     [RE_MSG_RESEARCH_ONE_ON] = "Abonnement : %s activé. Recherche faite, frais %s (chaque mois)",
     [RE_MSG_RESEARCH_ONE_OFF] = "Abonnement : %s désactivé. Pas de frais dès le mois prochain",
     [RE_MSG_RESEARCH_ALL_ON] = "Abonnement : toutes les entreprises. %d recherchées maintenant, frais %s",

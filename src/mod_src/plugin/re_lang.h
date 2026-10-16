@@ -109,6 +109,12 @@ enum {
     RE_MSG_RESEARCH_KEPT,
     RE_MSG_RESEARCH_KEPT_SHORT,
     RE_MSG_RESEARCH_KEPT_TICK,
+    /* the four summary lines above for one company: English, Spanish, French and Portuguese (and the German of the
+     * two kept ones) put the noun in the singular */
+    RE_MSG_RESEARCH_PAID_ONE,
+    RE_MSG_RESEARCH_SHORT_ONE,
+    RE_MSG_RESEARCH_KEPT_ONE,
+    RE_MSG_RESEARCH_KEPT_SHORT_ONE,
     /* ... its switch in the stock window's list: the ticker lines of a Shift-click on a company (%s the company,
      * %s the fee a month) and of a Ctrl+Shift-click (%s the fee a company a month), the line for a company of the
      * board (%s the company), and the last line of the mod's part of a company's hover text, at most 34 columns */

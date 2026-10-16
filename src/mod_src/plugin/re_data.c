@@ -21,6 +21,18 @@ static const struct {
     [RE_DATA_COMMUNICATIONS] = {"the degree Communications: its price, for the wages of the jobs it opens",
                                 "<study months=\"36\" hours=\"120\" money=\"-9000000\" allowPartTime=\"1\">",
                                 "<study months=\"36\" hours=\"120\" money=\"-4500000\" allowPartTime=\"1\">"},
+    [RE_DATA_DEGREE_COMPUTING] = {"the degree Computer Science: its price, a year of the pay of the jobs it opens",
+                                  "<study months=\"36\" hours=\"120\" money=\"-11300000\" allowPartTime=\"1\">",
+                                  "<study months=\"36\" hours=\"120\" money=\"-5380000\"  allowPartTime=\"1\">"},
+    [RE_DATA_DEGREE_ART] = {"the degree Art and Design: its price, a year of the pay of the jobs it opens",
+                            "<study months=\"36\" hours=\"120\" money=\"-10730000\" allowPartTime=\"1\">",
+                            "<study months=\"36\" hours=\"120\" money=\"-5120000\"  allowPartTime=\"1\">"},
+    [RE_DATA_DEGREE_SCIENCE] = {"the degree Science and Engineering: its price, a year of the pay of the jobs it opens",
+                                "<study months=\"36\" hours=\"120\" money=\"-11500000\" allowPartTime=\"1\">",
+                                "<study months=\"36\" hours=\"120\" money=\"-6300000\"  allowPartTime=\"1\">"},
+    [RE_DATA_DEGREE_BUSINESS] = {"the degree Business and Finance: its price, a year of the pay of the jobs it opens",
+                                 "<study months=\"36\" hours=\"120\" money=\"-12500000\" allowPartTime=\"1\">",
+                                 "<study months=\"36\" hours=\"120\" money=\"-5650000\"  allowPartTime=\"1\">"},
 };
 
 static char g_put[RE_DATA_COUNT][64]; /* a `put` with its number in */

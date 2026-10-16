@@ -20,8 +20,8 @@ game again. "[features] balance=0" means: under the line [features], change bala
    What changes the game's numbers
      - Balance (14 below). Share fee 2% (the game: 1%), futures fee 10% of the margin (1%), savings rate 0.8 (0.5)
        of the central-bank rate, interest on cash, a rent that can come down at a renewal, a new business starts
-       with 25% awareness (0%), Hydroponics Farm's income, the price of the degree Communications. The fees make
-       the game harder; the interest on cash and the awareness make it easier.
+       with 25% awareness (0%), Hydroponics Farm's income, the price of five degrees. The fees make the game
+       harder; the interest on cash, the awareness and the degree prices make it easier.
           All of it off: [features] balance=0
           One by one: put the game's number in [balance] (each line names it).
      - Loan rates by credit grade (1). A good grade borrows cheaper than in the game, a poor one dearer.
@@ -490,6 +490,18 @@ What it does
    Japanese text shown when a child comes of age, which names the age as "YEAR".
    Korean only: the four lines about a listed company that goes bankrupt, takes an emergency measure or is newly
    listed are written again (the game puts one particle behind every company name and translates word by word).
+   Since 1.2.1 also:
+     - Korean: three lines of a business's month that the game has in English (a pay demand, a member of staff who
+       leaves for personal reasons, the heading "S-Con auto purchase:" of what "buy worn-out assets again" bought).
+     - French, German, Chinese: that heading, which read "car purchase".
+     - Japanese: the line of a bankrupt company's shares, which left out the number of shares and named the company
+       twice.
+     - German, Japanese, Chinese: the news of a new currency (a redenomination). The Japanese file had the Chinese
+       sentence and the Chinese file the Japanese one, and the German and that Chinese sentence left a "VALUE"
+       behind the number.
+     - The title of the month's summary. Korean "10월, 2035 말" (the English order) becomes "2035년 10월 말", German
+       "Beenden von Oktober" ("quit") "Ende Oktober 2035", French "Fin du Octobre" "Fin Octobre 2035". In
+       Japanese and Chinese a second "月" followed the month's name ("10月月末", "十月月底"); now "10月末", "十月底".
 
 8. Casino
    The four casino games (slots, roulette, blackjack, baccarat) become games of chance with a set stake.
@@ -1048,6 +1060,11 @@ What it does
      - The degree Communications costs half ($90,000 to $45,000, before the city's and the price index's part).
        communicationsDegree
          The four jobs that ask for this degree pay $20.15 to $26.35 an hour.
+     - Four degrees cost a year of the pay of the jobs they open (since 1.2.1; before the city's and the price
+       index's part). degreePrices
+         Computer Science $113,000 to $53,800, Art and Design $107,300 to $51,200, Science and Engineering $115,000
+         to $63,000, Business and Finance $125,000 to $56,500. In the game the four cost 22 to 27 months of that
+         pay, where 25 of the 30 courses that open jobs cost 13 months or less. The other courses keep their price.
 
 No window or button is added. Text is added to windows the game already has.
 

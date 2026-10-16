@@ -62,7 +62,13 @@ static const char *const LANG_ES[RE_MSG_COUNT] = {
                              "nuevo, cuota %s",
     [RE_MSG_RESEARCH_KEPT_SHORT] = "%scargar una partida anterior no la devuelve. %d empresas pagadas este mes se investigaron de "
                                    "nuevo, cuota %s; te faltaba efectivo, así que %s es ahora una deuda",
-    [RE_MSG_RESEARCH_KEPT_TICK] = "Cuota de investigación cobrada de nuevo tras cargar: %s (%d empresas)",
+    [RE_MSG_RESEARCH_KEPT_TICK] = "Cuota de investigación cobrada de nuevo tras cargar: %s (empresas: %d)",
+    [RE_MSG_RESEARCH_PAID_ONE] = "%s%d empresa investigada de nuevo, cuota %s",
+    [RE_MSG_RESEARCH_SHORT_ONE] = "%s%d empresa investigada de nuevo, cuota %s; te faltaba efectivo, así que %s es ahora una deuda",
+    [RE_MSG_RESEARCH_KEPT_ONE] = "%scargar una partida anterior no la devuelve. %d empresa pagada este mes se investigó de "
+                                 "nuevo, cuota %s",
+    [RE_MSG_RESEARCH_KEPT_SHORT_ONE] = "%scargar una partida anterior no la devuelve. %d empresa pagada este mes se investigó de "
+                                       "nuevo, cuota %s; te faltaba efectivo, así que %s es ahora una deuda",
     [RE_MSG_RESEARCH_ONE_ON] = "Suscripción: %s activada. Investigada ahora, cuota %s (cada mes)",
     [RE_MSG_RESEARCH_ONE_OFF] = "Suscripción: %s desactivada. Sin cuota desde el mes que viene",
     [RE_MSG_RESEARCH_ALL_ON] = "Suscripción: todas las empresas activadas. %d investigadas ahora, cuota %s",

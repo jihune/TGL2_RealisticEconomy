@@ -67,6 +67,16 @@ static const wording TABLE[] = {
     {RE_LANG_KO, "futuresDeclinedBankruptcy", "최근 파산으로 인해 선물을 거래할 수 없습니다. 파산은 {{데이터스트링}}에 만료됩니다.",
      "최근 파산 때문에 선물을 거래할 수 없습니다. 파산 기록은 {{DATESTRING}}에 없어집니다.", 0, 0, NULL},
     {RE_LANG_KO, "kinEditRelationshipsTitle", "{{PERSONNAME}} ({{연령월}}) 관계", "{{PERSONNAME}} ({{AGEYEARSMONTHS}}) 관계", 0, 0, NULL},
+    /* Lines of a business's month the Korean file has in English (analysis/notes/e16_more_defects.md, W1). The game's
+     * own Korean neighbour, employeeQuitWage, says "{{STAFFNAME}}가 …"; a colon after the name needs no particle. */
+    {RE_LANG_KO, "employeeQuitPersonal", "({{FIRMNAME}}, {{JOBTITLE}}, {{MONTHWAGE}}, {{MONTHHOURS}}) {{STAFFNAME}} quit for personal reasons.",
+     "({{FIRMNAME}}, {{JOBTITLE}}, {{MONTHWAGE}}, {{MONTHHOURS}}) {{STAFFNAME}}: 개인 사정으로 퇴사했습니다.", 0, 0, NULL},
+    {RE_LANG_KO, "employeeWageDemand", "({{FIRMNAME}}, {{JOBTITLE}}) {{STAFFNAME}} demands a pay increase!",
+     "({{FIRMNAME}}, {{JOBTITLE}}) {{STAFFNAME}}: 임금 인상을 요구합니다!", 0, 0, NULL},
+    {RE_LANG_KO, "firmAutoPurchase", "{{FIRMNAME}} auto purchase:", "{{FIRMNAME}} 자동 구매:", 0, 0, NULL},
+    /* the title of the month's summary: the Korean has the English order, the German says "quit" (Beenden), the
+     * French puts "du" before a month, and in Japanese and Chinese a second 月 follows the month, whose name has one */
+    {RE_LANG_KO, "endOfMonthSummaryTitle", "{{MONTH}}, {{YEAR}} 말", "{{YEAR}}년 {{MONTH}} 말", 0, 0, NULL},
     {RE_LANG_EN, "itemStolen", "{{LOCATIONNAME}}:{{ITEMNAME}} stolen due to lack of floorspace",
      "{{LOCATIONNAME}}:{{ITEMNAME}} stolen due to lack of floorspace", 0, 0, "{{ITEMNAME}} stolen: no home or premises to keep it in"},
     {RE_LANG_EN, "itemRecovered", "{{LOCATIONNAME}}:{{ITEMNAME}} recovered by police", "{{LOCATIONNAME}}:{{ITEMNAME}} recovered by police", 0,
@@ -100,6 +110,9 @@ static const wording TABLE[] = {
      "{{LOCATIONNAME}}:{{ITEMNAME}} volé par manque de place", 0, 0, "{{ITEMNAME}} volé : ni logement ni locaux où le garder"},
     {RE_LANG_FR, "itemRecovered", "{{LOCATIONNAME}}:{{ITEMNAME}} récupéré par la police",
      "{{LOCATIONNAME}}:{{ITEMNAME}} récupéré par la police", 0, 0, "{{ITEMNAME}} récupéré par la police"},
+    /* the heading of what "buy worn-out assets again" bought: French, German and Chinese read "auto" as a car */
+    {RE_LANG_FR, "firmAutoPurchase", "Achat automobile {{FIRMNAME}} :", "Achat automatique {{FIRMNAME}} :", 0, 0, NULL},
+    {RE_LANG_FR, "endOfMonthSummaryTitle", "Fin du {{MONTH}}, {{YEAR}}", "Fin {{MONTH}} {{YEAR}}", 0, 0, NULL},
     /* German, Japanese and Chinese write the names without braces, which the game fills in all the same */
     {RE_LANG_DE, "loanAdded", "LOANTYPE für GELD hinzugefügt", "{{LOANTYPE}} für {{MONEY}} hinzugefügt", 0, 0, NULL},
     /* PERSONAME is the name the game passes (the English file has it so) */
@@ -114,6 +127,15 @@ static const wording TABLE[] = {
      "{{ITEMNAME}} gestohlen: weder Zuhause noch Geschäftsräume zum Aufbewahren"},
     {RE_LANG_DE, "itemRecovered", "LOCATIONNAME: ITEMNAME von der Polizei sichergestellt",
      "{{LOCATIONNAME}}: {{ITEMNAME}} von der Polizei sichergestellt", 0, 0, "{{ITEMNAME}} von der Polizei sichergestellt"},
+    {RE_LANG_DE, "firmAutoPurchase", "FIRMNAME Autokauf:", "{{FIRMNAME}} automatischer Kauf:", 0, 0, NULL},
+    {RE_LANG_DE, "endOfMonthSummaryTitle", "Beenden von MONTH, YEAR", "Ende {{MONTH}} {{YEAR}}", 0, 0, NULL},
+    /* the game fills in LARGENUMBER wherever the name stands, so "LARGENUMBERVALUE" leaves a "VALUE" (e16, W2) */
+    {RE_LANG_DE, "redenominationLong",
+     "Überall herrscht Chaos, weil die Landeswährung auf LARGENUMBERVALUE:1 umgestellt wird! Regierungsbeamte sagen den Leuten, sie "
+     "sollen ihre Spiele speichern und neu laden. Der Bürgermeister meint zur Währungssituation: „Die werden sich schon daran gewöhnen.“",
+     "Überall herrscht Chaos, weil die Landeswährung auf {{LARGENUMBER}}:1 umgestellt wird! Regierungsbeamte sagen den Leuten, sie "
+     "sollen ihre Spiele speichern und neu laden. Der Bürgermeister meint zur Währungssituation: „Die werden sich schon daran gewöhnen.“",
+     0, 0, NULL},
     {RE_LANG_PT_BR, "educationLoanTip",
      "Leia as condições e clique em Accept (Aceitar). Em seguida, inscreva-se em um curso. O empréstimo será aplicado "
      "automaticamente com as condições abaixo. Você tem direito a {{NÚMERO PERMITIDO}} empréstimos educacionais por toda a vida.",
@@ -153,6 +175,16 @@ static const wording TABLE[] = {
      "{{ITEMNAME}} 盗難 (保管する家も事業所もない)"},
     {RE_LANG_JP, "itemRecovered", "LOCATIONNAME:ITEMNAME 警察により回収", "{{LOCATIONNAME}}:{{ITEMNAME}} 警察により回収", 0, 0,
      "{{ITEMNAME}} 警察により回収"},
+    /* the share count is missing and the company named twice (e16, W3) */
+    {RE_LANG_JP, "stockBankruptWorthless", "COMPANYNAMEは破産した！あなたのCOMPANYNAMEの株式は現在、価値がなくなった。",
+     "{{COMPANYNAME}}は破産した！あなたの{{SHARENUMBER}}株は現在、価値がなくなった。", 0, 0, NULL},
+    /* the Japanese file has the Chinese sentence and the Chinese file the Japanese one (e16, W2) */
+    {RE_LANG_JP, "redenominationLong",
+     "货币重新定值引发全面混乱，当地货币现值为LARGENUMBERVALUE:1！政府官员呼吁市民保存并重新加载游戏。市长就货币状况发表声明：“人们会习惯的。”",
+     "現地通貨が{{LARGENUMBER}}:1でデノミされ、至る所で混乱が起きている！政府関係者は市民にゲームをセーブしてロードし直すよう勧めている。"
+     "市長は通貨の状況について「そのうち慣れるさ」と声明を出した。",
+     0, 0, NULL},
+    {RE_LANG_JP, "endOfMonthSummaryTitle", "YEAR年MONTH月末", "{{YEAR}}年{{MONTH}}末", 0, 0, NULL},
     {RE_LANG_ZH_CN, "isBorn", "名字 出生！", "{{NAME}} 出生了！", 0, 0, NULL},
     {RE_LANG_ZH_CN, "chartHouseholdFinancialTitle", "家庭收入/支出（货币)", "家庭收入/支出（{{CURRENCY}}）", 0, 0, NULL},
     {RE_LANG_ZH_CN, "chartHouseholdTaxTitle", "家庭纳税申报单（货币)", "家庭纳税申报单（{{CURRENCY}}）", 0, 0, NULL},
@@ -160,6 +192,13 @@ static const wording TABLE[] = {
      "{{ITEMNAME}}被盗（没有可存放的住宅或营业场所）"},
     {RE_LANG_ZH_CN, "itemRecovered", "LOCATIONNAME：ITEMNAME被警方追回", "{{LOCATIONNAME}}：{{ITEMNAME}}被警方追回", 0, 0,
      "{{ITEMNAME}}被警方追回"},
+    {RE_LANG_ZH_CN, "firmAutoPurchase", "FIRMNAME 购买汽车：", "{{FIRMNAME}} 自动购买：", 0, 0, NULL},
+    {RE_LANG_ZH_CN, "endOfMonthSummaryTitle", "YEAR年MONTH月底", "{{YEAR}}年{{MONTH}}底", 0, 0, NULL},
+    {RE_LANG_ZH_CN, "redenominationLong",
+     "現地通貨が再評価されたことで、至る所で混乱が起きている。その額はLARGENUMBER:1！政府関係者は市民に貯蓄とゲームの再ロードを促している。"
+     "市長は通貨状況について声明を発表した。「そのうち慣れるさ」",
+     "当地货币按{{LARGENUMBER}}:1重新定值，各地一片混乱！政府官员呼吁市民保存并重新加载游戏。市长就货币状况发表声明：“人们会习惯的。”",
+     0, 0, NULL},
 };
 #define COUNT ((int)(sizeof TABLE / sizeof TABLE[0]))
 #define MAX_VALUES RE_TEXT_PAIRS
