@@ -734,6 +734,12 @@ What it does
            Ties go to the lower price for one of the asset, then to the less floor space. The price is the
            game's shop price, and the purchase is made by the function the game uses when it buys a worn-out
            asset again. If you want another kind, buy one unit of it yourself: from then on 1) follows it.
+         · When you choose yourself (since 1.3.1): in the window "Purchase Assets" that the shop icon at the start of a business
+           window's asset row opens, the hover text of an item has "Cost per 10hrs $0.97 (price ÷ lifetime +
+           consumption)" above its "Activity:" line. That is the sum of 3) for that one ware (before it is
+           divided by what a unit brings), in the ten hours of the game's own utility line; the game shows the
+           price, the life and the utilities apart. In the test save a fridge came to $0.97 and a coffee maker to
+           $2.26. It is in that window only, not in the windows that buy for a home or a person.
          · It buys even when your cash does not cover the price ([business] missingAssetsOnDebt, on by default).
            What is missing the game books as a debt, the kind it makes of wages you could not pay: no interest,
            due at once at the third month end. The game says so itself at the top of the screen ("...Capital

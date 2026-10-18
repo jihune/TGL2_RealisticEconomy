@@ -71,7 +71,7 @@
 #include "re_wording.h"
 #include "re_xp.h"
 
-#define PLUGIN_VERSION "1.3.0"
+#define PLUGIN_VERSION "1.3.1"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -452,6 +452,7 @@ enum {
     TEXT_XP_TIP, /* under the game's sentence about the monthly decay of experience: what the mod keeps */
     TEXT_ASSET_TIP, /* under the game's sentence about buying worn-out assets again: what the box does with the mod */
     TEXT_FUT_FEE, /* the label of the futures fee says what it is a part of: the margin */
+    TEXT_WARE_HOUR, /* above "Activity" of an item in a business's purchase window: what ten hours of the ware cost */
     TEXT_WORDING /* + the entry of the wording table */
 };
 
@@ -543,6 +544,19 @@ static const re_casino_game *casino_tip_game(const re_text_regs *regs)
     return re_readable(id, 4) ? re_casino_game_of(*id) : NULL;
 }
 
+/* The ware of an item whose hover text is being made in a business's purchase window (REQUEST.md [85]), with the
+ * business in `firm`; 0 for every other activity hover text. The activity text (0x0055e6b0) was called by the item's
+ * hover handler when its frame returns there; the handler's frame, the one below, holds the item. */
+static int shop_tip_ware(const re_text_regs *regs, int *firm)
+{
+    const BYTE *frame = (const BYTE *)(UINT_PTR)regs->ebp;
+    if (!re_readable(frame, 8) || *(const UINT_PTR *)(frame + 4) != (UINT_PTR)AT(RE_VA_SHOP_HOVER_ACTIVITY + 5))
+        return 0;
+    const BYTE *handler = *(const BYTE *const *)frame;
+    const BYTE *const *cell = (const BYTE *const *)(handler + RE_SHOP_HOVER_FRAME_CELL);
+    return re_readable(cell, 4) ? re_game_shop_ware(*cell, firm) : 0;
+}
+
 /* The tooltip of a variable-rate debt: only the personal loan and the mortgage are priced by the grade. Arrears, an
  * old variable education loan or a loan product of another mod keep their own rate, so they get no grade. */
 static int debt_is_graded(const re_text_regs *regs)
@@ -613,9 +627,12 @@ static int text_want(const char *key, unsigned len, unsigned caller, const re_te
         return TEXT_IPO_KEPT;
     if (g_on_stocks && from == RE_VA_CALL_STOCK_LIST + 5 && len == sizeof KEY_STOCK_LIST - 1 && memcmp(key, KEY_STOCK_LIST, len) == 0)
         return TEXT_STOCK_LIST;
-    if (g_casino_installed && from == RE_VA_CALL_ACTIVITY_TITLE + 5 && len == sizeof KEY_ACTIVITY_TITLE - 1 &&
-        memcmp(key, KEY_ACTIVITY_TITLE, len) == 0)
-        return casino_tip_game(regs) != NULL ? TEXT_CASINO_TIP : 0;
+    if (from == RE_VA_CALL_ACTIVITY_TITLE + 5 && len == sizeof KEY_ACTIVITY_TITLE - 1 && memcmp(key, KEY_ACTIVITY_TITLE, len) == 0) {
+        int firm;
+        if (g_casino_installed && casino_tip_game(regs) != NULL)
+            return TEXT_CASINO_TIP;
+        return g_on_business && shop_tip_ware(regs, &firm) > 0 ? TEXT_WARE_HOUR : 0;
+    }
     if (g_business_sorted && from == RE_VA_CALL_HIRE_COUNT + 5 && len == sizeof KEY_HIRE_COUNT - 1 && memcmp(key, KEY_HIRE_COUNT, len) == 0)
         return TEXT_HIRE_ORDER;
     if (g_on_business && from == RE_VA_CALL_STAFF_WAGE_TIP + 5 && len == sizeof KEY_STAFF_WAGE_TIP - 1 &&
@@ -1951,6 +1968,35 @@ static unsigned text_edit(int want, char *text, unsigned len, unsigned cap, cons
             return len;
         memcpy(text, label, n);
         return n;
+    }
+    if (want == TEXT_WARE_HOUR) {
+        /* above "Activity: Order From Wholesaler" (REQUEST.md [85]): what ten hours of the ware cost, its price over its
+         * life and what it uses up, the number the mod's own choice of a missing asset goes by (D-084), in the unit of
+         * the game's utility line. The game shows the three apart, the life and the use in other units; an hour
+         * came out as $0.10 for a fridge and $0.23 for a coffee maker (run2027) */
+        static int told, last;
+        int firm = 0, type = shop_tip_ware(regs, &firm);
+        re_ware w = {0};
+        double hour = 0.0;
+        if (type > 0 && re_game_ware(re_game_firms(g_main_obj), firm, type, &w))
+            hour = (w.hours > 0.0 ? (double)w.price / w.hours : 0.0) + w.running;
+        char line[200], cost[64];
+        int n = hour > 0.0 ? snprintf(line, sizeof line, T(RE_MSG_WARE_HOUR), money(g_main_obj, (long long)(10.0 * hour + 0.5), cost)) : 0;
+        if (!told++)
+            re_log("business: the hover text of a ware in a business's purchase window is asked for: the cost of ten hours goes above "
+                   "its activity");
+        if (g_on_trace && type != last) {
+            last = type;
+            re_log("assets (trace): ware %d '%s' in the purchase window of firm %d: price $%.2f, life %.0f hours, uses up %.2f cents "
+                   "an hour: %.2f cents an hour",
+                   type, w.name, firm, (double)w.price / 100.0, w.hours, w.running, hour);
+        }
+        if (n <= 0 || (unsigned)n + 1 + len >= cap)
+            return len;
+        memmove(text + n + 1, text, len);
+        memcpy(text, line, (size_t)n);
+        text[n] = '\n';
+        return (unsigned)n + 1 + len;
     }
     if (want == TEXT_CASINO_TIP) {
         /* a line above "Activity: Play Slots" says what the game pays: the odds are nowhere else on screen */

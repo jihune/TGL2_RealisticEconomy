@@ -1242,10 +1242,32 @@ static double ware_running(const BYTE *stack, BYTE *ware_info)
     return sum;
 }
 
+/* what a ware is and costs for the business of `stack`, all but `power`; 0 when the data has no such id */
+static int ware_fill(const BYTE *stack, int type, re_ware *w)
+{
+    typedef long long(__thiscall * price_fn)(void *prices, void *info, short_string element, short_string attribute);
+    BYTE info[RE_INFO_BYTES + 4];
+    short_string shop = {"shop", 4, 15}, money = {"money", 5, 15};
+    memset(w, 0, sizeof *w);
+    w->type = type;
+    if (!info_of(stack, type, 0, info))
+        return 0;
+    w->space = info_number(info, "stats", "floorspace");
+    w->fixed = info_number(info, "stats", "fixedAsset") != 0.0;
+    w->active = info_number(info, "stats", "active") != 0.0;
+    w->hours = info_number(info, "stats", "usageHours");
+    if (!(w->hours > 0.0))
+        w->hours = info_number(info, "stats", "decayHours");
+    w->running = ware_running(stack, info);
+    w->price = -((price_fn)AT(RE_VA_WARE_PRICE))(*(void *const *)(stack + RE_FIRM_PRICES), info, shop, money);
+    info_name(info, w->name, sizeof w->name);
+    info_done(info);
+    return 1;
+}
+
 /* one id of the data: a ware when it has a list of what it brings, and wanted here when that list has the tag */
 static int visit_ware(const BYTE *n, void *vctx)
 {
-    typedef long long(__thiscall * price_fn)(void *prices, void *info, short_string element, short_string attribute);
     wares_ctx *c = (wares_ctx *)vctx;
     const key_ctx path[2] = {{0, "tags", NULL}, {0, "power", NULL}};
     const BYTE *at = n + RE_SPECIALS_ID_VALUE;
@@ -1268,24 +1290,10 @@ static int visit_ware(const BYTE *n, void *vctx)
     if (power <= 0 || power > 100000 || c->count >= c->cap)
         return 1;
     re_ware *w = &c->out[c->count];
-    BYTE info[RE_INFO_BYTES + 4];
-    short_string shop = {"shop", 4, 15}, money = {"money", 5, 15};
-    memset(w, 0, sizeof *w);
-    w->type = *(const int *)(n + NODE_HEADER);
-    w->power = (int)power;
-    if (!info_of(c->stack, w->type, 0, info))
-        return 1;
-    w->space = info_number(info, "stats", "floorspace");
-    w->fixed = info_number(info, "stats", "fixedAsset") != 0.0;
-    w->active = info_number(info, "stats", "active") != 0.0;
-    w->hours = info_number(info, "stats", "usageHours");
-    if (!(w->hours > 0.0))
-        w->hours = info_number(info, "stats", "decayHours");
-    w->running = ware_running(c->stack, info);
-    w->price = -((price_fn)AT(RE_VA_WARE_PRICE))(*(void *const *)(c->stack + RE_FIRM_PRICES), info, shop, money);
-    info_name(info, w->name, sizeof w->name);
-    info_done(info);
-    c->count++;
+    if (ware_fill(c->stack, *(const int *)(n + NODE_HEADER), w)) {
+        w->power = (int)power;
+        c->count++;
+    }
     return 1;
 }
 
@@ -1300,6 +1308,23 @@ int re_game_tag_wares(void *firms, int firm, int tag, re_ware *out, int cap)
         map_walk(data + RE_DATA_LISTS, RE_SPECIALS_ID_VALUE + 8, visit_ware, &c) < 0)
         return -1;
     return c.count;
+}
+
+int re_game_ware(void *firms, int firm, int type, re_ware *out)
+{
+    const BYTE *stack = own_firm(firms, firm);
+    return stack != NULL && re_readable(*(const BYTE *const *)(stack + RE_FIRM_PRICES), 4) && ware_fill(stack, type, out);
+}
+
+int re_game_shop_ware(const BYTE *cell, int *firm)
+{
+    const BYTE *window = re_readable(cell, RE_SHOP_CELL_WARE + 4) ? *(const BYTE *const *)cell : NULL;
+    char state[32];
+    if (!re_readable(window, RE_SHOP_WINDOW_FIRM + 4) || !string_text(window + RE_SHOP_WINDOW_STATE, state, sizeof state) ||
+        strcmp(state, "StateFirmAsset") != 0)
+        return 0;
+    *firm = *(const int *)(window + RE_SHOP_WINDOW_FIRM);
+    return *(const int *)(cell + RE_SHOP_CELL_WARE);
 }
 
 void re_game_tag_name(void *firms, int firm, int tag, char *out, unsigned cap)

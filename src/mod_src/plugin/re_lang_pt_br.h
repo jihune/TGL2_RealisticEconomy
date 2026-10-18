@@ -164,4 +164,5 @@ static const char *const LANG_PT_BR[RE_MSG_COUNT] = {
     [RE_MSG_COACH_NONE] = "Coaching de %s: %s, já %s; taxa devolvida",
     [RE_MSG_COACH_YEAR] = "Coaching de %s: %s, uma preferência por ano; taxa devolvida",
     [RE_MSG_COACH_CASH] = "Coaching de %s: %s, falta dinheiro (%s); taxa devolvida",
+    [RE_MSG_WARE_HOUR] = "Custo por 10 horas %s\n(preço ÷ vida útil + consumo)",
 };

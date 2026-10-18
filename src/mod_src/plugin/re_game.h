@@ -201,6 +201,11 @@ typedef struct {
 /* The wares of the game's data that bring an asset tag: how many were written (at most `cap`), -1 when the data
  * cannot be read. */
 int re_game_tag_wares(void *firms, int firm, int tag, re_ware *out, int cap);
+/* One ware as re_game_tag_wares gives it for a business of the household, `power` 0; 0 when it cannot be read. */
+int re_game_ware(void *firms, int firm, int type, re_ware *out);
+/* The ware of an item of the game's purchase window when the window buys assets for a business, with that business
+ * in `firm`; 0 for an item of any other purchase. `cell` is the item as the window's hover handler has it. */
+int re_game_shop_ware(const BYTE *cell, int *firm);
 /* How many units of a ware a business of the household has among its assets; 0 when it cannot be read. */
 int re_game_firm_asset_units(void *firms, int firm, int type);
 /* The name of an asset tag as the game shows it; empty when there is none. */

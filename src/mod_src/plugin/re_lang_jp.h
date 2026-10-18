@@ -184,4 +184,5 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_COACH_NONE] = "パーソナルコーチング(%s): %sはすでに%s。料金を返金した",
     [RE_MSG_COACH_YEAR] = "パーソナルコーチング(%s): %s、変えられる好みは年に1つ。料金を返金した",
     [RE_MSG_COACH_CASH] = "パーソナルコーチング(%s): %s、追加料金%sの現金が足りない。料金を返金した",
+    [RE_MSG_WARE_HOUR] = "10時間あたりのコスト %s\n（価格÷耐用年数＋消費）",
 };

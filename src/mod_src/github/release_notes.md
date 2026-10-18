@@ -1,6 +1,8 @@
-Realistic Economy 1.3.0 for This Grand Life 2, game version v1.03.22.
+Realistic Economy 1.3.1 for This Grand Life 2, game version v1.03.22.
 
-**New in 1.3.0: things to spend the money of the late game on, and earlier competition.** Each has its own setting in `RealisticEconomy.ini`.
+**New in 1.3.1: what an asset costs to keep.** In a business's "Purchase Assets" window (the shop icon at the start of the business window's asset row), the hover text of an item has "Cost per 10hrs $0.97 (price ÷ lifetime + consumption)" above its activity: the price spread over the item's life plus the electricity, fuel and maintenance it uses, in the ten hours of the game's own utility line. The game shows the price, the life and the utilities apart, and among cars the cheapest to buy costs the most to keep. It is the number the mod's own choice of a missing asset goes by. In that window only; it follows `business` under `[features]`.
+
+**From 1.3.0: things to spend the money of the late game on, and earlier competition.** Each has its own setting in `RealisticEconomy.ini`.
 
 - Money into influence. A bank has two more donations below the game's "Donate To Political Group" ($100,000, about 100 influence points a month for 12 months), at the same points a dollar: "Fund A Think Tank", $1M, about 1,000 points a month for 12 months, and "Fund A Political Party", $10M, about 10,000. Like the game's donation they need the passion Lobbying. Each can be made once a year: the same donation made again within its 12 months only starts the 12 months again. The city votes on its policies every 12 months (the game: 24); the next vote a save has planned comes on its date. `influence=0` under `[features]` switches both off, `bigDonations=0` and `voteEvery12Months=0` under `[influence]` one of them.
 - Personal Coaching, at a hospital below Mental Therapy: one activity for each of the 18 preferences, $500,000 times the price level and 20 hours. When it ends, the chosen preference moves one step towards a like (an allergy becomes a hate, a hate a dislike, a dislike a like; a love a like, an addiction a love). From a dislike to a like the price is taken once more. Each person changes one preference a year; a like already, a second one the same year or too little cash for the second price gets the money back. No happiness points are taken. In the game preferences change only on a birthday, for points. `coaching=0` under `[features]`.
@@ -17,10 +19,10 @@ Realistic Economy 1.3.0 for This Grand Life 2, game version v1.03.22.
 
 **Coming from an earlier version**: extract and run the same file. It replaces the mod's files and leaves your settings file as it was (the saves are not copied a second time). The new features work without a line in an older settings file; to keep the game as it was, add `influence=0` and `coaching=0` under `[features]` and `competitionWeight=1` under `[balance]`.
 
-**Install**: close the game, extract `RealisticEconomy-1.3.0.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
+**Install**: close the game, extract `RealisticEconomy-1.3.1.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
 
 What the mod adds and how to use it is in the README of this repository, in the game's eight languages: English, 한국어, Deutsch, Español, Français, Português (Brasil), 日本語, 简体中文.
 
-The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.3.0.zip.sha256.txt`.
+The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.3.1.zip.sha256.txt`.
 
 An antivirus may question `version.dll`: it is the public Ultimate ASI Loader (MIT), the file that loads the mod when the game starts.

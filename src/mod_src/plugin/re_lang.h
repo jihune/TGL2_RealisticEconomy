@@ -260,6 +260,9 @@ enum {
     RE_MSG_COACH_NONE,
     RE_MSG_COACH_YEAR,
     RE_MSG_COACH_CASH,
+    /* above "Activity" in the hover text of an item of a business's purchase window (REQUEST.md [85]): %s what ten
+     * hours of the ware cost, its price over its life and what it uses up, in the game's unit and words for those */
+    RE_MSG_WARE_HOUR,
     RE_MSG_COUNT
 };
 

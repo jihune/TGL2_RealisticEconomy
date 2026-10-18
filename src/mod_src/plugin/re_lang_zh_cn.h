@@ -181,4 +181,5 @@ static const char *const LANG_ZH_CN[RE_MSG_COUNT] = {
     [RE_MSG_COACH_NONE] = "个人辅导（%s）：%s已是%s，费用已退还",
     [RE_MSG_COACH_YEAR] = "个人辅导（%s）：%s，每年只能改变一项偏好，费用已退还",
     [RE_MSG_COACH_CASH] = "个人辅导（%s）：%s，现金不足以支付追加费用%s，费用已退还",
+    [RE_MSG_WARE_HOUR] = "每10小时成本 %s\n（价格÷生命周期＋消耗）",
 };

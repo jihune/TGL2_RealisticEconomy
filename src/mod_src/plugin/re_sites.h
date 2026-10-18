@@ -362,9 +362,22 @@ enum {
 #define RE_PERSON_WINDOWS 0x5d8
 /* the hover text of an activity in a list (0x0055e6b0) asks for "activityTitle" here, its first line; the activity
  * object is the local at [ebp - 0xe0], filled before that */
+#define RE_VA_ACTIVITY_HOVER 0x0055e6b0u
 #define RE_VA_CALL_ACTIVITY_TITLE 0x0055ee21u
 #define RE_VA_HOVER_ACTIVITY 0x0055e88du /* lea eax, [ebp - 0xe0] / mov dword ptr [ecx], 1: the object the lookup fills */
 #define RE_HOVER_FRAME_ACTIVITY (-0xe0)
+/* the game's purchase window (FUN_0079e3a0 opens it for a business's assets): the hover text of an item (0x007a27e0)
+ * is the item's text, then that activity hover text (REQUEST.md [85]). Its frame has the item at [ebp - 0x164]; an
+ * item's ware is at +0xc, its window at +0; the window's state, a std::string, and the business it buys for */
+#define RE_VA_SHOP_HOVER_ACTIVITY 0x007a2b55u /* call 0x55e6b0: the activity text returns to the next instruction */
+#define RE_VA_SHOP_HOVER_CELL 0x007a280fu     /* mov [ebp - 0x164], edx: the item */
+#define RE_SHOP_HOVER_FRAME_CELL (-0x164)
+#define RE_VA_SHOP_CELL_WARE 0x007a2883u /* mov eax, [esi + 0xc]: the ware of the item's key */
+#define RE_SHOP_CELL_WARE 0xc
+#define RE_VA_SHOP_WINDOW_FIRM 0x0079e401u /* mov [edi + 0x12c], esi: the business the window buys for */
+#define RE_SHOP_WINDOW_FIRM 0x12c
+#define RE_VA_SHOP_WINDOW_STATE 0x0079e413u /* lea ecx, [edi + 0x110]: "StateFirmAsset" goes there */
+#define RE_SHOP_WINDOW_STATE 0x110
 
 /* futures (note b12 "Q4", "Q5"): what the rule of the rates makes of an asset's inflation rate until the expiry.
  * These sites belong to the stocks group: the futures tab is a part of the stocks window. */

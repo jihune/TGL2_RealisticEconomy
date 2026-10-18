@@ -168,4 +168,5 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_COACH_NONE] = "Coaching de %s : %s, déjà %s ; frais remboursés",
     [RE_MSG_COACH_YEAR] = "Coaching de %s : %s, une préférence par an ; frais remboursés",
     [RE_MSG_COACH_CASH] = "Coaching de %s : %s, liquidités sous %s ; frais remboursés",
+    [RE_MSG_WARE_HOUR] = "Coût par 10 heures %s\n(prix ÷ durée de vie + consommation)",
 };

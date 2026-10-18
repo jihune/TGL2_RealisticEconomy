@@ -341,6 +341,9 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     /* the person, the preference, the second price */
     [RE_MSG_COACH_CASH] = {"Coaching for %s: %s, cash short of %s more; fee paid back",
                            "개인 코칭(%s): %s, 추가 비용 %s에 현금 부족. 비용을 돌려받았습니다", NULL, NULL, NULL, NULL},
+    /* the cost of ten hours, the unit of the game's own utility line ("Cost Per 10hrs"); "수명" is the game's word as
+     * the mod's Korean wording has it (the file says "라이프타임") */
+    [RE_MSG_WARE_HOUR] = {"Cost per 10hrs %s\n(price ÷ lifetime + consumption)", "10시간당 비용 %s\n(가격÷수명 + 소비)", NULL, NULL, NULL, NULL},
 };
 
 /* What the table does not have: one file a language, `[RE_MSG_...] = "text"` a line. */
