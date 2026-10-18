@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.2.1 do mod. Não é do desenvolvedor do jogo.
+Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.3.0 do mod. Não é do desenvolvedor do jogo.
 
 Outros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -68,6 +68,9 @@ Estas são todas as funções que mudam uma regra ou um número do jogo. Coloque
 | Cassino | Aposta e chances fixas, cada jogo uma vez por mês | `[features] casino=0` |
 | Formação concluída | O valor não diminui | `[features] experience=0` |
 | Automação das empresas | O mod cuida de funcionários, ativos, anúncios e contratos só em uma empresa que você entrega. O mesmo clique pega de volta | `[features] business=0` |
+| Concorrência | No mercado de um tipo de empresa, as empresas contam 1,25 vez, então a concorrência chega antes | `[balance] competitionWeight=1` |
+| Dinheiro em influência | Duas doações grandes no banco ($1M, $10M); a cidade vota suas políticas a cada 12 meses (jogo: 24); a doação própria do jogo uma vez por ano (jogo: todo mês) | `[features] influence=0` |
+| Coaching pessoal | No hospital, com dinheiro, uma preferência escolhida se aproxima um nível de «gosta»; uma por ano por pessoa | `[features] coaching=0` |
 
 Cada número do balanceamento tem a sua linha em `[balance]`.
 

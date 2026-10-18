@@ -163,4 +163,9 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_SORT_DEAR] = "Trier par\nsurévaluées\n(recherchées)",
     [RE_MSG_SORT_CHANGE] = "Par variation\nsur un mois",
     [RE_MSG_SORT_CAP] = "Trier par\ncapitalisation\n(grandes d'abord)",
+    [RE_MSG_COACH_DONE] = "Coaching de %s : %s, %s → %s",
+    [RE_MSG_COACH_CROSS] = "Coaching de %s : %s, %s → %s, %s de plus payés",
+    [RE_MSG_COACH_NONE] = "Coaching de %s : %s, déjà %s ; frais remboursés",
+    [RE_MSG_COACH_YEAR] = "Coaching de %s : %s, une préférence par an ; frais remboursés",
+    [RE_MSG_COACH_CASH] = "Coaching de %s : %s, liquidités sous %s ; frais remboursés",
 };

@@ -18,6 +18,10 @@
 #define RE_ID_BLACKJACK 75721
 #define RE_ID_BACCARAT 75726
 #define RE_TAG_GAMBLING 2191 /* the finance tag the game books these activities under */
+/* The same wrapper hands the last hour of the mod's activities of Personal Coaching (REQUEST.md [76], [79]; the ids
+ * RE_COACHING_FIRST to RE_COACHING_LAST, one a preference) to `re_coaching_end`, whether or not the casino is on;
+ * `re_casino_games` is 1 when the casino is. */
+#include "re_data_coaching.h"
 
 typedef struct {
     double chance, times; /* with this chance the game pays this many times the stake */
@@ -67,6 +71,9 @@ extern re_casino_end_fn re_casino_end;
 typedef void (*re_casino_start_fn)(unsigned char *object);
 extern re_casino_start_fn re_casino_start;
 void re_casino_start_enter(unsigned char *object);
+extern unsigned char re_casino_games;
+extern re_casino_end_fn re_coaching_end;
+void re_coaching_end_enter(unsigned char *actions, unsigned char *record, unsigned char *object);
 void re_casino_money_hook(void); /* target for re_patch_call; not callable from C */
 
 #endif

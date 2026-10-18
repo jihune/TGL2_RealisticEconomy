@@ -179,4 +179,9 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_SORT_DEAR] = "割高順に並べる\n(調査済みのみ)",
     [RE_MSG_SORT_CHANGE] = "前月比で\n上昇順に並べる",
     [RE_MSG_SORT_CAP] = "時価総額\n大きい順に並べる",
+    [RE_MSG_COACH_DONE] = "パーソナルコーチング(%s): %s、%s → %s",
+    [RE_MSG_COACH_CROSS] = "パーソナルコーチング(%s): %s、%s → %s、追加料金%s",
+    [RE_MSG_COACH_NONE] = "パーソナルコーチング(%s): %sはすでに%s。料金を返金した",
+    [RE_MSG_COACH_YEAR] = "パーソナルコーチング(%s): %s、変えられる好みは年に1つ。料金を返金した",
+    [RE_MSG_COACH_CASH] = "パーソナルコーチング(%s): %s、追加料金%sの現金が足りない。料金を返金した",
 };

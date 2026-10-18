@@ -24,6 +24,17 @@ game again. "[features] balance=0" means: under the line [features], change bala
        harder; the interest on cash, the awareness and the degree prices make it easier.
           All of it off: [features] balance=0
           One by one: put the game's number in [balance] (each line names it).
+     - Competition comes earlier (the last of 14). In a business type's market the firms count 1.25 times. With
+       more firms of a type, competition sets in sooner than in the game and takes more awareness every month.
+       It makes the game harder.
+          Off: [balance] competitionWeight=1
+     - Money into influence (15). A bank has two large donations ($1M, $10M), and the city votes on its policies
+       every 12 months (the game: 24). Something to spend the money of the late game on.
+          Off: [features] influence=0
+          One by one: [influence] bigDonations=0, [influence] voteEvery12Months=0
+     - Personal Coaching (16). At a hospital, for money, a preference you choose moves one step towards a like, one
+       preference a year for each person. In the game preferences change only on a birthday.
+          Off: [features] coaching=0
      - Loan rates by credit grade (1). A good grade borrows cheaper than in the game, a poor one dearer.
           Off: [features] credit=0
      - A listing pays cash (4). You keep 45% of the shares and get the money for the rest (the game: 25%, no cash).
@@ -502,6 +513,17 @@ What it does
      - The title of the month's summary. Korean "10월, 2035 말" (the English order) becomes "2035년 10월 말", German
        "Beenden von Oktober" ("quit") "Ende Oktober 2035", French "Fin du Octobre" "Fin Octobre 2035". In
        Japanese and Chinese a second "月" followed the month's name ("10月月末", "十月月底"); now "10月末", "十月底".
+   Since 1.3.0, in Korean, more than three hundred names and tips of the game that are wrong or read strangely:
+   places ("학년 학교", "grade year school", becomes "초등학교", primary school; "라이브러리", the loanword, the plain
+   "도서관"), the city's policies ("Defund Transportation" read "교통비 환불", "refund of transit fares"), jobs
+   ("Dishwasher" read as the machine), status effects, the bank's actions ("Withdraw" read "철수", a retreat), the
+   words for needs and preferences, a number of months that read as the name of a month. The game reads them so from
+   its language files; the files on the disk are not changed, and a text the game itself puts right later is left
+   as the game has it. The other languages have not had such a review.
+   In the other languages, since 1.3.0, the words for how much a person likes something: Spanish and Portuguese
+   wrote a like as "Como" ("as", "I eat"), French as "Comme" ("as"), and Japanese had the like and the love one step
+   off ("楽しむ", to enjoy, for a like; "好き", like, for a love). Spanish "Añadir" ("to add") for an addiction and
+   Portuguese "Não Gostei" ("I did not like it") for a dislike are put right as well.
 
 8. Casino
    The four casino games (slots, roulette, blackjack, baccarat) become games of chance with a set stake.
@@ -1065,8 +1087,60 @@ What it does
          Computer Science $113,000 to $53,800, Art and Design $107,300 to $51,200, Science and Engineering $115,000
          to $63,000, Business and Finance $125,000 to $56,500. In the game the four cost 22 to 27 months of that
          pay, where 25 of the 30 courses that open jobs cost 13 months or less. The other courses keep their price.
+     - Competition comes earlier: in a business type's market the firms count 1.25 times (since 1.3.0; the game:
+       1). competitionWeight
+         The game measures competition in each business type by the custom the city holds plus the share of that
+         type's firms; the larger that sum, the more awareness the type's businesses lose every month. At 1.25 the
+         firms' size at which competition sets in comes down to about four fifths of the game's. In one save the
+         competition index (awareness lost a month, %) of Auditing, Law Firm and Hair Salon was +9, +7, +2 as in the
+         game, +20, +15, +10 at 1.25 and +32, +23, +18 at 1.5. At 1.5 a large type loses a third of its awareness
+         every month, more than advertising holds up, so 1.25 it is. 1 to 3 can be set; 1 is the game. Rivals and
+         listed companies see the same competition. The custom the city holds shrinks faster too, and what it lost
+         stays in the save (also without the mod). Competition among property types is reckoned apart and is not
+         changed.
 
-No window or button is added. Text is added to windows the game already has.
+15. Money into influence (since 1.3.0, for late in the game)
+   Late in the game money piles up and there is little to spend it on. Influence is the points that move the city's
+   votes on its policies. The game's "Donate To Political Group" ($100,000) gives about 100 points a month for 12
+   months. The mod adds two larger donations at the same rate, below that one at a bank:
+     - Fund A Think Tank: $1,000,000. About 1,000 influence points a month for 12 months.
+     - Fund A Political Party: $10,000,000. About 10,000 a month for 12 months.
+   The game's price level multiplies the price. As with the game's donation, only a person with the passion
+   Lobbying can make them, and they take 10 hours. Each can be made once a year: the same donation made again
+   within 12 months does not add its points, it only starts the 12 months again, so the money would be lost.
+   Different donations add up.
+   The game's own donation ("Donate To Political Group") could be made every month, but made again it only starts
+   its 12 months again, so made monthly it threw away eleven twelfths of the money. The mod makes it once a year for
+   the household as well; for 12 months after it the bank's row says "recently done".
+   The city votes on its policies every 12 months (the game: 24). The next vote a save has planned already comes on
+   its date; from that vote on the votes are 12 months apart.
+   Off: [features] influence=0. One by one: [influence] bigDonations=0 (the two donations), voteEvery12Months=0 (the
+   time between votes), donationOncePerYear=0 (the game's donation every month). The game's data files are not changed: the game reads them with the two donations added.
+
+16. Personal Coaching (since 1.3.0)
+   In the game a person's likes and dislikes (preferences) change only on a birthday, for points, and only four
+   chosen by chance can be changed. The mod adds 18 activities at a hospital, below "Mental Therapy", one for each
+   preference ("Personal Coaching: Working", "Personal Coaching: Exercising" and so on). You choose the preference.
+     - $500,000 times the game's price level, and 20 hours. No happiness points are taken.
+     - When it ends, the chosen preference moves one step towards a like: an allergy becomes a hate, a hate a
+       dislike, a dislike a like. A love becomes a like and an addiction a love (both have a need to keep up). A like
+       stays as it is.
+     - From a dislike to a like the same price is taken once more at the end. The game's character editor counts that
+       step twice as well.
+     - A person changes one preference a year. After a change all 18 coachings of that person show as "Already done
+       recently" for twelve months.
+     - Nothing changes and the money comes back when the preference is a like already, when another preference of
+       the person was changed the same year (two coachings booked before either ended), or when the cash is short of
+       the second price. A coaching paid back is not blocked as done recently (after a change the same year it is
+       blocked with the others).
+     - What changed is shown in the ticker at the top and in the recent notes, for example "Coaching for (name):
+       Exercising, Dislike → Like, $928,935.92 more paid".
+   The change of a preference in the birthday window stays as in the game. Coaching does not count as a birthday
+   change, so the points a change costs there stay as they were.
+   Off: [features] coaching=0.
+
+No window or button is added. Text is added to windows the game already has, and twenty activities to the game's
+lists of a place (the two donations and the 18 of Personal Coaching).
 
 The mod's own texts follow the language of the game, all eight: English, Korean, German, Spanish, French,
 Brazilian Portuguese, Japanese and Simplified Chinese. Where the game has a word of its own for a thing (awareness,

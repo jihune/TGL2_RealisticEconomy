@@ -1656,8 +1656,16 @@ static void test_casino_end(unsigned char *actions, unsigned char *record, unsig
     __asm__("pxor %xmm3, %xmm3");
 }
 
-static unsigned g_start_calls;
+static unsigned g_start_calls, g_coach_calls;
 static unsigned char *g_start_object;
+
+static void test_coaching_end(unsigned char *actions, unsigned char *record, unsigned char *object)
+{
+    g_coach_calls++;
+    g_end_actions = actions;
+    g_end_record = record;
+    g_end_object = object;
+}
 
 static void test_casino_start(unsigned char *object)
 {
@@ -3591,6 +3599,7 @@ int main(int argc, char **argv)
         re_casino_money = (void *)fake_action_money;
         re_casino_end = test_casino_end;
         re_casino_start = test_casino_start;
+        re_casino_games = 1;
         installed = re_patch_call((BYTE *)fake_action_site, (const BYTE *)fake_action_money, re_casino_money_hook);
         printf("  T15 money call redirected=%d\n", installed);
         g_failures += !installed;
@@ -3617,6 +3626,41 @@ int main(int argc, char **argv)
         g_failures += !ok;
         printf("  T15 the first and the last hour of a game          calls_wrong=%d of %d kinds %s\n", calls_wrong,
                (int)(sizeof calls / sizeof calls[0]), ok ? "ok" : "FAIL");
+
+        /* the same wrapper and Personal Coaching: the last hour of any of its activities (the first and the last id)
+         * goes to re_coaching_end; its first hour, the ids just outside them and anything of the casino's with the
+         * casino off go to the game's function as they came (id 0 is the game's) */
+        fake_object coach_object = {{0, 0, 0}, 0, 0.0f};
+        static const struct {
+            int id, games;
+            unsigned phase, want_phase, want_coach, want_end;
+        } more[] = {{RE_COACHING_FIRST, 1, 1, 1, 0, 0},     {RE_COACHING_FIRST, 1, 0, 0, 1, 0},    {RE_COACHING_LAST, 0, 0, 0, 1, 0},
+                    {RE_COACHING_LAST + 1, 0, 0, 0, 0, 0}, {RE_COACHING_FIRST - 1, 0, 0, 0, 0, 0}, {0, 0, 1, 1, 0, 0},
+                    {0, 0, 0, 0, 0, 0}};
+        re_coaching_end = test_coaching_end;
+        calls_wrong = 0;
+        for (int i = 0; installed && i < (int)(sizeof more / sizeof more[0]); i++) {
+            coach_object.id = more[i].id;
+            fake_object *object = more[i].id ? &coach_object : &game_object;
+            unsigned intact = 0;
+            re_casino_games = (unsigned char)more[i].games;
+            g_action_calls = g_end_calls = g_start_calls = g_coach_calls = 0;
+            g_action_phase = 99;
+            unsigned result = call_action(actions, record, object, more[i].phase, &intact);
+            int wrong = result != 0x55555555 || intact != 1 || g_action_calls != 1 || g_action_phase != more[i].want_phase + (unsigned)control ||
+                        g_coach_calls != more[i].want_coach || g_end_calls != more[i].want_end || g_start_calls != 0 ||
+                        (more[i].want_coach && (g_end_actions != actions || g_end_record != record || g_end_object != (unsigned char *)object));
+            if (wrong)
+                printf("  T15 coaching call %d: result=0x%x intact=%u calls=%u phase=%u coach=%u end=%u start=%u\n", i, result, intact,
+                       g_action_calls, g_action_phase, g_coach_calls, g_end_calls, g_start_calls);
+            calls_wrong += wrong;
+        }
+        re_casino_games = 1;
+        re_coaching_end = NULL;
+        ok = installed && calls_wrong == 0;
+        g_failures += !ok;
+        printf("  T15 Personal Coaching and the casino switched off  calls_wrong=%d of %d kinds %s\n", calls_wrong,
+               (int)(sizeof more / sizeof more[0]), ok ? "ok" : "FAIL");
     }
 
     /* T16: a business. The cost of an hour of work and the order of a list; the call of the game's efficiency function; the
@@ -4460,6 +4504,202 @@ int main(int argc, char **argv)
         printf("  T27 corrections of the game's data files            files_read=%d corrections=%d found_once=%d found_again=%d "
                "file_lengths_changed=%d table_lengths_wrong=%d numbers_wrong=%d %s\n",
                files, RE_DATA_COUNT, once, again, sizes_wrong, lengths_wrong, numbers_wrong, ok ? "ok" : "FAIL");
+    }
+
+    /* T28: the additions to the game's data files (re_data.h). Each row has to be made in exactly one file of the
+     * game's data and language folders; the longer text has every element closed, the original text whole around the
+     * additions, and gets nothing a second time. An addition that is not wanted is made nowhere. The control reads a
+     * folder that has none of the pieces the files are known by. */
+    {
+        static char xml[1 << 20];
+        const wchar_t *const known[] = {L"data\\activities",
+                                        L"data\\status",
+                                        L"data\\passions",
+                                        L"data\\sites",
+                                        L"modsLanguages\\ko\\data\\activities",
+                                        L"modsLanguages\\ko\\data\\status",
+                                        L"modsLanguages\\de\\data\\activities",
+                                        L"modsLanguages\\de\\data\\status",
+                                        L"modsLanguages\\es\\data\\activities",
+                                        L"modsLanguages\\es\\data\\status",
+                                        L"modsLanguages\\fr\\data\\activities",
+                                        L"modsLanguages\\fr\\data\\status",
+                                        L"modsLanguages\\pt-br\\data\\activities",
+                                        L"modsLanguages\\pt-br\\data\\status",
+                                        L"modsLanguages\\jp\\data\\activities",
+                                        L"modsLanguages\\jp\\data\\status",
+                                        L"modsLanguages\\zh_CN\\data\\activities",
+                                        L"modsLanguages\\zh_CN\\data\\status"},
+                             *const other[] = {L"data\\quests"};
+        const wchar_t *const *folders = control ? other : known;
+        size_t folder_count = control ? 1 : sizeof known / sizeof known[0];
+        int rows = re_data_add_rows(), found[32] = {0}, files = 0, again = 0, unclosed = 0, cut = 0, unwanted = 0, on[RE_ADD_COUNT], off[RE_ADD_COUNT];
+        for (int i = 0; i < RE_ADD_COUNT; i++)
+            on[i] = i != RE_ADD_KOREAN && i != RE_ADD_LEVEL_WORDS && i != RE_ADD_DONATION_YEARLY, off[i] = 0; /* T29's */
+        wchar_t file[MAX_PATH];
+        wcsncpy(file, path, MAX_PATH - 1);
+        file[MAX_PATH - 1] = 0;
+        wchar_t *slash = wcsrchr(file, L'\\') ? wcsrchr(file, L'\\') : wcsrchr(file, L'/');
+        for (size_t d = 0; slash != NULL && d < folder_count; d++) {
+            WIN32_FIND_DATAW entry;
+            if ((size_t)(slash - file) + wcslen(folders[d]) + 80 >= MAX_PATH)
+                continue;
+            _snwprintf(slash + 1, 100, L"%ls\\*.xml", folders[d]);
+            HANDLE find = FindFirstFileW(file, &entry);
+            if (find == INVALID_HANDLE_VALUE)
+                continue;
+            do {
+                if (wcslen(entry.cFileName) > 60)
+                    continue;
+                _snwprintf(slash + 1, 170, L"%ls\\%ls", folders[d], entry.cFileName);
+                FILE *f = _wfopen(file, L"rb");
+                if (f == NULL)
+                    continue;
+                size_t size = fread(xml, 1, sizeof xml - 1, f);
+                fclose(f);
+                xml[size] = 0;
+                files++;
+                unsigned made = 0, made_off = 0;
+                int replaced[RE_DATA_REPLACE_FILES] = {0}, replaced_off[RE_DATA_REPLACE_FILES] = {0};
+                char *grown = re_data_add(xml, on, (void *(*)(unsigned))malloc, &made, replaced);
+                char *none = re_data_add(xml, off, (void *(*)(unsigned))malloc, &made_off, replaced_off);
+                unwanted += none != NULL || made_off != 0;
+                free(none);
+                if (grown == NULL)
+                    continue;
+                for (int r = 0; r < rows && r < 32; r++)
+                    found[r] += made >> r & 1;
+                unsigned more = 0;
+                int replaced_more[RE_DATA_REPLACE_FILES] = {0};
+                char *twice = re_data_add(grown, on, (void *(*)(unsigned))malloc, &more, replaced_more);
+                again += twice != NULL;
+                free(twice);
+                const char *open_close[][2] = {{"<activity>", "</activity>"}, {"<status>", "</status>"}};
+                for (int k = 0; k < 2; k++) {
+                    int opened = 0, closed = 0;
+                    for (const char *at = strstr(grown, open_close[k][0]); at; at = strstr(at + 1, open_close[k][0]))
+                        opened++;
+                    for (const char *at = strstr(grown, open_close[k][1]); at; at = strstr(at + 1, open_close[k][1]))
+                        closed++;
+                    unclosed += opened != closed;
+                }
+                /* the original's head and its tail from the last "</xml>" are where they were */
+                size_t head = size < 200 ? size : 200, grown_len = strlen(grown);
+                const char *end = NULL;
+                for (const char *at = strstr(xml, "</xml>"); at; at = strstr(at + 1, "</xml>"))
+                    end = at;
+                size_t tail = end ? size - (size_t)(end - xml) : 0;
+                cut += end == NULL || grown_len <= size || memcmp(grown, xml, head) != 0 || memcmp(grown + grown_len - tail, end, tail) != 0;
+                free(grown);
+            } while (FindNextFileW(find, &entry));
+            FindClose(find);
+        }
+        int once = 0;
+        for (int r = 0; r < rows && r < 32; r++)
+            once += found[r] == 1;
+        int ok = files > 0 && rows <= 32 && once == rows && again == 0 && unclosed == 0 && cut == 0 && unwanted == 0;
+        g_failures += !ok;
+        printf("  T28 additions to the game's data files              files_read=%d rows=%d made_once=%d made_again=%d unclosed=%d "
+               "original_cut=%d made_unwanted=%d %s\n",
+               files, rows, once, again, unclosed, cut, unwanted, ok ? "ok" : "FAIL");
+    }
+
+    /* T29: the pieces of text put in the place of others (re_data_ko.h). Every piece of a file has to be put in one
+     * file of the game's language folders only, the result to have the same elements, and a second pass to find
+     * nothing. A replacement that is not wanted is made nowhere. Besides the Korean pieces: the words for a level in
+     * four languages and the game's donation once a year (data\activities). The control reads the English files,
+     * which have none of them. */
+    {
+        static char xml[1 << 20];
+        const wchar_t *const known[] = {L"modsLanguages\\ko",
+                                        L"modsLanguages\\ko\\data\\activities",
+                                        L"modsLanguages\\ko\\data\\business",
+                                        L"modsLanguages\\ko\\data\\cities",
+                                        L"modsLanguages\\ko\\data\\contracts",
+                                        L"modsLanguages\\ko\\data\\educations",
+                                        L"modsLanguages\\ko\\data\\jobs",
+                                        L"modsLanguages\\ko\\data\\misc",
+                                        L"modsLanguages\\ko\\data\\passions",
+                                        L"modsLanguages\\ko\\data\\quests",
+                                        L"modsLanguages\\ko\\data\\restate",
+                                        L"modsLanguages\\ko\\data\\sites",
+                                        L"modsLanguages\\ko\\data\\status",
+                                        L"modsLanguages\\ko\\data\\wares",
+                                        L"modsLanguages\\en",
+                                        L"modsLanguages\\jp",
+                                        L"modsLanguages\\es",
+                                        L"modsLanguages\\fr",
+                                        L"modsLanguages\\pt-br",
+                                        L"modsLanguages\\de",
+                                        L"modsLanguages\\zh_CN",
+                                        L"data\\activities",
+                                        L"data\\misc"},
+                             *const other[] = {L"modsLanguages\\en"};
+        const wchar_t *const *folders = control ? other : known;
+        size_t folder_count = control ? 1 : sizeof known / sizeof known[0];
+        int count = re_data_replace_files(), put[RE_DATA_REPLACE_FILES] = {0}, in_files[RE_DATA_REPLACE_FILES] = {0}, files = 0, again = 0,
+            elements = 0, unwanted = 0, on[RE_ADD_COUNT], off[RE_ADD_COUNT];
+        for (int i = 0; i < RE_ADD_COUNT; i++)
+            on[i] = i == RE_ADD_KOREAN || i == RE_ADD_LEVEL_WORDS || i == RE_ADD_DONATION_YEARLY, off[i] = 0;
+        wchar_t file[MAX_PATH];
+        wcsncpy(file, path, MAX_PATH - 1);
+        file[MAX_PATH - 1] = 0;
+        wchar_t *slash = wcsrchr(file, L'\\') ? wcsrchr(file, L'\\') : wcsrchr(file, L'/');
+        for (size_t d = 0; slash != NULL && d < folder_count; d++) {
+            WIN32_FIND_DATAW entry;
+            if ((size_t)(slash - file) + wcslen(folders[d]) + 80 >= MAX_PATH)
+                continue;
+            _snwprintf(slash + 1, 100, L"%ls\\*.xml", folders[d]);
+            HANDLE find = FindFirstFileW(file, &entry);
+            if (find == INVALID_HANDLE_VALUE)
+                continue;
+            do {
+                if (wcslen(entry.cFileName) > 60)
+                    continue;
+                _snwprintf(slash + 1, 170, L"%ls\\%ls", folders[d], entry.cFileName);
+                FILE *f = _wfopen(file, L"rb");
+                if (f == NULL)
+                    continue;
+                size_t size = fread(xml, 1, sizeof xml - 1, f);
+                fclose(f);
+                xml[size] = 0;
+                files++;
+                unsigned made = 0, made_off = 0, more = 0;
+                int replaced[RE_DATA_REPLACE_FILES] = {0}, replaced_off[RE_DATA_REPLACE_FILES] = {0}, replaced_more[RE_DATA_REPLACE_FILES] = {0};
+                char *grown = re_data_add(xml, on, (void *(*)(unsigned))malloc, &made, replaced);
+                char *none = re_data_add(xml, off, (void *(*)(unsigned))malloc, &made_off, replaced_off);
+                unwanted += none != NULL;
+                free(none);
+                if (grown == NULL)
+                    continue;
+                for (int r = 0; r < count; r++) {
+                    put[r] += replaced[r];
+                    in_files[r] += replaced[r] > 0;
+                }
+                char *twice = re_data_add(grown, on, (void *(*)(unsigned))malloc, &more, replaced_more);
+                again += twice != NULL;
+                free(twice);
+                int was = 0, now = 0;
+                for (const char *at = strchr(xml, '<'); at; at = strchr(at + 1, '<'))
+                    was++;
+                for (const char *at = strchr(grown, '<'); at; at = strchr(at + 1, '<'))
+                    now++;
+                elements += was != now;
+                free(grown);
+            } while (FindNextFileW(find, &entry));
+            FindClose(find);
+        }
+        int whole = 0, pieces = 0, made_pieces = 0;
+        for (int r = 0; r < count; r++) {
+            whole += in_files[r] == 1 && put[r] == re_data_replace_pieces(r);
+            pieces += re_data_replace_pieces(r);
+            made_pieces += put[r];
+        }
+        int ok = files > 0 && whole == count && again == 0 && elements == 0 && unwanted == 0;
+        g_failures += !ok;
+        printf("  T29 Korean texts put right in the game's files      files_read=%d files_with_pieces=%d made_whole=%d pieces=%d made=%d "
+               "made_again=%d elements_changed=%d made_unwanted=%d %s\n",
+               files, count, whole, pieces, made_pieces, again, elements, unwanted, ok ? "ok" : "FAIL");
     }
 
     printf("failures=%d control=%d verdict=%s\n", g_failures, control, g_failures == 0 ? "PASS" : "FAIL");

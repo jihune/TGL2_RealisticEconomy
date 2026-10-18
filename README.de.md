@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.2.1. Nicht vom Entwickler des Spiels.
+Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.3.0. Nicht vom Entwickler des Spiels.
 
 Andere Sprachen: [English](README.md), [한국어](README.ko.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -68,6 +68,9 @@ Das sind alle Funktionen, die eine Regel oder eine Zahl des Spiels ändern. Setz
 | Casino | Fester Einsatz und feste Chancen, jedes Spiel einmal im Monat | `[features] casino=0` |
 | Abgeschlossene Ausbildung | Ihr Wert sinkt nicht | `[features] experience=0` |
 | Automatisierung der Geschäfte | Der Mod verwaltet Personal, Vermögenswerte, Werbung und Verträge nur in einem Geschäft, das du ihm übergibst. Derselbe Klick holt es zurück | `[features] business=0` |
+| Konkurrenz | Im Markt einer Geschäftsart zählen die Firmen 1,25-fach, die Konkurrenz setzt früher ein | `[balance] competitionWeight=1` |
+| Geld für Einfluss | Zwei große Spenden bei der Bank ($1M, $10M); die Stadt stimmt alle 12 Monate über ihre Politik ab (Spiel: 24); die Spende des Spiels selbst einmal im Jahr (Spiel: jeden Monat) | `[features] influence=0` |
+| Persönliches Coaching | Im Krankenhaus rückt gegen Geld eine gewählte Vorliebe eine Stufe näher an Gefallen; eine pro Person und Jahr | `[features] coaching=0` |
 
 Jede Zahl der Balance hat ihre eigene Zeile unter `[balance]`.
 

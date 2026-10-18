@@ -12,7 +12,8 @@
  *             and the other month-end payments as they were at the last month end; shown as one line of the game's
  *             monthly summary panel
  *   wording   texts of the game that mistranslate the English original are put right ("수정됨" for a fixed rate
- *             becomes "고정"); most of them Korean, a few in other languages
+ *             becomes "고정"); most of them Korean, a few in other languages. In Korean also the names and tips that
+ *             are wrong or read strangely, put right in the language files as the game reads them (re_data_ko.h)
  *
  * The plugin's own texts come from re_lang.c, in the language the game is set to; English where it has none.
  *   guard     after loading a save from before a month end the playthrough has already passed, the player's stock
@@ -70,7 +71,7 @@
 #include "re_wording.h"
 #include "re_xp.h"
 
-#define PLUGIN_VERSION "1.2.1"
+#define PLUGIN_VERSION "1.3.0"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -179,11 +180,18 @@ static int g_asset_fill_hooked, g_asset_debt, g_asset_charge, g_asset_charge_hoo
 static int g_contracts_keep = 1, g_contracts_hooked;
 static double g_contract_hours = 10.0; /* what a signing costs: hours of a store manager at the standard wage */
 static int g_data_fix[RE_DATA_COUNT];  /* the corrections of the game's data files that are wanted (re_data.h) */
+static int g_data_add[RE_ADD_COUNT];   /* the additions to them that are wanted */
+/* late game (REQUEST.md [76], note e17): money into influence. Two larger donations, and the city's vote on its
+ * policies every 12 months instead of 24 */
+static int g_on_influence;
+/* late game: Personal Coaching, an activity for each preference that moves it one step towards a like (coaching_end) */
+static int g_on_coaching, g_coaching_tried;
 /* balance (note m48): numbers of the game's economy that the mod sets. The two trading fees and the savings account's
  * rate are the game's data, corrected as it is read (re_data.h); the interest on the cash is the mod's own, paid
  * before a month end (cash_interest). */
 static int g_on_balance;
 static double g_stock_fee = 0.02, g_futures_fee = 0.10, g_savings_rate = 0.8, g_cash_rate = 0.5;
+static double g_competition_weight = 1.25; /* the firms' part of a business type's market (competition_scale) */
 static int g_rent_market = 1; /* a renewed lease takes the market's rent, lower as well as higher */
 static double g_start_awareness = 0.25; /* the awareness of a business the player starts; the game's is 0 */
 static int g_fee_label; /* the futures fee's label is put in the mod's words (text_want) */
@@ -3144,25 +3152,119 @@ static int casino_load(void *main_obj)
     return total != 0;
 }
 
+/* The two calls of the action-money function go through re_casino_money_hook, for the casino and for Personal
+ * Coaching alike: redirected once, the first time either asks. 1 = both calls are redirected. */
+static int g_money_end_hooked, g_money_start_hooked, g_money_tried;
+static int money_hook(void)
+{
+    if (!g_money_tried) {
+        g_money_tried = 1;
+        re_casino_money = AT(RE_VA_ACTION_MONEY);
+        g_money_end_hooked = re_patch_call(AT(RE_VA_CALL_MONEY_END), AT(RE_VA_ACTION_MONEY), re_casino_money_hook);
+        g_money_start_hooked =
+            g_money_end_hooked && re_patch_call(AT(RE_VA_CALL_MONEY_START), AT(RE_VA_ACTION_MONEY), re_casino_money_hook);
+    }
+    return g_money_end_hooked && g_money_start_hooked;
+}
+
 static void casino_install(void)
 {
     re_casino_str_free = AT(RE_VA_STR_FREE);
-    re_casino_money = AT(RE_VA_ACTION_MONEY);
     re_casino_end = casino_end;
     re_casino_start = casino_start;
     /* the attributes last: without them a game keeps the game's own amount, with them and without the two calls it
      * would charge the stake and never pay */
-    int end = re_patch_call(AT(RE_VA_CALL_MONEY_END), AT(RE_VA_ACTION_MONEY), re_casino_money_hook);
-    int start = end && re_patch_call(AT(RE_VA_CALL_MONEY_START), AT(RE_VA_ACTION_MONEY), re_casino_money_hook);
-    int attributes = start && re_detour5(AT(RE_VA_ATTRIBUTE), RE_GETTER_PROLOGUE, re_casino_attr_hook, &re_casino_attr_trampoline);
+    re_casino_games = 1;
+    int calls = money_hook();
+    int attributes = calls && re_detour5(AT(RE_VA_ATTRIBUTE), RE_GETTER_PROLOGUE, re_casino_attr_hook, &re_casino_attr_trampoline);
     g_casino_installed = attributes;
+    re_casino_games = (unsigned char)attributes;
     re_log("casino: money call at the end %s, at the start %s, attribute detour %s; a game played after the loaded save: %s",
-           end ? "redirected" : "NOT redirected", start ? "redirected" : "NOT redirected", attributes ? "installed" : "NOT installed",
-           g_casino_keep ? "counts again" : "is forgotten");
+           g_money_end_hooked ? "redirected" : "NOT redirected", g_money_start_hooked ? "redirected" : "NOT redirected",
+           attributes ? "installed" : "NOT installed", g_casino_keep ? "counts again" : "is forgotten");
     for (int g = 0; g < RE_CASINO_GAMES; g++)
         re_log("casino: %s (activity %d): stake $%.2f before the price index, %.1f%% of the stakes come back",
                re_lang_text(RE_LANG_EN, RE_MSG_CASINO_SLOTS + g), RE_CASINO[g].id, dollars(RE_CASINO[g].stake),
                100.0 * re_casino_return(&RE_CASINO[g]));
+}
+
+/* ------------------------------------------------------------ Personal Coaching */
+
+/* REQUEST.md [76], [79], notes e17 A and e18. The 18 preferences of data/misc/tagPreference.xml in the order of the
+ * activities (re_data_coaching.h): the five major ones (Working, Thinking, Exercising, Eating, Sleeping) first. */
+static const int PREF_TAGS[RE_COACHING_PREFS] = COACHING_PREF_TAGS;
+#define RE_TAG_COACHING 2561 /* the finance tag of the activity, as Mental Therapy's */
+
+/* The last hour of "Personal Coaching: <preference>": that preference goes one step towards a plain like: -3 to -2,
+ * -2 to -1, -1 to 1 past 0, 3 to 2, 2 to 1 (a love or an addiction has a need bar to keep up). It costs money alone
+ * (REQUEST.md [80]); from a dislike to a like, which the character editor counts as two steps (run1886: Working -1 to
+ * 1 four points, 1 to 2 two), the price is taken once more now. A person changes one preference a year: the game keeps
+ * for every activity with an `interval` the month it last ended, and has just written this month for this one. A
+ * change writes it for all 18, so the hospital lists them all as done recently for twelve months; a refusal writes
+ * this one back to the month of the other 17. The price comes back at a like already, within the year (two coachings
+ * queued before either ended) and when the cash is short of the second price. The ticker says what happened, with
+ * the game's words. */
+static void coaching_end(BYTE *actions, BYTE *record, BYTE *object)
+{
+    void *main_obj = g_main_obj;
+    BYTE *person = re_game_actions_person(actions);
+    int index = re_readable(object, RE_OBJ_ID + 4) ? *(const int *)(object + RE_OBJ_ID) - RE_COACHING_FIRST : -1;
+    BYTE *finance = person != NULL ? *(BYTE **)(actions + RE_ACTION_FINANCE) : NULL, *prices = person != NULL ? *(BYTE **)(actions + RE_ACTION_PRICES) : NULL;
+    int month = person != NULL ? re_game_actions_month(actions) : -1;
+    char name[200], text[480], pref[160], before[80], after[80], amount[64];
+    if (main_obj == NULL || person == NULL || month < 0 || !re_readable(finance, 0x380) || !re_readable(record, RE_RECORD_COUNT + 4) ||
+        index < 0 || index >= RE_COACHING_PREFS) {
+        re_log("coaching: the end of Personal Coaching could not be read: nothing changed");
+        return;
+    }
+    if (!re_game_person_name(person, name, sizeof name))
+        snprintf(name, sizeof name, "?");
+    int tag = PREF_TAGS[index], level = re_game_pref_level(person, tag), step = level < 0 ? 1 : level > 1 ? -1 : 0, last = -999;
+    for (int i = 0; i < RE_COACHING_PREFS; i++) {
+        int ended = i == index ? -999 : re_game_activity_last(actions, RE_COACHING_FIRST + i);
+        last = ended > last ? ended : last;
+    }
+    int count = *(const int *)(record + RE_RECORD_COUNT), year = last >= 0 && month - last < 12, twice = level == -1;
+    long long price = (re_readable(prices, 4) ? -re_game_activity_money(prices, object) : 0) * (count > 1 ? count : 1);
+    long long cash = *(const long long *)(finance + RE_PFM_CASH);
+    re_game_pref_name(person, tag, pref, sizeof pref);
+    re_game_feeling(person, level, before, sizeof before);
+    re_log("coaching: %s (person %d) ends Personal Coaching for preference %d (%s) at %d (%s) in month %d; the other coachings last "
+           "ended in month %d; the price $%.2f, the cash $%.2f",
+           name, *(const int *)(person + RE_PERSON_SELF_ID), tag, pref, level, before, month, last, dollars(price), dollars(cash));
+    if (step == 0 || year || (twice && cash < price)) {
+        if (price > 0)
+            ((money_fn)AT(RE_VA_CHANGE_MONEY))(finance, (unsigned)price, (int)(price >> 32), RE_TAG_COACHING, 0, 0, 0);
+        re_game_activity_set(actions, RE_COACHING_FIRST + index, last);
+        re_log("coaching: %s: %s, nothing changed; $%.2f paid back, the activity's month back to %d", name,
+               step == 0 ? "a like already"
+               : year    ? "a preference was changed within twelve months"
+                         : "the cash is short of the second price",
+               price > 0 ? dollars(price) : 0.0, last);
+        if (step == 0)
+            snprintf(text, sizeof text, T(RE_MSG_COACH_NONE), name, pref, before);
+        else if (year)
+            snprintf(text, sizeof text, T(RE_MSG_COACH_YEAR), name, pref);
+        else
+            snprintf(text, sizeof text, T(RE_MSG_COACH_CASH), name, pref, money(main_obj, price, amount));
+        re_game_post_message(main_obj, text);
+        return;
+    }
+    if (twice && price > 0) {
+        long long charge = -price;
+        ((money_fn)AT(RE_VA_CHANGE_MONEY))(finance, (unsigned)charge, (int)(charge >> 32), RE_TAG_COACHING, 0, 0, 0);
+    }
+    int now = re_game_pref_step(person, tag, step);
+    for (int i = 0; i < RE_COACHING_PREFS; i++)
+        re_game_activity_set(actions, RE_COACHING_FIRST + i, month);
+    re_game_feeling(person, now, after, sizeof after);
+    re_log("coaching: %s: preference %d (%s) from %d (%s) to %d (%s), $%.2f more paid; all %d coachings ended in month %d", name, tag,
+           pref, level, before, now, after, twice ? dollars(price) : 0.0, RE_COACHING_PREFS, month);
+    if (twice)
+        snprintf(text, sizeof text, T(RE_MSG_COACH_CROSS), name, pref, before, after, money(main_obj, price, amount));
+    else
+        snprintf(text, sizeof text, T(RE_MSG_COACH_DONE), name, pref, before, after);
+    re_game_post_message(main_obj, text);
 }
 
 /* ------------------------------------------------------------ futures */
@@ -6315,6 +6417,15 @@ __attribute__((force_align_arg_pointer)) static void __fastcall postload_wrapper
         g_casino_tried = 1;
         casino_install();
     }
+    if (g_on_coaching && !g_coaching_tried) {
+        g_coaching_tried = 1;
+        re_coaching_end = coaching_end;
+        int calls = money_hook();
+        if (!calls)
+            re_coaching_end = NULL;
+        re_log("coaching: the last hour of Personal Coaching (activities %d to %d) %s", RE_COACHING_FIRST, RE_COACHING_LAST,
+               calls ? "redirected" : "NOT redirected");
+    }
     if (g_on_stocks && !g_fut_tried) {
         g_fut_tried = 1;
         futures_install();
@@ -6644,6 +6755,14 @@ static void load_settings(void)
     g_data_fix[RE_DATA_DEGREE_COMPUTING] = g_data_fix[RE_DATA_DEGREE_ART] = g_data_fix[RE_DATA_DEGREE_SCIENCE] =
         g_data_fix[RE_DATA_DEGREE_BUSINESS] = re_ini_int("balance", "degreePrices", 1);
     g_rent_market = re_ini_int("balance", "rentFollowsMarket", 1);
+    g_on_influence = re_ini_int("features", "influence", 1);
+    g_data_add[RE_ADD_DONATIONS] = g_on_influence && re_ini_int("influence", "bigDonations", 1);
+    g_data_fix[RE_DATA_VOTE_INTERVAL] = g_on_influence && re_ini_int("influence", "voteEvery12Months", 1);
+    g_data_add[RE_ADD_DONATION_YEARLY] = g_on_influence && re_ini_int("influence", "donationOncePerYear", 1);
+    g_on_coaching = re_ini_int("features", "coaching", 1);
+    g_data_add[RE_ADD_COACHING] = g_on_coaching;
+    re_ini_doubles("balance", "competitionWeight", &g_competition_weight, 1);
+    g_competition_weight = g_competition_weight < 1.0 ? 1.0 : g_competition_weight > 3.0 ? 3.0 : g_competition_weight;
     re_ini_doubles("balance", "newBusinessAwareness", &g_start_awareness, 1);
     g_start_awareness = g_start_awareness < 0.0 ? 0.0 : g_start_awareness > 1.0 ? 1.0 : g_start_awareness;
     g_cash_rate = g_cash_rate < 0.0 ? 0.0 : g_cash_rate > 1.0 ? 1.0 : g_cash_rate; /* above 1 the cash would beat a loan's base */
@@ -6880,22 +6999,145 @@ __attribute__((force_align_arg_pointer)) static BYTE *__fastcall new_firm_wrappe
     return made;
 }
 
-/* The text of a file the game has just read, before its XML reader gets it: the wanted corrections are made in it. */
-__attribute__((force_align_arg_pointer)) static BYTE *__fastcall xml_text_wrapper(BYTE *text)
+static void *game_new_array(unsigned size)
+{
+    typedef void *(__cdecl * new_fn)(unsigned size);
+    return ((new_fn)AT(RE_VA_NEW_ARRAY))(size);
+}
+
+/* Competition (REQUEST.md [76], notes e17 C and e20). A business type's competition goes by its market's sum, which
+ * FUN_004ec490 makes for every reader: the month end's change of awareness, the shrinking of the pool the city
+ * keeps, the Competition Index tab, the rivals and the listed companies. In the sum everything but that pool
+ * counts `g_competition_weight` times, so the firms meet competition at a smaller size, while the pool, the game's
+ * market size and the save stay as they are. */
+void *competition_sum;
+
+/* the next node of an MSVC std::map in order, or NULL when a pointer cannot be read */
+static BYTE *tree_next(BYTE *node)
+{
+    BYTE *right = *(BYTE **)(node + 8);
+    if (!re_readable(right, 0x10))
+        return NULL;
+    if (right[0xd] == 0) {
+        for (node = right; re_readable(*(BYTE **)node, 0x10) && (*(BYTE **)node)[0xd] == 0;)
+            node = *(BYTE **)node;
+        return node;
+    }
+    BYTE *parent = *(BYTE **)(node + 4);
+    while (re_readable(parent, 0x10) && parent[0xd] == 0 && node == *(BYTE **)(parent + 8)) {
+        node = parent;
+        parent = *(BYTE **)(node + 4);
+    }
+    return re_readable(parent, 0x10) ? parent : NULL;
+}
+
+/* `out` is the map the game's function has just filled, `firms` its manager: each type's sum becomes the pool's part
+ * plus the weight times the rest. Both maps go by type, so they are walked side by side. */
+void competition_scale(BYTE *out, BYTE *firms);
+__attribute__((force_align_arg_pointer)) void competition_scale(BYTE *out, BYTE *firms)
+{
+    if (!re_readable(out, 8) || !re_readable(firms + RE_FIRMS_POOL, 4))
+        return;
+    BYTE *head = *(BYTE **)out, *pool_head = *(BYTE **)(firms + RE_FIRMS_POOL);
+    if (!re_readable(head, 0x10) || !re_readable(pool_head, 0x10))
+        return;
+    BYTE *node = *(BYTE **)head, *pool = *(BYTE **)pool_head;
+    static int told;
+    long long before = 0, after = 0, pooled = 0;
+    int types = 0;
+    for (int n = 0; node != NULL && node != head && n < 1000 && re_readable(node, 0x20); n++) {
+        int type = *(const int *)(node + 0x10);
+        while (pool != NULL && pool != pool_head && re_readable(pool, 0x20) && *(const int *)(pool + 0x10) < type)
+            pool = tree_next(pool);
+        long long kept = pool != NULL && pool != pool_head && re_readable(pool, 0x20) && *(const int *)(pool + 0x10) == type
+                             ? *(const long long *)(pool + 0x18)
+                             : 0;
+        long long sum = *(const long long *)(node + 0x18);
+        *(long long *)(node + 0x18) = (long long)((double)kept + g_competition_weight * (double)(sum - kept));
+        before += sum, after += *(const long long *)(node + 0x18), pooled += kept, types++;
+        node = tree_next(node);
+    }
+    if (g_on_trace && told < 3) { /* a load makes the stored sums once; the live ones are made per entry of a list */
+        told++;
+        re_log("competition (trace): %d business types, the market's sums $%.0f, of them the pool $%.0f; weighted $%.0f", types,
+               dollars(before), dollars(pooled), dollars(after));
+    }
+}
+/* the two calls of the game's function come here: ecx = the manager, [esp + 4] = the map; ret 4 with the map in eax */
+void competition_sum_hook(void);
+__asm__(".intel_syntax noprefix\n"
+        ".text\n"
+        ".globl _competition_sum_hook\n"
+        "_competition_sum_hook:\n"
+        "  push ecx\n"
+        "  push dword ptr [esp + 8]\n"
+        "  call dword ptr [_competition_sum]\n" /* thiscall: it takes its argument off */
+        "  pop ecx\n"
+        "  push eax\n"
+        "  push ecx\n"
+        "  push eax\n"
+        "  call _competition_scale\n"
+        "  add esp, 8\n"
+        "  pop eax\n"
+        "  ret 4\n"
+        ".att_syntax prefix\n");
+
+/* The text of a file the game has just read, before its XML reader gets it: the wanted corrections are made in it.
+ * When additions belong to the file, the document is given a longer copy from the game's new[] and the old text is
+ * freed, so that the document frees the new one when it ends; the reader goes on with the copy. Called from
+ * xml_text_hook with the document. */
+BYTE *xml_text_take(BYTE *text, BYTE *doc);
+__attribute__((force_align_arg_pointer)) BYTE *xml_text_take(BYTE *text, BYTE *doc)
 {
     typedef BYTE *(__fastcall * skip_fn)(BYTE *text);
+    typedef void(__cdecl * delete_fn)(void *block);
     /* said once: the game reads its data again for every game it starts or loads, and a line written in the middle
      * of a load is taken for the end of that load by whatever waits for the log to stand still (run1184) */
-    static unsigned told;
-    unsigned made = re_data_correct((char *)text, g_data_fix);
+    static unsigned told, told_added, told_replaced;
+    unsigned made = re_data_correct((char *)text, g_data_fix), added = 0;
+    int replaced[RE_DATA_REPLACE_FILES] = {0};
     for (int i = 0; i < RE_DATA_COUNT; i++)
         if (made >> i & 1 && !(told >> i & 1)) {
             told |= 1u << i;
             re_log("data: corrected in a file the game reads, now and whenever it reads its data again: %s: %s", re_data_what(i),
                    re_data_put(i));
         }
+    BYTE **held = (BYTE **)(doc + RE_XML_DOC_TEXT);
+    char *grown = re_readable(held, sizeof *held) && *held == text
+                      ? re_data_add((const char *)text, g_data_add, game_new_array, &added, replaced)
+                      : NULL;
+    if (grown != NULL) {
+        *held = (BYTE *)grown;
+        ((delete_fn)AT(RE_VA_DELETE_ARRAY))(text);
+        text = (BYTE *)grown;
+    }
+    for (int r = 0; r < re_data_add_rows(); r++)
+        if (added >> r & 1 && !(told_added >> r & 1)) {
+            told_added |= 1u << r;
+            re_log("data: added to a file the game reads, now and whenever it reads its data again: %s; the file with %s",
+                   re_data_add_what(re_data_add_of(r)), re_data_add_file(r));
+        }
+    for (int f = 0; f < re_data_replace_files(); f++)
+        if (replaced[f] > 0 && !(told_replaced >> f & 1)) {
+            told_replaced |= 1u << f;
+            re_log("data: %d of %d piece(s) of text put in the place of others in a file the game reads, now and whenever it reads its "
+                   "data again: %s; the file with %s",
+                   replaced[f], re_data_replace_pieces(f), re_data_add_what(re_data_replace_of(f)), re_data_replace_file(f));
+        }
     return ((skip_fn)AT(RE_VA_XML_SKIP))(text);
 }
+/* the call at RE_VA_CALL_XML_SKIP comes here: ecx the text, esi the document; eax back as from the game's function */
+void xml_text_hook(void);
+__asm__(".intel_syntax noprefix\n"
+        ".text\n"
+        ".globl _xml_text_hook\n"
+        "_xml_text_hook:\n"
+        "  push esi\n"
+        "  push ecx\n"
+        "  call _xml_text_take\n"
+        "  add esp, 8\n"
+        "  ret\n"
+        ".att_syntax prefix\n");
 
 BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
 {
@@ -6943,6 +7185,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     /* the fee is read with the data-number function of the business group */
     g_transfer_sites = re_sites_verify(g_base, RE_GROUP_TRANSFER, report_site) == 0 && business;
     int balance = re_sites_verify(g_base, RE_GROUP_BALANCE, report_site) == 0;
+    int coaching = re_sites_verify(g_base, RE_GROUP_COACHING, report_site) == 0;
 
     re_log("  feature credit:   %s", state_of(g_on_credit, core && finance && credit));
     re_log("  feature forecast: %s", state_of(g_on_forecast, core && finance && money));
@@ -6959,6 +7202,8 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     re_log("  feature property: %s", state_of(g_on_property, core && property));
     re_log("  feature experience: %s", state_of(g_on_experience, experience));
     re_log("  feature balance:  %s", state_of(g_on_balance, core && finance && money && data));
+    re_log("  feature influence: %s", state_of(g_on_influence, data));
+    re_log("  feature coaching: %s", state_of(g_on_coaching, core && finance && money && text && data && coaching));
     /* the letters: no site of the game's file, two functions of libcocos2d.dll; the names: two functions of the game */
     re_log("  feature fonts:    %s; its names in Latin letters: %s", state_of(g_on_fonts, 1), state_of(g_on_fonts, text && names));
     re_log("  feature trace:    %s", state_of(g_on_trace, core && finance && credit && money && trace));
@@ -6981,12 +7226,23 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     g_on_property = g_on_property && core && property;
     g_on_experience = g_on_experience && experience;
     g_on_balance = g_on_balance && core && finance && money && data;
+    g_on_influence = g_on_influence && data;
+    g_data_add[RE_ADD_DONATIONS] = g_data_add[RE_ADD_DONATIONS] && g_on_influence;
+    g_data_add[RE_ADD_DONATION_YEARLY] = g_data_add[RE_ADD_DONATION_YEARLY] && g_on_influence;
+    g_data_fix[RE_DATA_VOTE_INTERVAL] = g_data_fix[RE_DATA_VOTE_INTERVAL] && g_on_influence;
+    /* the activity only with the hook that ends it: without it a person would pay and nothing would change */
+    g_on_coaching = g_on_coaching && core && finance && money && text && data && coaching;
+    g_data_add[RE_ADD_COACHING] = g_on_coaching;
     g_on_trace = g_on_trace && core && finance && credit && money && trace;
     g_trace_getter = g_trace_getter && g_on_trace;
     g_wage_refuse_all = g_wage_refuse_all && g_on_trace;
     g_can_text = text;
     int worded = strcmp(re_language(), re_lang_folder(g_lang)) == 0 && re_wording_has(g_lang);
     re_log("  feature wording:  %s", !worded ? "off (no corrections for the game's language)" : state_of(g_on_wording, core && text));
+    /* the Korean texts are put right in the files as the game reads them, so they need the reading's call, not the
+     * translation function's */
+    g_data_add[RE_ADD_KOREAN] = g_on_wording && worded && g_lang == RE_LANG_KO && data;
+    g_data_add[RE_ADD_LEVEL_WORDS] = g_on_wording && worded && data; /* each file is known by its own words */
     g_on_wording = g_on_wording && worded && core && text;
     if (!g_on_credit && !g_on_forecast && !g_on_wording && !g_on_guard && !g_on_ipo && !g_on_board && !g_on_stocks && !g_on_casino &&
         !g_on_business && !g_on_memory && !g_on_property && !g_on_experience && !g_on_balance && !g_on_fonts && !g_on_trace) {
@@ -7044,14 +7300,30 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
                !(g_start_awareness > 0.0)                                                                           ? "off (settings)"
                : balance && re_patch_call(AT(RE_VA_CALL_NEW_FIRM), AT(RE_VA_FIRM_CTOR), new_firm_wrapper) ? "on"
                                                                                                                     : "NOT on");
+        int weighted = 0;
+        if (balance && g_competition_weight != 1.0) { /* both calls or none: the two sums must agree */
+            competition_sum = AT(RE_VA_MARKET_SUM);
+            weighted = re_patch_call(AT(RE_VA_CALL_SUM_STORED), AT(RE_VA_MARKET_SUM), competition_sum_hook);
+            weighted = weighted && re_patch_call(AT(RE_VA_CALL_SUM_LIVE), AT(RE_VA_MARKET_SUM), competition_sum_hook);
+        }
+        re_log("balance: in a business type's market the firms count %.2f times beside the pool the city keeps: %s", g_competition_weight,
+               g_competition_weight == 1.0 ? "off (settings)" : weighted ? "on" : "NOT on");
     }
-    int corrections = 0;
+    int corrections = 0, additions = 0;
     for (int i = 0; i < RE_DATA_COUNT; i++)
         corrections += g_data_fix[i] != 0;
-    if (corrections > 0) /* here, before the game reads its data */
-        re_log("data: %d correction(s) of the game's data files are made in a file's text before the game reads it: the call %s",
-               corrections,
-               data && re_patch_call(AT(RE_VA_CALL_XML_SKIP), AT(RE_VA_XML_SKIP), xml_text_wrapper) ? "redirected" : "NOT redirected");
+    for (int i = 0; i < RE_ADD_COUNT; i++)
+        additions += g_data_add[i] != 0;
+    if (corrections > 0 || additions > 0) /* here, before the game reads its data */
+        re_log("data: %d correction(s) and %d addition(s) of the game's data files are made in a file's text before the game reads it: "
+               "the call %s",
+               corrections, additions,
+               data && re_patch_call(AT(RE_VA_CALL_XML_SKIP), AT(RE_VA_XML_SKIP), xml_text_hook) ? "redirected" : "NOT redirected");
+    if (g_on_influence)
+        re_log("influence: two larger donations of the passion Lobbying at a bank: %s; the city's vote on its policies every 12 months: %s; "
+               "the game's donation once a year: %s",
+               g_data_add[RE_ADD_DONATIONS] ? "on" : "off (settings)", g_data_fix[RE_DATA_VOTE_INTERVAL] ? "on" : "off (settings)",
+               g_data_add[RE_ADD_DONATION_YEARLY] ? "on" : "off (settings)");
     if (g_on_experience) {
         g_xp_hooked = re_patch_call(AT(RE_VA_CALL_XP_DECAY), AT(RE_VA_XP_DECAY), re_xp_decay_hook);
         re_log("experience: a household member's educations are kept up to what requirements ask, work experience decays as in the game: "

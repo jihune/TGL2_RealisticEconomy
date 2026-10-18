@@ -29,7 +29,7 @@ from PIL import ImageFont
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 BUDGET = 960.0
-SITES = 22
+SITES = 24
 FONT = {
     "ko": "NotoSansKR-Regular.ttf",
     "jp": "NotoSansJP-Regular.ttf",
@@ -99,6 +99,23 @@ def premises(lang):
     return t("RE_MSG_PREMISES_PREFIX", lang, NAME)
 
 
+def coaching(lang, name="RE_MSG_COACH_DONE"):
+    # a person, a long preference name, the two words of the game's for its levels, from a dislike the second price;
+    # for a preference at a like already its word, for a short cash the second price
+    pref, before, after = (
+        ("スピリチュアル", "大嫌い", "好き好き")
+        if lang in FONT
+        else ("Spirituality", "N'aime pas", "Le gusta")
+    )
+    if name == "RE_MSG_COACH_NONE":
+        return t(name, lang, NAME, pref, after)
+    if name == "RE_MSG_COACH_YEAR":
+        return t(name, lang, NAME, pref)
+    if name == "RE_MSG_COACH_CASH":
+        return t(name, lang, NAME, pref, MONEY)
+    return t(name, lang, NAME, pref, before, after, MONEY)
+
+
 def widest(lang, texts):
     return max(texts, key=lambda text: raw(lang, text))
 
@@ -164,6 +181,11 @@ LINES = {
     ),
     "asset not bought": asset_short,
     "a save from before the mod": lambda g: t("RE_MSG_ADOPT_TICK", g),
+    "coaching": coaching,
+    "coaching: past a dislike": lambda g: coaching(g, "RE_MSG_COACH_CROSS"),
+    "coaching: a like already": lambda g: coaching(g, "RE_MSG_COACH_NONE"),
+    "coaching: one a year": lambda g: coaching(g, "RE_MSG_COACH_YEAR"),
+    "coaching: cash short": lambda g: coaching(g, "RE_MSG_COACH_CASH"),
 }
 
 

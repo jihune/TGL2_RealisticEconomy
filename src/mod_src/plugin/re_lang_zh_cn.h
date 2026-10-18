@@ -176,4 +176,9 @@ static const char *const LANG_ZH_CN[RE_MSG_COUNT] = {
     [RE_MSG_SORT_DEAR] = "按高估排序\n(仅已研究)",
     [RE_MSG_SORT_CHANGE] = "按较上月\n涨幅排序",
     [RE_MSG_SORT_CAP] = "按市值排序\n(从大到小)",
+    [RE_MSG_COACH_DONE] = "个人辅导（%s）：%s，%s → %s",
+    [RE_MSG_COACH_CROSS] = "个人辅导（%s）：%s，%s → %s，追加费用%s",
+    [RE_MSG_COACH_NONE] = "个人辅导（%s）：%s已是%s，费用已退还",
+    [RE_MSG_COACH_YEAR] = "个人辅导（%s）：%s，每年只能改变一项偏好，费用已退还",
+    [RE_MSG_COACH_CASH] = "个人辅导（%s）：%s，现金不足以支付追加费用%s，费用已退还",
 };

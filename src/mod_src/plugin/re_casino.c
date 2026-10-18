@@ -97,6 +97,8 @@ void *re_casino_str_free;
 void *re_casino_money;
 re_casino_end_fn re_casino_end;
 re_casino_start_fn re_casino_start;
+unsigned char re_casino_games;
+re_casino_end_fn re_coaching_end;
 
 /* MSVC 14.x std::string, 32-bit: 16 bytes inline buffer or pointer, then size, then capacity. */
 typedef struct {
@@ -137,6 +139,13 @@ __attribute__((force_align_arg_pointer)) void re_casino_start_enter(unsigned cha
     re_casino_start_fn start = re_casino_start;
     if (start != NULL)
         start(object);
+}
+
+__attribute__((force_align_arg_pointer)) void re_coaching_end_enter(unsigned char *actions, unsigned char *record, unsigned char *object)
+{
+    re_casino_end_fn end = re_coaching_end;
+    if (end != NULL)
+        end(actions, record, object);
 }
 
 #define TEXT_OF(x) #x
@@ -188,13 +197,21 @@ __asm__(".intel_syntax noprefix\n"
 
 /* The action-money function, as its two callers reach it. Stack on entry: [esp] return address, [esp + 4] result,
  * [esp + 8] queue record, [esp + 0xc] activity object (id at +0xc), then the strings, [esp + 0x48] the phase.
- * eax is free at both call sites: it held the last pushed argument and is not read after the call. */
+ * eax is free at both call sites: it held the last pushed argument and is not read after the call. Personal
+ * Coaching first (any of its ids; label 3: its last hour only), then the four games when the casino is on. */
 __asm__(".intel_syntax noprefix\n"
         ".text\n"
         ".globl _re_casino_money_hook\n"
         "_re_casino_money_hook:\n"
         "  mov eax, [esp + 0xc]\n"
         "  mov eax, [eax + " ASM(RE_OBJ_ID) "]\n"
+        "  cmp eax, " ASM(RE_COACHING_FIRST) "\n"
+        "  jb 5f\n"
+        "  cmp eax, " ASM(RE_COACHING_LAST) "\n"
+        "  jbe 3f\n"
+        "5:\n"
+        "  cmp byte ptr [_re_casino_games], 0\n"
+        "  je 4f\n"
         "  cmp eax, " ASM(RE_ID_SLOTS) "\n"
         "  je 1f\n"
         "  cmp eax, " ASM(RE_ID_ROULETTE) "\n"
@@ -203,6 +220,7 @@ __asm__(".intel_syntax noprefix\n"
         "  je 1f\n"
         "  cmp eax, " ASM(RE_ID_BACCARAT) "\n"
         "  je 1f\n"
+        "4:\n"
         "  jmp dword ptr [_re_casino_money]\n"
         "1:\n"
         "  cmp byte ptr [esp + " ASM(RE_ACTION_MONEY_PHASE) "], 0\n"
@@ -223,6 +241,19 @@ __asm__(".intel_syntax noprefix\n"
         "  push eax\n"
         "  push ecx\n"
         "  call _re_casino_end_enter\n"
+        "  add esp, 12\n"
+        "  popad\n"
+        "  jmp dword ptr [_re_casino_money]\n"
+        "3:\n"
+        "  cmp byte ptr [esp + " ASM(RE_ACTION_MONEY_PHASE) "], 0\n"
+        "  jne 4b\n" /* its first hour: the game books the price */
+        "  pushad\n"
+        "  mov eax, [esp + 32 + 0xc]\n"
+        "  push eax\n"
+        "  mov eax, [esp + 36 + 8]\n"
+        "  push eax\n"
+        "  push ecx\n"
+        "  call _re_coaching_end_enter\n"
         "  add esp, 12\n"
         "  popad\n"
         "  jmp dword ptr [_re_casino_money]\n"

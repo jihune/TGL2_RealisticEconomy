@@ -159,4 +159,9 @@ static const char *const LANG_PT_BR[RE_MSG_COUNT] = {
     [RE_MSG_SORT_DEAR] = "Ordenar por\nsupervalorizadas\n(pesquisadas)",
     [RE_MSG_SORT_CHANGE] = "Por variação\nno último mês",
     [RE_MSG_SORT_CAP] = "Ordenar por\nvalor de mercado\n(maior primeiro)",
+    [RE_MSG_COACH_DONE] = "Coaching de %s: %s, %s → %s",
+    [RE_MSG_COACH_CROSS] = "Coaching de %s: %s, %s → %s, mais %s pagos",
+    [RE_MSG_COACH_NONE] = "Coaching de %s: %s, já %s; taxa devolvida",
+    [RE_MSG_COACH_YEAR] = "Coaching de %s: %s, uma preferência por ano; taxa devolvida",
+    [RE_MSG_COACH_CASH] = "Coaching de %s: %s, falta dinheiro (%s); taxa devolvida",
 };

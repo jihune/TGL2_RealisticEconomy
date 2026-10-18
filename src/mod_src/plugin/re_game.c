@@ -1111,17 +1111,21 @@ typedef struct {
     unsigned size, capacity;
 } short_string;
 
-/* The game's info of a ware or of an asset tag, filled by the game; `info_done` gives its string back. */
-static int info_of(const BYTE *stack, int id, int tag, BYTE *info)
+/* The game's info of a ware or of a tag, filled by the game from its data; `info_done` gives its string back. */
+static int info_of_data(void *data, int id, int tag, BYTE *info)
 {
     typedef void *(__thiscall * info_fn)(void *data, void *info, int complain, list_element key);
-    void *data = *(void *const *)(stack + RE_FIRM_DATA);
     list_element key = {1, 1.0f, id, 1.0};
     if (!re_readable(data, RE_DATA_LISTS + 8))
         return 0;
     memset(info, 0, RE_INFO_BYTES + 4);
     ((info_fn)AT(tag ? RE_VA_TAG_INFO : RE_VA_WARE_INFO))(data, info, 0, key);
     return 1;
+}
+
+static int info_of(const BYTE *stack, int id, int tag, BYTE *info)
+{
+    return info_of_data(*(void *const *)(stack + RE_FIRM_DATA), id, tag, info);
 }
 
 static void info_done(BYTE *info)
@@ -1307,6 +1311,101 @@ void re_game_tag_name(void *firms, int firm, int tag, char *out, unsigned cap)
         return;
     info_name(info, out, cap);
     info_done(info);
+}
+
+/* ---- a person's likes and dislikes (REQUEST.md [76], note e18) ---- */
+
+BYTE *re_game_actions_person(BYTE *actions)
+{
+    BYTE *person = re_readable(actions + RE_ACTIONS_PERSON, 4) ? *(BYTE **)(actions + RE_ACTIONS_PERSON) : NULL;
+    return person != NULL && person + RE_PERSON_ACTIONS == actions && re_readable(person, RE_PERSON_EXPERIENCE + 0x200) ? person : NULL;
+}
+
+int re_game_pref_level(BYTE *person, int tag)
+{
+    typedef int(__thiscall * level_fn)(void *chars, int tag);
+    return ((level_fn)AT(RE_VA_PREF_LEVEL))(person + RE_PERSON_CHARS, tag);
+}
+
+int re_game_pref_step(BYTE *person, int tag, int steps)
+{
+    typedef int(__thiscall * step_fn)(void *chars, int tag, int steps, int start);
+    typedef void(__thiscall * set_fn)(void *experience, int tag, int level);
+    int level = ((step_fn)AT(RE_VA_PREF_STEP))(person + RE_PERSON_CHARS, tag, steps, 0);
+    ((set_fn)AT(RE_VA_PREF_SET))(person + RE_PERSON_EXPERIENCE, tag, level);
+    return re_game_pref_level(person, tag);
+}
+
+int re_game_actions_month(const BYTE *actions)
+{
+    const BYTE *calendar = re_readable(actions + RE_ACTIONS_CALENDAR, 4) ? *(const BYTE *const *)(actions + RE_ACTIONS_CALENDAR) : NULL;
+    if (!re_readable(calendar, RE_CALENDAR_YEAR + 4))
+        return -1;
+    return *(const int *)(calendar + RE_CALENDAR_MONTH) + 12 * *(const int *)(calendar + RE_CALENDAR_YEAR);
+}
+
+int re_game_activity_last(BYTE *actions, int id)
+{
+    typedef int(__thiscall * last_fn)(void *actions, int id);
+    return ((last_fn)AT(RE_VA_ACTION_LAST))(actions, id);
+}
+
+void re_game_activity_set(BYTE *actions, int id, int month)
+{
+    typedef int *(__thiscall * at_fn)(void *map, const int *key);
+    *((at_fn)AT(RE_VA_INT_MAP_AT))(actions + RE_ACTIONS_LAST_MONTHS, &id) = month;
+}
+
+int re_game_person_name(const BYTE *person, char *out, unsigned cap)
+{
+    if (cap < 2 || !string_text(person + RE_PERSON_CHARS + RE_STAFF_FIRST_NAME, out, cap - 1))
+        return 0;
+    unsigned at = (unsigned)strlen(out);
+    out[at] = ' ';
+    if (!string_text(person + RE_PERSON_CHARS + RE_STAFF_LAST_NAME, out + at + 1, cap - at - 1))
+        out[at] = 0;
+    return 1;
+}
+
+void re_game_pref_name(BYTE *person, int tag, char *out, unsigned cap)
+{
+    BYTE info[RE_INFO_BYTES + 4];
+    out[0] = 0;
+    if (!info_of_data(*(void **)(person + RE_PERSON_DATA), tag, 1, info))
+        return;
+    info_name(info, out, cap);
+    info_done(info);
+}
+
+/* the game's function takes the level in xmm2: data, the string to construct, the level, the function (cdecl) */
+void re_game_feeling_call(void *data, void *string, int level, void *fn);
+__asm__(".intel_syntax noprefix\n"
+        ".text\n"
+        ".globl _re_game_feeling_call\n"
+        "_re_game_feeling_call:\n"
+        "  push ebp\n"
+        "  mov ebp, esp\n"
+        "  cvtsi2ss xmm2, dword ptr [ebp + 16]\n"
+        "  mov ecx, [ebp + 8]\n"
+        "  push 1\n"
+        "  push dword ptr [ebp + 12]\n"
+        "  call dword ptr [ebp + 20]\n" /* ret 8 */
+        "  pop ebp\n"
+        "  ret\n"
+        ".att_syntax prefix\n");
+
+void re_game_feeling(BYTE *person, int level, char *out, unsigned cap)
+{
+    typedef void(__thiscall * free_fn)(void *string);
+    void *data = *(void **)(person + RE_PERSON_DATA);
+    BYTE word[0x18];
+    out[0] = 0;
+    if (!re_readable(data, RE_DATA_LISTS + 8))
+        return;
+    re_game_feeling_call(data, word, level, AT(RE_VA_FEELING));
+    if (!string_text(word, out, cap))
+        out[0] = 0;
+    ((free_fn)AT(RE_VA_STR_FREE))(word);
 }
 
 int re_game_firm_space(void *firms, int firm, double *used, double *most)

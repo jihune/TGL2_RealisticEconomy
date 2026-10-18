@@ -328,6 +328,19 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     [RE_MSG_SORT_DEAR] = {"Sort by\novervalued\n(researched)", "고평가순으로 정렬\n(조사한 회사만)", NULL, NULL, NULL, NULL},
     [RE_MSG_SORT_CHANGE] = {"Sort by change\non the month before", "전월 대비\n오른 순으로 정렬", NULL, NULL, NULL, NULL},
     [RE_MSG_SORT_CAP] = {"Sort by\nmarket cap\n(largest first)", "시가총액\n큰 순으로 정렬", NULL, NULL, NULL, NULL},
+    /* the person, the preference, the word before and after */
+    [RE_MSG_COACH_DONE] = {"Coaching for %s: %s, %s → %s", "개인 코칭(%s): %s, %s → %s", NULL, NULL, NULL, NULL},
+    /* the same and the second price */
+    [RE_MSG_COACH_CROSS] = {"Coaching for %s: %s, %s → %s, %s more paid", "개인 코칭(%s): %s, %s → %s, 추가 비용 %s", NULL, NULL, NULL, NULL},
+    /* the person, the preference, its word (a like) */
+    [RE_MSG_COACH_NONE] = {"Coaching for %s: %s, %s already; fee paid back", "개인 코칭(%s): %s, 이미 %s. 비용을 돌려받았습니다", NULL, NULL,
+                           NULL, NULL},
+    /* the person, the preference */
+    [RE_MSG_COACH_YEAR] = {"Coaching for %s: %s, one preference a year; fee paid back",
+                           "개인 코칭(%s): %s, 성향은 1년에 하나. 비용을 돌려받았습니다", NULL, NULL, NULL, NULL},
+    /* the person, the preference, the second price */
+    [RE_MSG_COACH_CASH] = {"Coaching for %s: %s, cash short of %s more; fee paid back",
+                           "개인 코칭(%s): %s, 추가 비용 %s에 현금 부족. 비용을 돌려받았습니다", NULL, NULL, NULL, NULL},
 };
 
 /* What the table does not have: one file a language, `[RE_MSG_...] = "text"` a line. */

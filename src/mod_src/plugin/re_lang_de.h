@@ -162,4 +162,9 @@ static const char *const LANG_DE[RE_MSG_COUNT] = {
     [RE_MSG_SORT_DEAR] = "Sortieren:\nüberbewertet\n(recherchiert)",
     [RE_MSG_SORT_CHANGE] = "Nach Änderung\nzum Vormonat",
     [RE_MSG_SORT_CAP] = "Sortieren:\nMarktkap.\n(größte zuerst)",
+    [RE_MSG_COACH_DONE] = "Coaching für %s: %s, %s → %s",
+    [RE_MSG_COACH_CROSS] = "Coaching für %s: %s, %s → %s, %s zusätzlich",
+    [RE_MSG_COACH_NONE] = "Coaching für %s: %s, schon %s; Gebühr zurück",
+    [RE_MSG_COACH_YEAR] = "Coaching für %s: %s, eine Vorliebe pro Jahr; Gebühr zurück",
+    [RE_MSG_COACH_CASH] = "Coaching für %s: %s, Bargeld fehlt (%s); Gebühr zurück",
 };

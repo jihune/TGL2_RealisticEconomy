@@ -297,6 +297,25 @@ int re_game_holdings(void *market, re_holding *out, int cap);
 /* A company's name as the save holds it. UTF-8, zero-terminated. 0 when it cannot be read or does not fit. */
 int re_game_company_name(const BYTE *company, char *out, unsigned cap);
 
+/* A person's likes and dislikes (Personal Coaching, REQUEST.md [76], note e18). The person of an actions object, or
+ * NULL when it does not hold up (the actions are not at +0x5a0 of it). */
+BYTE *re_game_actions_person(BYTE *actions);
+/* the level of a preference tag, -3 to 3; 0 when the person has none for it */
+int re_game_pref_level(BYTE *person, int tag);
+/* `steps` steps on (from -1 to 1 past 0), stored the game's way; the level now */
+int re_game_pref_step(BYTE *person, int tag, int steps);
+/* The waiting time of an activity, as the game keeps it for the actions of a person: this month (month + 12 * year;
+ * -1 when the calendar cannot be read), the month the activity last ended (-999 when never) and the writing of a month
+ * for it, as the game writes this month at the end of an activity with an `interval` (-999 reads as never). */
+int re_game_actions_month(const BYTE *actions);
+int re_game_activity_last(BYTE *actions, int id);
+void re_game_activity_set(BYTE *actions, int id, int month);
+/* "First Last"; 0 when it cannot be read */
+int re_game_person_name(const BYTE *person, char *out, unsigned cap);
+/* the tag's name and the word for a level ("dislike", "like"), both in the player's language; empty when not had */
+void re_game_pref_name(BYTE *person, int tag, char *out, unsigned cap);
+void re_game_feeling(BYTE *person, int level, char *out, unsigned cap);
+
 /* The industries a listed company sells into (positive weight) or buys from (negative), each with the yearly price
  * change the economy has for it now. `company` is the market's own object (re_game_listed_company), not a window's
  * copy. Returns the count, at most `cap`; -1 when the list or the rates cannot be read. */

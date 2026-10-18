@@ -251,6 +251,15 @@ enum {
     RE_MSG_SORT_DEAR,
     RE_MSG_SORT_CHANGE,
     RE_MSG_SORT_CAP,
+    /* Personal Coaching (REQUEST.md [76], [80]), the ticker's line when it ends: the person, the preference, its word
+     * before and after ("dislike", "like": the game's words); _CROSS the same past 0 with the second price it took.
+     * The fee comes back with _NONE (a like already), _YEAR (the person's preference of the year was changed) and
+     * _CASH (the cash is short of the second price, said) */
+    RE_MSG_COACH_DONE,
+    RE_MSG_COACH_CROSS,
+    RE_MSG_COACH_NONE,
+    RE_MSG_COACH_YEAR,
+    RE_MSG_COACH_CASH,
     RE_MSG_COUNT
 };
 

@@ -31,6 +31,7 @@ enum {
     RE_GROUP_DATA,
     RE_GROUP_TRANSFER,
     RE_GROUP_BALANCE,
+    RE_GROUP_COACHING,
     RE_GROUP_COUNT
 };
 
@@ -677,6 +678,42 @@ enum {
 #define RE_VA_NAME_FIRST 0x004c3dfeu      /* lea eax, [esi + 0x10]: the length of the std::string at +0 */
 #define RE_VA_NAME_LAST 0x004c3e20u       /* lea ecx, [esi + 0x18] */
 #define RE_VA_CALL_STAFF_AUTO_TIP 0x00629edfu /* translate "staffAutoManageTip", the hover text of a row's switch */
+/* a person's likes and dislikes (REQUEST.md [76], note e18), for Personal Coaching. The actions object of a
+ * person (the `this` of RE_VA_ACTION_MONEY) holds its person at +0xa0, the money function reads it there; a person
+ * holds its actions at +0x5a0. Of the person: the CharStack at +0x338 (the names as RE_STAFF_FIRST_NAME and
+ * RE_STAFF_LAST_NAME, the levels as std::map<tag, level> at +0x50), the Experience at +0x428 and the game's data at
+ * +0x90. A level is -3 to -1 or 1 to 3; 0 is never stored. */
+#define RE_VA_ACTIONS_PERSON 0x004384e1u /* mov eax, [esi + 0xa0] / push dword ptr [eax + 8]: the person's id */
+#define RE_ACTIONS_PERSON 0xa0
+#define RE_PERSON_ACTIONS 0x5a0
+#define RE_PERSON_CHARS 0x338
+#define RE_PERSON_EXPERIENCE 0x428
+#define RE_PERSON_DATA 0x90
+#define RE_VA_PERSON_DATA 0x006627cbu   /* mov ecx, [edi + 0x90], before the feeling word */
+#define RE_VA_PREF_LEVEL 0x004c4170u     /* ecx = the CharStack; the tag (ret 4): its level, 0 when it has none */
+#define RE_VA_PREF_LEVEL_RET 0x004c4195u
+#define RE_VA_PREF_STEP 0x004c41c0u      /* ecx = the CharStack; tag, steps, start (0 = its level) (ret 0xc): the level so many
+                                            steps on, past 0; stores nothing */
+#define RE_VA_PREF_STEP_RET 0x004c4226u
+#define RE_VA_PREF_SET 0x004d8210u       /* ecx = the Experience; tag, level (ret 8): stores it within -3..3 and makes or takes
+                                            the need bar of a level of 2 and more */
+#define RE_VA_PREF_SET_RET 0x004d82d0u
+#define RE_VA_FEELING 0x0080fdd0u        /* ecx = the game's data; a std::string to construct, 1 = the long word; the level as a
+                                            float in xmm2 (ret 8): "dislike", "like" ... in the player's language */
+#define RE_VA_FEELING_RET 0x0081147au
+/* The waiting time of an activity (REQUEST.md [79], note a3 Q2): the actions object keeps for every activity with an
+ * `interval` the month it last ended, in std::map<id, month> at +0xb4, saved with the person; the game writes it at
+ * the end of the action (0x00439ad0) and the place lists read it ("alreadyDoneRecently"). A month is month + 12 *
+ * year of the calendar the actions object holds at +0x54 (+0x10 the month, +0x14 the year). */
+#define RE_VA_ACTION_LAST 0x004406d0u /* ecx = the actions; the activity id (ret 4): its month, -999 when it has none */
+#define RE_VA_ACTION_LAST_RET 0x004406f8u
+#define RE_VA_INT_MAP_AT 0x00420620u /* std::map<int, int>::operator[], as the game's writer 0x004406a0 calls it: ecx = the
+                                        map, a pointer to the key (ret 4); the value's address, a new 0 when absent */
+#define RE_VA_INT_MAP_AT_RET 0x0042065au
+#define RE_ACTIONS_LAST_MONTHS 0xb4
+#define RE_ACTIONS_CALENDAR 0x54
+#define RE_CALENDAR_MONTH 0x10
+#define RE_CALENDAR_YEAR 0x14
 #define RE_STAFF_FIRST_NAME 0    /* std::string */
 #define RE_STAFF_LAST_NAME 0x18  /* std::string */
 #define RE_STAFF_DEMAND 0x130    /* int64, cents a month; open while it is above the wage */
@@ -1115,6 +1152,15 @@ enum {
  * (ecx = the text; eax = the text after its leading white space) before the text is parsed. */
 #define RE_VA_XML_SKIP 0x00699730u
 #define RE_VA_CALL_XML_SKIP 0x0069b91cu
+/* At that call esi is the document and +0x40 its text (tinyxml2's _charBuffer), made by new[] (0x008321e5, cdecl:
+ * the size) at 0x0069b8f8 and freed by delete[] (0x008321e0, cdecl: the block) at 0x0069b73a, in the document's
+ * end. A file that gets additions (REQUEST.md [76]) is given a longer text from the same new[], the old freed. */
+#define RE_VA_XML_TEXT_READ 0x0069b912u   /* mov eax, [esi + 0x40]; mov byte [ebx + eax], 0; mov ecx, [esi + 0x40] */
+#define RE_VA_CALL_XML_NEW 0x0069b8f8u
+#define RE_VA_CALL_XML_DELETE 0x0069b73au
+#define RE_VA_NEW_ARRAY 0x008321e5u
+#define RE_VA_DELETE_ARRAY 0x008321e0u
+#define RE_XML_DOC_TEXT 0x40
 
 /* the monthly auto transfer (note m47): FUN_00547670 runs the rules at a month end; a rule for shares works out a
  * quantity, has FUN_00534ef0 hold it to what one holder may own, and calls the purchase (RE_VA_STOCK_BUY) with it.
@@ -1150,6 +1196,16 @@ enum {
 #define RE_VA_CALL_NEW_FIRM 0x0043a123u
 #define RE_VA_FIRM_CTOR 0x004f25c0u
 #define RE_VA_FIRM_CTOR_AWARE 0x004f282cu /* mov dword ptr [edi + 0x208], 0 */
+/* competition (REQUEST.md [76], note e20): FUN_004ec490 (thiscall: ecx = the firms' manager, the map to fill; ret 4;
+ * eax = that map) sums the market of every business type, std::map<type, int64 cents>: the pool the city keeps
+ * (the manager's map at +0xbc, saved as m_publicBusinessValue), the player's firms, the rivals' and the listed
+ * companies'. Every reader of competition takes its sums from it: the stored map that FUN_004ec7d0 makes at a month
+ * start and at a load (the call at 0x004ec835) and the fresh one of FUN_004ec8c0 (the call at 0x004ec8f4). */
+#define RE_VA_MARKET_SUM 0x004ec490u
+#define RE_VA_CALL_SUM_STORED 0x004ec835u
+#define RE_VA_CALL_SUM_LIVE 0x004ec8f4u
+#define RE_VA_SUM_POOL 0x004ec639u /* mov eax, [ebx + 0xbc]: the pool, inside FUN_004ec490 */
+#define RE_FIRMS_POOL 0xbc
 
 /* property (note b17_property_listings.md): the properties for sale and the two amounts of each */
 #define RE_VA_HOUSE_PRICE 0x0054d190u      /* ecx = RestateM; record, std::string kind by value, flag (ret 0x20); edx:eax, cents */

@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョンは 1.2.1 です。ゲームの開発元が作ったものではありません。
+This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョンは 1.3.0 です。ゲームの開発元が作ったものではありません。
 
 ほかの言語: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [简体中文](README.zh-CN.md)
 
@@ -68,6 +68,9 @@ This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョ�
 | カジノ | 決まった賭け金と確率、各ゲーム月1回 | `[features] casino=0` |
 | 修了した教育 | 数値が下がりません | `[features] experience=0` |
 | ビジネスの自動化 | 任せたビジネスでだけ、MODが従業員・資産・広告・契約を管理します。同じクリックで取り戻せます | `[features] business=0` |
+| 競争 | 業種の市場で企業の分を 1.25 倍に数え、競争が早く始まります | `[balance] competitionWeight=1` |
+| お金で影響力 | 銀行に大きな寄付が二つ($1M、$10M)、市の政策投票は 12 か月ごと(ゲーム 24 か月)、ゲーム本来の寄付は年に一度(ゲームは毎月) | `[features] influence=0` |
+| パーソナルコーチング | 病院でお金を払うと、選んだ好みが「好き」に一段階近づきます(1人につき年に1つ) | `[features] coaching=0` |
 
 バランスの数値は `[balance]` に1行ずつあります。
 
