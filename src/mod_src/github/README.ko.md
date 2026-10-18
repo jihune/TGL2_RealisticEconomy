@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.3.1. 게임 제작사가 만든 것이 아닙니다.
+This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.4.0. 게임 제작사가 만든 것이 아닙니다.
 
 다른 언어: [English](README.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.3.1. 
 
 ![광고 아이콘의 설명 글](img/ko/automation.png)
 
-직원, 자산, 광고, 계약을 사업체마다 하나씩 모드에 맡길 수 있습니다. 광고 아이콘을 Ctrl+Shift-클릭하면 전부 맡깁니다. 누르는 법은 아이콘의 설명 글에 나옵니다.
+직원, 자산, 광고, 계약을 사업체마다 하나씩 모드에 맡길 수 있습니다. 광고 아이콘을 Ctrl+Shift-클릭하면 전부 맡깁니다. 누르는 법은 아이콘의 설명 글에 나옵니다. 맡기기는 우리 가계가 회사를 한 번 상장(IPO)한 뒤에 열립니다. 일손이 모자란 몇 시간은 지키는 평판보다 싸면 외주나 채용으로 채웁니다.
 
 ![채용 창](img/ko/hire.png)
 
@@ -69,6 +69,7 @@ This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.3.1. 
 | 마친 교육 | 수치가 깎이지 않습니다 | `[features] experience=0` |
 | 사업체 자동화 | 맡긴 사업체에서만 모드가 직원·자산·광고·계약을 관리합니다. 같은 클릭으로 되찾습니다 | `[features] business=0` |
 | 경쟁 | 업종 시장에서 회사들의 몫을 1.25배로 셉니다. 경쟁이 더 일찍 붙습니다 | `[balance] competitionWeight=1` |
+| 평판 가산 | 사업체의 월말 "완료된 작업" 가산(3.6포인트)이 못 한 일의 비율에 따라 줄어 2% 에서 0 이 됩니다. 한 시간만 남겨도 통째로 잃던 것이 없어집니다 | `[balance] reputationBonusFade=0` |
 | 돈으로 영향력 | 은행에 큰 기부 둘($1M, $10M), 시의 정책 투표는 12개월마다(게임 24개월), 게임 자체의 기부는 1년에 한 번(게임은 다달이) | `[features] influence=0` |
 | 개인 코칭 | 병원에서 돈을 내고, 고른 성향 하나를 좋아함 쪽으로 한 단계 옮깁니다(사람마다 1년에 하나) | `[features] coaching=0` |
 

@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Un mod para This Grand Life 2. Solo para la versión v1.03.22 del juego, versión 1.3.1 del mod. No es del desarrollador del juego.
+Un mod para This Grand Life 2. Solo para la versión v1.03.22 del juego, versión 1.4.0 del mod. No es del desarrollador del juego.
 
 Otros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ El gráfico de una empresa se abre solo con el precio de la acción. Cada línea
 
 ![El texto de un icono de anuncio](img/es/automation.png)
 
-Empleados, activos, anuncios y contratos se pueden dejar al mod uno por uno, en cada negocio. Con Ctrl+Mayús+clic en un icono de anuncio se deja todo. Los textos de los iconos indican los clics.
+Empleados, activos, anuncios y contratos se pueden dejar al mod uno por uno, en cada negocio. Con Ctrl+Mayús+clic en un icono de anuncio se deja todo. Los textos de los iconos indican los clics. Ceder se abre cuando tu hogar ha sacado a bolsa una empresa propia (IPO). Lo que aún falta de manos se externaliza o se contrata cuando cuesta menos que la reputación que conserva.
 
 ![La pestaña de contratación](img/es/hire.png)
 
@@ -69,6 +69,7 @@ Estas son todas las funciones que cambian una regla o un número del juego. Pon 
 | Educación terminada | Su valor no baja | `[features] experience=0` |
 | Automatización de los negocios | El mod gestiona empleados, activos, anuncios y contratos solo en un negocio que le cedes. El mismo clic lo recupera | `[features] business=0` |
 | Competencia | En el mercado de un tipo de negocio las empresas cuentan 1,25 veces, así que la competencia llega antes | `[balance] competitionWeight=1` |
+| Bonificación de reputación | La bonificación mensual de un negocio por el trabajo completado (3,6 puntos) baja con la parte de trabajo sin hacer y desaparece en el 2%, en vez de perderse entera por una hora | `[balance] reputationBonusFade=0` |
 | Dinero por influencia | Dos donaciones grandes en el banco ($1M, $10M); la ciudad vota sus políticas cada 12 meses (juego: 24); la donación propia del juego una vez al año (juego: cada mes) | `[features] influence=0` |
 | Coaching personal | En el hospital, con dinero, una preferencia elegida se acerca un paso a «le gusta»; una al año por persona | `[features] coaching=0` |
 

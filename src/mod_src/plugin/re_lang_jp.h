@@ -185,4 +185,8 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_COACH_YEAR] = "パーソナルコーチング(%s): %s、変えられる好みは年に1つ。料金を返金した",
     [RE_MSG_COACH_CASH] = "パーソナルコーチング(%s): %s、追加料金%sの現金が足りない。料金を返金した",
     [RE_MSG_WARE_HOUR] = "10時間あたりのコスト %s\n（価格÷耐用年数＋消費）",
+    [RE_MSG_AUTO_CLOSED] = "%s: MODに任せるのは、世帯が初めて上場（IPO）した後に開きます",
+    [RE_MSG_AUTO_CLOSED_TIP] = "\nMOD: 事業を任せるのは\n初めての上場（IPO）後に開きます。",
+    [RE_MSG_AUTO_RELEASED_PREFIX] = "MODから取り戻したビジネス: ",
+    [RE_MSG_AUTO_RELEASED] = "%s%s。任せられるのは、世帯が初めて上場（IPO）した後です",
 };

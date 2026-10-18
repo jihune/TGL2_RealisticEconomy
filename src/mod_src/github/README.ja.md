@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョンは 1.3.1 です。ゲームの開発元が作ったものではありません。
+This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョンは 1.4.0 です。ゲームの開発元が作ったものではありません。
 
 ほかの言語: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョ�
 
 ![広告アイコンの説明文](img/ja/automation.png)
 
-従業員、資産、広告、契約を、ビジネスごとに1つずつMODに任せられます。広告アイコンを Ctrl+Shift+クリックすると全部任せます。操作はアイコンの説明文に書いてあります。
+従業員、資産、広告、契約を、ビジネスごとに1つずつMODに任せられます。広告アイコンを Ctrl+Shift+クリックすると全部任せます。操作はアイコンの説明文に書いてあります。任せられるのは、世帯が自分の会社を一度上場（IPO）した後からです。人手の足りない数時間は、守れる評判より安ければ外注か採用で埋めます。
 
 ![採用タブ](img/ja/hire.png)
 
@@ -69,6 +69,7 @@ This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョ�
 | 修了した教育 | 数値が下がりません | `[features] experience=0` |
 | ビジネスの自動化 | 任せたビジネスでだけ、MODが従業員・資産・広告・契約を管理します。同じクリックで取り戻せます | `[features] business=0` |
 | 競争 | 業種の市場で企業の分を 1.25 倍に数え、競争が早く始まります | `[balance] competitionWeight=1` |
+| 評判のボーナス | ビジネスの月末の「完了した作業」ボーナス（3.6ポイント）が、残した作業の割合に応じて減り、2%でゼロになります。1時間残しただけで丸ごと失うことはなくなります | `[balance] reputationBonusFade=0` |
 | お金で影響力 | 銀行に大きな寄付が二つ($1M、$10M)、市の政策投票は 12 か月ごと(ゲーム 24 か月)、ゲーム本来の寄付は年に一度(ゲームは毎月) | `[features] influence=0` |
 | パーソナルコーチング | 病院でお金を払うと、選んだ好みが「好き」に一段階近づきます(1人につき年に1つ) | `[features] coaching=0` |
 

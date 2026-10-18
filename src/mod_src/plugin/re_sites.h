@@ -223,6 +223,20 @@ enum {
 #define RE_VA_IPO_MARKET 0x00536dc6u       /* mov esi, [ebp - 0x3ac] / mov ecx, esi: the market in the listing's frame */
 #define RE_IPO_FRAME_MARKET (-0x3ac)
 #define RE_MARKET_COMPANIES 0x164    /* std::map<company id, company> */
+/* where the household may hand its businesses to the mod (REQUEST.md [90], [91], note b25): the game's rich unlock and a
+ * listing of its own. The unlock (net worth $1M x the price index; the window "Rivals, Influence and Policies" and the
+ * competition of business types) is an int of RichM that FUN_004841d0 sets at a month end and the save keeps. A
+ * company the household lists is given the type 69211 ("Conglomerate", tagStocks.xml: "special player company from
+ * publicly listing their smaller businesses"), which no other company has; a company that goes bankrupt is moved from
+ * the listed ones to a map of ended ones (FUN_005348e0) with its record. */
+#define RE_VA_RICH_UNLOCK 0x004842b7u     /* mov dword ptr [ebx + 0x9c], 1 */
+#define RE_RICH_UNLOCKED 0x9c
+#define RE_VA_IPO_COMPANY_KIND 0x0053668fu /* inside mov dword ptr [ebp - 0x430], 0x10e5b (at 0x0053668d) */
+#define RE_COMPANY_KIND_LISTED 69211
+#define RE_VA_COMPANY_KIND 0x0053419du    /* movups xmm0, [esi + 0x48]: amount, chance and type of the company's record */
+#define RE_COMPANY_KIND 0x54
+#define RE_VA_MARKET_ENDED 0x00534a63u    /* lea ecx, [edi + 0x16c] */
+#define RE_MARKET_ENDED 0x16c
 #define RE_MARKET_NODE_COMPANY 0x18
 #define RE_COMPANY_MARKET 0x78
 #define RE_COMPANY_PEOPLE 0x98
@@ -513,6 +527,19 @@ enum {
  * reputation for it (reason 0x715), and a later update turns the hours into influence. */
 #define RE_VA_FIRM_REPUTATION 0x004f9fb9u /* addss xmm3, dword ptr [esi + 0x20c] */
 #define RE_FIRM_REPUTATION 0x20c
+/* the month's mark of a business's work (REQUEST.md [90], [91], note m51). FUN_004f35d0 works out the share of the
+ * month's work left undone, s, in [ebp - 0x6c]; s > 0 takes 0.2 x s off the reputation with the mark 0xfd8
+ * ("incomplete work"), s = 0 gives 0.036 with the mark 0xfda ("completed work"). Both go through one call of
+ * FUN_004f9fa0: ecx = the business, the mark on the stack, the change in xmm2; ret 4. */
+#define RE_VA_REP_SHARE 0x004f389bu        /* movss xmm0, dword ptr [ebp - 0x6c] */
+#define RE_VA_REP_UNDONE 0x004f38b2u       /* xorps xmm2, xmm2 / mov esi, dword ptr [ebp - 0x5c]: the business */
+#define RE_VA_REP_UNDONE_MARK 0x004f38bcu  /* push 0xfd8 */
+#define RE_VA_REP_UNDONE_RATE 0x008fa010u  /* 0.2, a double */
+#define RE_VA_REP_DONE_MARK 0x004f38deu    /* push 0xfda */
+#define RE_VA_REP_DONE_BONUS 0x008f9e6cu   /* 0.036f */
+#define RE_VA_CALL_REP_CHANGE 0x004f38e5u
+#define RE_VA_REP_CHANGE 0x004f9fa0u
+#define RE_REP_MARK_DONE 0xfda
 #define RE_VA_FIRM_INFLUENCE 0x004f6113u /* cmp byte ptr [edi + 0x234], 0 */
 #define RE_FIRM_INFLUENCE 0x234
 /* a business open (1) or closed (0) to its work (REQUEST.md [49], note m34). The button of a business window, the
@@ -777,6 +804,38 @@ enum {
 #define RE_VA_HIRE_RET_EARLY 0x004ea03cu
 #define RE_JOB_NODE_OUTSOURCED 0x48
 #define RE_JOB_NODE_KIND 0x20
+#define RE_JOB_NODE_KEY 0x10 /* the number the business keeps the job under */
+/* a job outsourced by the mod (REQUEST.md [91], note b24). The box of a job row calls FUN_004e7900 (ecx = firms; the
+ * business, the job's key, 0 or 1; ret 0xc), which stores that int as the job's switch, then FUN_004e9aa0 (ecx =
+ * firms; the business; ret 4), which has the business work out its efficiency and the assets it wants again. Neither
+ * asks whether the data allows it: a job of the game's data is outsourced where its info has <business
+ * canOutsource="1">, unless the business type's list jobExtras/outsourceOverride says otherwise (prob 1 or more
+ * allows, below 1 forbids; the last entry of the job decides). Every game hour FUN_004f3070 does an hour of an
+ * outsourced job that has work left while its people have fewer than 11 hours left, at the job's standard wage an hour
+ * times 3 (FUN_004d5180: [0x8fa1f8]), on the business's statement line 2541. */
+#define RE_VA_JOB_OUTSOURCE 0x004e7900u
+#define RE_VA_JOB_OUTSOURCE_STORE 0x004e794du /* mov dword ptr [eax + 0x30], ecx */
+#define RE_VA_JOB_OUTSOURCE_RET 0x004e7952u   /* ret 0xc */
+#define RE_VA_CALL_JOB_OUTSOURCE 0x005d82cdu  /* in the click of the box */
+#define RE_VA_FIRM_RESET 0x004e9aa0u
+#define RE_VA_FIRM_RESET_RET 0x004e9af0u /* ret 4 */
+#define RE_VA_CALL_FIRM_RESET 0x005d82f5u
+#define RE_VA_OUTSOURCE_PRICE 0x008fa1f8u /* 3.0f */
+#define RE_VA_JOB_INFO 0x0080e6c0u        /* as RE_VA_WARE_INFO, for a job */
+#define RE_VA_JOB_INFO_RET 0x0080e7cau
+#define RE_VA_FIRM_INFO 0x0080f3b0u       /* as RE_VA_WARE_INFO, for a business type: what the window hands RE_VA_DATA_LIST */
+#define RE_VA_FIRM_INFO_RET 0x0080f4bau
+#define RE_VA_CALL_DATA_LIST_OUTSOURCE 0x005ce405u /* the window's call for jobExtras/outsourceOverride */
+/* a business's own statement (note b26): an IncomeSt like the household's at FirmStack + 0x128, its months at +0x20.
+ * The cash function books every movement of a business there too (FUN_004e9940 for income, FUN_004e99b0 for an
+ * expense), under the month of the time object. */
+#define RE_VA_FIRM_STATEMENT 0x004e998cu /* lea ecx, [ebx + 0x128] */
+#define RE_FIRM_STATEMENT 0x128
+#define RE_TAG_SALES 2517         /* what the customers paid for the hours of work */
+#define RE_TAG_CONTRACT_PAY 2524  /* the payments of contracts, every six months and at the end */
+#define RE_TAG_OUTSOURCING 2541   /* what outsourced hours cost (the 0x9ed of FUN_004f3070) */
+#define RE_CONTRACT_FINAL 0x20     /* int64, cents: the payment at the end */
+#define RE_CONTRACT_MILESTONE 0x28 /* int64, cents: the payment every six months before it */
 /* adverts handed to the mod (note m22): the adverts of a business type as the game fetches them, the switch of an
  * advert, its price, and where the held keys are found from the object the ticker is in */
 #define RE_VA_DATA_LIST 0x00807f30u         /* ecx = an empty vector; a record (0x38) and two std::string by value, removed by the CALLER (plain ret) */

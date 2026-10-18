@@ -4045,11 +4045,27 @@ int main(int argc, char **argv)
                             (re_business_smaller_pick(wage, hours, efficiency, 6, 700000, 160, 20.0) != 0) +
                             (re_business_smaller_pick(wage, hours, efficiency, 6, 300000, 160, 20.0) != -1) +
                             (re_business_smaller_pick(wage, hours, efficiency, 6, 700000, 48, 20.0) != -1);
-        int ok = picks_wrong == 0 && cases_wrong == 0 && blind == 4 && spare_wrong == 0 && smaller_wrong == 0 && fills_wrong == 0;
+        /* a month's mark (note m51): the game's rule gives 0.036 for nothing left and takes 0.2 x the share otherwise,
+         * one hour of 1829 (0.055%) included; with the bonus fading to nothing at 2%, a month with 1% left keeps half
+         * the bonus less 0.002, one with 2% none of it. A point of reputation of a business paid $1000 a month: at 75%
+         * it is paid 1.0 of its table, a point moves 0.4 of that a month and fades by 3% a month, over twelve months
+         * 0.4 x 1000 x (1 - 0.97^12) / 0.03; at 125% the point fades by 32.1% a month and the income is 1.2 of the
+         * table; nothing paid, nothing worth. */
+        double fade12 = 0.4 * 1000.0 * (1.0 - pow(0.97, 12)) / 0.03, above12 = 0.4 * 1000.0 / 1.2 * (1.0 - pow(0.679, 12)) / 0.321;
+        int marks_wrong = (fabs(re_business_mark(0.0, 0.036, 0.2, 0.0) - 0.036) > 1e-12) +
+                          (fabs(re_business_mark(1.0 / 1829.0, 0.036, 0.2, 0.0) + 0.2 / 1829.0) > 1e-12) +
+                          (fabs(re_business_mark(0.0, 0.036, 0.2, 0.02) - 0.036) > 1e-12) +
+                          (fabs(re_business_mark(0.01, 0.036, 0.2, 0.02) - (control ? 0.018 : 0.016)) > 1e-12) +
+                          (fabs(re_business_mark(0.02, 0.036, 0.2, 0.02) + 0.004) > 1e-12) +
+                          (fabs(re_business_reputation_worth(1000.0, 0.75, 12) - fade12) > 1e-6) +
+                          (fabs(re_business_reputation_worth(1000.0, 1.25, 12) - above12) > 1e-6) +
+                          (re_business_reputation_worth(0.0, 0.75, 12) != 0.0);
+        int ok = picks_wrong == 0 && cases_wrong == 0 && blind == 4 && spare_wrong == 0 && smaller_wrong == 0 && fills_wrong == 0 &&
+                 marks_wrong == 0;
         g_failures += !ok;
         printf("  T20 a wage demand against the job's candidates     picks_wrong=%d of 14 cases_wrong=%d of %d nothing_to_compare=%d of 4 "
-               "spare_wrong=%d of 5 smaller_wrong=%d of 4 fills_wrong=%d of 17 %s\n",
-               picks_wrong, cases_wrong, (int)(sizeof cases / sizeof cases[0]), blind, spare_wrong, smaller_wrong, fills_wrong,
+               "spare_wrong=%d of 5 smaller_wrong=%d of 4 fills_wrong=%d of 17 marks_wrong=%d of 8 %s\n",
+               picks_wrong, cases_wrong, (int)(sizeof cases / sizeof cases[0]), blind, spare_wrong, smaller_wrong, fills_wrong, marks_wrong,
                ok ? "ok" : "FAIL");
     }
 

@@ -344,6 +344,16 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     /* the cost of ten hours, the unit of the game's own utility line ("Cost Per 10hrs"); "수명" is the game's word as
      * the mod's Korean wording has it (the file says "라이프타임") */
     [RE_MSG_WARE_HOUR] = {"Cost per 10hrs %s\n(price ÷ lifetime + consumption)", "10시간당 비용 %s\n(가격÷수명 + 소비)", NULL, NULL, NULL, NULL},
+    /* the mod's business automation opens late (REQUEST.md [91]): a click that would hand something over, and the
+     * hover texts that say how to hand over */
+    [RE_MSG_AUTO_CLOSED] = {"%s: handing it to the mod opens after your household's first listing (IPO)",
+                            "%s: 모드에 맡기기는 우리 가계가 처음 상장(IPO)한 뒤에 열립니다", NULL, NULL, NULL, NULL},
+    [RE_MSG_AUTO_CLOSED_TIP] = {"\nMod: handing businesses over opens after your household's first listing (IPO).",
+                                "\n모드: 사업체 맡기기는 첫 상장(IPO)\n뒤에 열립니다.", NULL, NULL, NULL, NULL},
+    /* a load that took back what a save had handed over before the household could (REQUEST.md [92]) */
+    [RE_MSG_AUTO_RELEASED_PREFIX] = {"Taken back from the mod: ", "모드에서 되찾은 사업체: ", NULL, NULL, NULL, NULL},
+    [RE_MSG_AUTO_RELEASED] = {"%s%s. Handing over opens after your household's first listing (IPO)",
+                              "%s%s. 맡기기는 우리 가계가 처음 상장(IPO)한 뒤에 열립니다", NULL, NULL, NULL, NULL},
 };
 
 /* What the table does not have: one file a language, `[RE_MSG_...] = "text"` a line. */

@@ -169,4 +169,8 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_COACH_YEAR] = "Coaching de %s : %s, une préférence par an ; frais remboursés",
     [RE_MSG_COACH_CASH] = "Coaching de %s : %s, liquidités sous %s ; frais remboursés",
     [RE_MSG_WARE_HOUR] = "Coût par 10 heures %s\n(prix ÷ durée de vie + consommation)",
+    [RE_MSG_AUTO_CLOSED] = "%s : confier au mod s'ouvre après votre première entrée en bourse (IPO)",
+    [RE_MSG_AUTO_CLOSED_TIP] = "\nMod : confier des entreprises s'ouvre après votre première entrée en bourse (IPO).",
+    [RE_MSG_AUTO_RELEASED_PREFIX] = "Repris au mod : ",
+    [RE_MSG_AUTO_RELEASED] = "%s%s. Confier s'ouvre après votre première entrée en bourse (IPO)",
 };

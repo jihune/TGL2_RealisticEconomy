@@ -165,4 +165,8 @@ static const char *const LANG_ES[RE_MSG_COUNT] = {
     [RE_MSG_COACH_YEAR] = "Coaching de %s: %s, una preferencia al año; cuota devuelta",
     [RE_MSG_COACH_CASH] = "Coaching de %s: %s, falta efectivo (%s); cuota devuelta",
     [RE_MSG_WARE_HOUR] = "Coste por 10hrs %s\n(precio ÷ vida útil + consumo)",
+    [RE_MSG_AUTO_CLOSED] = "%s: ceder al mod se abre tras la primera salida a bolsa (IPO) de tu hogar",
+    [RE_MSG_AUTO_CLOSED_TIP] = "\nMod: ceder negocios se abre tras la primera salida a bolsa (IPO) de tu hogar.",
+    [RE_MSG_AUTO_RELEASED_PREFIX] = "Recuperado del mod: ",
+    [RE_MSG_AUTO_RELEASED] = "%s%s. Ceder se abre tras la primera salida a bolsa (IPO) de tu hogar",
 };

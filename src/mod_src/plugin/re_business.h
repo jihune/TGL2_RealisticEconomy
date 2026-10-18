@@ -65,6 +65,17 @@ int re_business_fill_pick(const long long *wage, const int *hours, const double 
  * whole month. */
 #define RE_FILL_LEAST 8.0
 int re_business_short(int given, int todo, double able, double share);
+/* A business's mark at a month end (REQUEST.md [90], [91], note m51): what the month's work does to its reputation
+ * with the share `share` of that work left undone - the bonus for completed work as the rule in force gives it, less
+ * the game's `rate` x share. `fade` 0 is the game's rule, the bonus only when nothing is left; above 0 the bonus goes
+ * down with the share and is gone at `fade` (balance's reputationBonusFade). */
+double re_business_mark(double share, double bonus, double rate, double fade);
+/* What a whole point of reputation (1.0) is worth to a business, in the unit of `income`, what it is paid a month.
+ * What it is paid goes with 0.7 + 0.4 x reputation (defaultData reputationIncomeMinXer and reputationIncomeGrowthXer,
+ * note e2), and a month end takes 3% of the reputation and, above 100%, 30% of what lies above (reputationDecayXer,
+ * extraReputationDecayXer): a point added now is counted, as it fades, over `months` months. */
+#define RE_REPUTATION_MONTHS 12
+double re_business_reputation_worth(double income, double reputation, int months);
 /* What missing assets leave of an hour of work (REQUEST.md [45], note b19 "A1"): the game multiplies a person's
  * skill by the assets of the job, which count for no less than RE_ASSETS_FLOOR, and by the furnishings of the
  * business, for no less than RE_FURNISH_FLOOR. 1 = nothing is short. An hour of a person is worth skill x this in
@@ -191,6 +202,12 @@ float re_business_length(void *function, void *firms, int months);
  * strings from the stack itself and one that leaves that to its caller. */
 float re_business_data_number(void *function, void *data, void *assign, const char *element, unsigned element_length, const char *name,
                               unsigned name_length);
+/* A list of a record's data as the game builds it from the XML (FUN_00807f30, the way the business window asks for
+ * a type's jobExtras/outsourceOverride at 0x005ce370): ecx = an empty vector to fill, then the record's info (0x38
+ * bytes, its string at +0x1c copied with the game's `copy`), the element's name and the child's name as std::string
+ * by value; the caller removes the 0x68 bytes, the function destroys the three strings. */
+void re_business_data_list(void *function, void *vector, const unsigned char *record, void *assign, void *copy, const char *element,
+                           unsigned element_length, const char *child, unsigned child_length);
 
 /* The hire tab's list: before the game's function runs, one callback gets the firms object, the business and the
  * job; after it has filled the vector, the other gets the firms object and the vector {first, end, room}. */

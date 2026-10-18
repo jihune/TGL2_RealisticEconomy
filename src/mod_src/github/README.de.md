@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.3.1. Nicht vom Entwickler des Spiels.
+Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.4.0. Nicht vom Entwickler des Spiels.
 
 Andere Sprachen: [English](README.md), [한국어](README.ko.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ Das Diagramm eines Unternehmens öffnet sich nur mit dem Aktienkurs. Jede Linie 
 
 ![Der Hinweistext eines Werbesymbols](img/de/automation.png)
 
-Mitarbeiter, Vermögenswerte, Werbung und Verträge lassen sich einzeln an den Mod übergeben, für jedes Geschäft. Ein Strg+Umschalt-Klick auf ein Werbesymbol übergibt alles. Die Hinweistexte der Symbole nennen die Klicks.
+Mitarbeiter, Vermögenswerte, Werbung und Verträge lassen sich einzeln an den Mod übergeben, für jedes Geschäft. Ein Strg+Umschalt-Klick auf ein Werbesymbol übergibt alles. Die Hinweistexte der Symbole nennen die Klicks. Die Übergabe öffnet sich, sobald dein Haushalt ein eigenes Unternehmen an die Börse gebracht hat (IPO). Was noch an Händen fehlt, wird ausgelagert oder eingestellt, wenn das weniger kostet als der Ruf, den es hält.
 
 ![Der Reiter zum Einstellen](img/de/hire.png)
 
@@ -69,6 +69,7 @@ Das sind alle Funktionen, die eine Regel oder eine Zahl des Spiels ändern. Setz
 | Abgeschlossene Ausbildung | Ihr Wert sinkt nicht | `[features] experience=0` |
 | Automatisierung der Geschäfte | Der Mod verwaltet Personal, Vermögenswerte, Werbung und Verträge nur in einem Geschäft, das du ihm übergibst. Derselbe Klick holt es zurück | `[features] business=0` |
 | Konkurrenz | Im Markt einer Geschäftsart zählen die Firmen 1,25-fach, die Konkurrenz setzt früher ein | `[balance] competitionWeight=1` |
+| Bonus für den Ruf | Der monatliche Bonus eines Geschäfts für erledigte Arbeit (3,6 Punkte) sinkt mit dem Anteil liegen gebliebener Arbeit und ist bei 2% weg, statt für eine Stunde ganz verloren zu gehen | `[balance] reputationBonusFade=0` |
 | Geld für Einfluss | Zwei große Spenden bei der Bank ($1M, $10M); die Stadt stimmt alle 12 Monate über ihre Politik ab (Spiel: 24); die Spende des Spiels selbst einmal im Jahr (Spiel: jeden Monat) | `[features] influence=0` |
 | Persönliches Coaching | Im Krankenhaus rückt gegen Geld eine gewählte Vorliebe eine Stufe näher an Gefallen; eine pro Person und Jahr | `[features] coaching=0` |
 

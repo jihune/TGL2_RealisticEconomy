@@ -28,6 +28,10 @@ game again. "[features] balance=0" means: under the line [features], change bala
        more firms of a type, competition sets in sooner than in the game and takes more awareness every month.
        It makes the game harder.
           Off: [balance] competitionWeight=1
+     - A business's monthly bonus for completed work goes down with the share left undone (14). The game takes the
+       whole bonus of 3.6 points for one hour left; the mod lowers it with the share, to nothing at 2%. It makes the
+       game easier.
+          Off: [balance] reputationBonusFade=0
      - Money into influence (15). A bank has two large donations ($1M, $10M), and the city votes on its policies
        every 12 months (the game: 24). Something to spend the money of the late game on.
           Off: [features] influence=0
@@ -63,6 +67,12 @@ game again. "[features] balance=0" means: under the line [features], change bala
      - The month's job candidates kept (9): [business] candidatesFixed=0
 
    Business automation (9 below)
+     - Handing businesses to the mod opens once your household has listed a company of its own (since 1.4.0). A
+       listing needs the game's unlock of "Rivals, Influence and Policies" (net worth $1M times the price index)
+       first. Until then a click that would hand something over is refused, and the game's two switches do only
+       what the game does with them. Whatever a save had handed over is taken back when it is loaded (as your own
+       click would take it back), and the monthly summary names the businesses.
+          Open from the start: [business] automationEarly=1
      - Until you hand something over, the mod buys, hires and signs nothing in a business. Handing over is done
        business by business, inside the game:
           - the game's two switches ("automatic staff management", "buy worn-out assets again"): where they are
@@ -643,7 +653,7 @@ What it does
            it: "S-Con (a job stands still: one of its assets is missing altogether)".
          · A person hired like this who is one too many in the next month (as under "A staff that fits the work"
            below) is let go at that month end, without the wait of three months and without severance.
-         · A job you have outsourced and a job without an automatically managed employee are left alone. One
+         · A job you have outsourced yourself and a job without an automatically managed employee are left alone. One
            exception (since 1.2.0): in a business handed over whole, a job that a signed contract brings work for
            and that has no employee at all gets its first person from the mod. The hire window of such a business
            is locked, so nobody else could hire there.
@@ -651,6 +661,27 @@ What it does
            the five businesses in the six months after (before, one business left a tenth of its work every
            month).
          · Off with [business] autoHire=0.
+     - The last few hours (since 1.4.0, [business] autoCover): what is short by less than the rule above (under 8
+       hours or no more than 5% of the job's month), what is short when no candidate is left, and the work that
+       comes in after the month's last look (with 91 hours left).
+         · At a month end the game takes reputation from a business for the share of its work left undone and gives
+           a bonus for a month with none (14, "the monthly bonus for completed work"). What a business is paid goes
+           with its reputation (0.7 times at 0%, 1.1 times at 100%).
+         · The mod puts a price on reputation: what the customers paid last month and what the signed contracts pay
+           a month, a point of reputation moving about 0.4% of that, counted over a year as the reputation fades.
+         · When the hours can be covered for less than that, the cheapest way is taken: the game's outsourcing (only
+           for a job the business may outsource; an hour costs three times the job's standard wage, and it does one
+           hour a game hour) or a candidate (two months' wages and hireFeeHours). When both cost more, or there is
+           neither, the reputation is lost.
+         · In the month's last look a job the business may outsource is outsourced when the reputation an hour keeps
+           is more than the hour costs. The game outsources only once the job's people have fewer than 11 hours
+           left, so it costs nothing while there is no such work. Jobs the mod outsourced are switched back at the
+           next month start.
+         · Seen with the user's save of 2035: S-Con's Builder Apprentices were 4 hours short (a job it may not
+           outsource). A candidate for $3,563 (two months' wages and the hiring cost) kept reputation worth $16,819,
+           the month ended with nothing undone and the reputation went from 68.4% to 70.1%. In a test with far too
+           few plumbers 112 hours were outsourced, for $18,664.80.
+         · Off with [business] autoCover=0.
      - A staff that fits the work (employees under the automatic management; [business] spareMonths, 3): just
        before a month end the mod looks at the hours each person did not work that month. Nothing is forecast.
          · In a job of two or more: when the others could have done a person's work in the hours they left
@@ -1104,6 +1135,16 @@ What it does
          listed companies see the same competition. The custom the city holds shrinks faster too, and what it lost
          stays in the save (also without the mod). Competition among property types is reckoned apart and is not
          changed.
+     - A business's monthly bonus for completed work goes down with the share left undone (since 1.4.0).
+       reputationBonusFade
+         At a month end the game takes 3% of a business's reputation (and 30% of what lies above 100%), takes 0.2
+         times the share of the month's work left undone, and gives 3.6 points for a month with nothing left. The
+         penalty goes with the share, but the bonus is gone for one hour: one hour left loses as much as 18% left
+         costs in penalty. The mod lowers the 3.6 points with the share: at 0.02 a month with 1% left gets 1.8
+         points and one with 2% or more none. The penalty stays the game's. The business window's hover text of the
+         reputation lists the two as "completed work" and "incomplete work". Your businesses only; 0 = the game. In
+         the user's save of 2035 S-Bro left 1 of 1,829 hours undone: 75.9% instead of the game's fall from 74.6% to
+         72.4%.
 
 15. Money into influence (since 1.3.0, for late in the game)
    Late in the game money piles up and there is little to spend it on. Influence is the points that move the city's

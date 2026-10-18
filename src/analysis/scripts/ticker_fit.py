@@ -29,7 +29,7 @@ from PIL import ImageFont
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 BUDGET = 960.0
-SITES = 24
+SITES = 26
 FONT = {
     "ko": "NotoSansKR-Regular.ttf",
     "jp": "NotoSansJP-Regular.ttf",
@@ -161,6 +161,7 @@ LINES = {
     "casino: won": lambda g: t("RE_MSG_CASINO_WON", g, game(g), "2.5", MONEY),
     "casino: lost": lambda g: t("RE_MSG_CASINO_LOST", g, game(g), MONEY),
     "business locked": lambda g: t("RE_MSG_LOCKED", g, NAME),
+    "hand-over before the household's first listing": lambda g: t("RE_MSG_AUTO_CLOSED", g, NAME),
     "adverts handed over": lambda g: t("RE_MSG_ADVERTS_KEPT", g, NAME),
     "adverts taken back": lambda g: t("RE_MSG_ADVERTS_BACK", g, NAME),
     "advert the mod switches": lambda g: t("RE_MSG_ADVERTS_LOCKED", g, NAME),

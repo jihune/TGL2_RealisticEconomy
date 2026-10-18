@@ -73,6 +73,22 @@ int re_business_short(int given, int todo, double able, double share)
     return given > 0 && todo > 0 && missing >= RE_FILL_LEAST && missing > share * (double)given;
 }
 
+double re_business_mark(double share, double bonus, double rate, double fade)
+{
+    double kept = fade > 0.0 ? (share < fade ? bonus * (1.0 - share / fade) : 0.0) : (share > 0.0 ? 0.0 : bonus);
+    return kept - rate * (share > 0.0 ? share : 0.0);
+}
+
+double re_business_reputation_worth(double income, double reputation, int months)
+{
+    double factor = 0.7 + 0.4 * reputation, keep = reputation < 1.0 ? 0.97 : 0.97 * 0.7, left = 1.0, sum = 0.0;
+    if (!(income > 0.0) || !(factor > 0.0))
+        return 0.0;
+    for (int i = 0; i < months; i++, left *= keep)
+        sum += left;
+    return 0.4 * income / factor * sum;
+}
+
 double re_business_asset_factor(double assets, double furnishings)
 {
     return (assets < RE_ASSETS_FLOOR ? RE_ASSETS_FLOOR : assets) * (furnishings < RE_FURNISH_FLOOR ? RE_FURNISH_FLOOR : furnishings);
@@ -445,6 +461,44 @@ __asm__(".intel_syntax noprefix\n"
         "  popad\n"
         "  fld dword ptr [ebp - 4]\n"
         "  mov esp, ebp\n"
+        "  pop ebp\n"
+        "  ret\n"
+        ".globl _re_business_data_list\n"
+        "_re_business_data_list:\n"
+        "  push ebp\n"
+        "  mov ebp, esp\n"
+        "  pushad\n"
+        "  sub esp, 24\n" /* the child's name, pushed first */
+        "  mov ecx, esp\n"
+        "  mov byte ptr [ecx], 0\n"
+        "  mov dword ptr [ecx + 16], 0\n"
+        "  mov dword ptr [ecx + 20], 15\n"
+        "  push dword ptr [ebp + 40]\n"
+        "  push dword ptr [ebp + 36]\n"
+        "  call dword ptr [ebp + 20]\n"
+        "  sub esp, 24\n" /* the element's name */
+        "  mov ecx, esp\n"
+        "  mov byte ptr [ecx], 0\n"
+        "  mov dword ptr [ecx + 16], 0\n"
+        "  mov dword ptr [ecx + 20], 15\n"
+        "  push dword ptr [ebp + 32]\n"
+        "  push dword ptr [ebp + 28]\n"
+        "  call dword ptr [ebp + 20]\n"
+        "  sub esp, 0x38\n" /* the record: its first 0x1c bytes as they are, its string by the copy constructor */
+        "  mov esi, [ebp + 16]\n"
+        "  mov edi, esp\n"
+        "  mov ecx, 7\n"
+        "  cld\n"
+        "  rep movsd\n"
+        "  mov eax, [ebp + 16]\n"
+        "  add eax, 0x1c\n"
+        "  push eax\n"
+        "  lea ecx, [esp + 0x20]\n"
+        "  call dword ptr [ebp + 24]\n"
+        "  mov ecx, [ebp + 12]\n"
+        "  call dword ptr [ebp + 8]\n"
+        "  lea esp, [ebp - 32]\n" /* the caller removes the 0x68 bytes; the function has destroyed the three strings */
+        "  popad\n"
         "  pop ebp\n"
         "  ret\n"
         ".globl _re_business_list_hook\n"

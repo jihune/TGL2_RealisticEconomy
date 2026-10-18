@@ -1,6 +1,6 @@
 # Realistic Economy
 
-A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.3.1. Not made by the game's developer.
+A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.4.0. Not made by the game's developer.
 
 Other languages: [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ A company's chart opens with the share price alone. Each line has its own colour
 
 ![The hover text of an advert icon](img/en/automation.png)
 
-Staff, assets, adverts and contracts can be handed to the mod one by one, for each business. Ctrl+Shift-click an advert icon to hand over everything. The icons' hover texts tell you the clicks.
+Staff, assets, adverts and contracts can be handed to the mod one by one, for each business. Ctrl+Shift-click an advert icon to hand over everything. The icons' hover texts tell you the clicks. Handing over opens once your household has listed a company of its own (IPO). What is still short of hands is outsourced or hired for when that costs less than the reputation it keeps.
 
 ![The hire tab](img/en/hire.png)
 
@@ -69,6 +69,7 @@ These are all the features that change a rule or a number of the game. Set the v
 | Completed education | Its value does not decay | `[features] experience=0` |
 | Business automation | The mod manages staff, assets, adverts and contracts only in a business you hand over. The same click takes it back | `[features] business=0` |
 | Competition | In a business type's market the firms count 1.25 times, so competition sets in earlier | `[balance] competitionWeight=1` |
+| Reputation bonus | A business's monthly bonus for completed work (3.6 points) goes down with the share of work left undone, to nothing at 2%, instead of being lost for one hour | `[balance] reputationBonusFade=0` |
 | Money into influence | Two large donations at a bank ($1M, $10M); the city votes on its policies every 12 months (the game: 24); the game's own donation once a year (the game: every month) | `[features] influence=0` |
 | Personal Coaching | At a hospital, for money, a preference you choose moves one step towards a like; one a year for each person | `[features] coaching=0` |
 

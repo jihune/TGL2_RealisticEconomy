@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.3.1。不是游戏开发商制作的。
+This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.4.0。不是游戏开发商制作的。
 
 其他语言：[English](README.md)、[한국어](README.ko.md)、[Deutsch](README.de.md)、[Español](README.es.md)、[Français](README.fr.md)、[Português (Brasil)](README.pt-BR.md)、[日本語](README.ja.md)
 
@@ -38,7 +38,7 @@ This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.3.1�
 
 ![广告图标的说明文字](img/zh-CN/automation.png)
 
-员工、资产、广告和合同，可以按业务逐项交给模组。Ctrl+Shift+点击广告图标可以全部交出。操作方法写在图标的说明文字里。
+员工、资产、广告和合同，可以按业务逐项交给模组。Ctrl+Shift+点击广告图标可以全部交出。操作方法写在图标的说明文字里。要在你的家庭让一家自己的公司上市（IPO）之后才能交给模组。缺人手的几个小时，如果比保住的声誉便宜，就用外包或招聘补上。
 
 ![招聘标签页](img/zh-CN/hire.png)
 
@@ -69,6 +69,7 @@ This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.3.1�
 | 已完成的教育 | 数值不会降低 | `[features] experience=0` |
 | 业务自动化 | 只有在你交给模组的业务里，模组才管理员工、资产、广告和合同。同样的点击可以收回 | `[features] business=0` |
 | 竞争 | 在业务类型的市场中，公司的份额按 1.25 倍计算，竞争来得更早 | `[balance] competitionWeight=1` |
+| 声誉奖励 | 业务每月的“已完成的工作”奖励（3.6 点）随未完成工作的比例减少，到 2% 为零，不再因为剩下一个小时就全部失去 | `[balance] reputationBonusFade=0` |
 | 用钱换影响力 | 银行新增两笔大额捐款（$1M、$10M）；城市每 12 个月就政策投票一次（原版 24 个月）；原版自带的捐款每年一次（原版每月） | `[features] influence=0` |
 | 个人辅导 | 在医院付钱，可让选定的一项偏好向“喜欢”靠近一级，每人每年一项 | `[features] coaching=0` |
 

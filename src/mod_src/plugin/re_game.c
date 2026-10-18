@@ -301,6 +301,29 @@ static int visit_listed(const BYTE *n, void *vctx)
     return 1;
 }
 
+static int visit_listing(const BYTE *n, void *vctx)
+{
+    *(int *)vctx += *(const int *)(n + RE_MARKET_NODE_COMPANY + RE_COMPANY_KIND) == RE_COMPANY_KIND_LISTED;
+    return 1;
+}
+
+int re_game_floated(void *main_obj)
+{
+    const BYTE *market = (const BYTE *)re_game_market(main_obj);
+    int listed = 0, ended = 0;
+    if (!re_readable(market, RE_MARKET_ENDED + 8) ||
+        map_walk(market + RE_MARKET_COMPANIES, RE_MARKET_NODE_COMPANY + RE_COMPANY_BOARD_NOTICE + 1, visit_listing, &listed) < 0 ||
+        map_walk(market + RE_MARKET_ENDED, RE_MARKET_NODE_COMPANY + RE_COMPANY_BOARD_NOTICE + 1, visit_listing, &ended) < 0)
+        return -1;
+    return listed + ended;
+}
+
+int re_game_rich(void *main_obj)
+{
+    const BYTE *rich = re_readable(main_obj, RE_MAIN_RICH + 4) ? *(const BYTE *const *)((const BYTE *)main_obj + RE_MAIN_RICH) : NULL;
+    return re_readable(rich, RE_RICH_UNLOCKED + 4) ? *(const int *)(rich + RE_RICH_UNLOCKED) > 0 : -1;
+}
+
 int re_game_companies(void *market, BYTE **out, int cap)
 {
     companies_ctx c = {out, cap, 0};
@@ -940,6 +963,7 @@ static int visit_job(const BYTE *n, void *vctx)
         j->allowed = *(const int *)(n + RE_JOB_NODE_ALLOWED);
         j->overtime = *(const int *)(n + RE_JOB_NODE_OVERTIME);
         j->outsourced = *(const int *)(n + RE_JOB_NODE_OUTSOURCED) > 0;
+        j->key = *(const int *)(n + RE_JOB_NODE_KEY);
     }
     c->count++;
     return 1;
@@ -1111,15 +1135,17 @@ typedef struct {
     unsigned size, capacity;
 } short_string;
 
-/* The game's info of a ware or of a tag, filled by the game from its data; `info_done` gives its string back. */
+/* The game's info of a ware (`tag` 0), of a tag (1), of a job (2) or of a business type (3), filled by the game from
+ * its data; `info_done` gives its string back. */
 static int info_of_data(void *data, int id, int tag, BYTE *info)
 {
     typedef void *(__thiscall * info_fn)(void *data, void *info, int complain, list_element key);
+    static const unsigned kind[4] = {RE_VA_WARE_INFO, RE_VA_TAG_INFO, RE_VA_JOB_INFO, RE_VA_FIRM_INFO};
     list_element key = {1, 1.0f, id, 1.0};
     if (!re_readable(data, RE_DATA_LISTS + 8))
         return 0;
     memset(info, 0, RE_INFO_BYTES + 4);
-    ((info_fn)AT(tag ? RE_VA_TAG_INFO : RE_VA_WARE_INFO))(data, info, 0, key);
+    ((info_fn)AT(kind[tag]))(data, info, 0, key);
     return 1;
 }
 
@@ -1150,6 +1176,65 @@ static void info_name(BYTE *info, char *out, unsigned cap)
     if (!string_text(name, out, cap))
         out[0] = 0;
     ((free_fn)AT(RE_VA_STR_FREE))(name);
+}
+
+/* ---- a job outsourced, and what a business is paid (REQUEST.md [91], notes b24, b26) ---- */
+
+int re_game_job_outsourceable(void *firms, int firm, int job)
+{
+    const BYTE *stack = own_firm(firms, firm);
+    BYTE info[RE_INFO_BYTES + 4];
+    if (stack == NULL || !info_of(stack, job, 2, info))
+        return -1;
+    int allowed = info_number(info, "business", "canOutsource") != 0.0;
+    info_done(info);
+    /* the business type's jobExtras/outsourceOverride, which the game reads from the XML when it is asked for, as the
+     * business window does */
+    typedef void(__thiscall * list_free_fn)(void *vector);
+    BYTE *vector[3] = {NULL, NULL, NULL};
+    if (!info_of(stack, *(const int *)(stack + RE_FIRM_TYPE), 3, info))
+        return -1;
+    re_business_data_list(AT(RE_VA_DATA_LIST), vector, info, AT(RE_VA_STR_ASSIGN), AT(RE_VA_STR_COPY), "jobExtras", 9,
+                          "outsourceOverride", 17);
+    info_done(info);
+    SIZE_T bytes = (SIZE_T)(vector[1] - vector[0]);
+    int read = vector[1] >= vector[0] && bytes % RE_INDUCED_BYTES == 0 && bytes <= 64 * RE_INDUCED_BYTES &&
+               (bytes == 0 || re_readable(vector[0], bytes));
+    for (const BYTE *e = vector[0]; read && e != vector[1]; e += RE_INDUCED_BYTES)
+        if (*(const int *)(e + RE_INDUCED_JOB) == job)
+            allowed = *(const float *)(e + RE_INDUCED_CHANCE) >= 1.0f;
+    if (vector[0] != NULL)
+        ((list_free_fn)AT(RE_VA_LIST_FREE))(vector);
+    return read ? allowed : -1;
+}
+
+int re_game_job_outsource(void *firms, int firm, int key, int on)
+{
+    typedef void(__thiscall * set_fn)(void *firms, int firm, int key, int on);
+    typedef void(__thiscall * reset_fn)(void *firms, int firm);
+    const BYTE *stack = own_firm(firms, firm);
+    if (stack == NULL)
+        return 0;
+    ((set_fn)AT(RE_VA_JOB_OUTSOURCE))(firms, firm, key, on ? 1 : 0);
+    ((reset_fn)AT(RE_VA_FIRM_RESET))(firms, firm);
+    key_ctx c = {key, NULL, NULL};
+    if (map_walk(stack + RE_FIRM_JOBS, RE_JOB_NODE_OVERTIME + 4, visit_key, &c) < 0 || c.node == NULL)
+        return 0;
+    return (*(const int *)(c.node + RE_JOB_NODE_OUTSOURCED) > 0) == (on != 0);
+}
+
+long long re_game_firm_booked(void *firms, int firm, int period, int tag, int income)
+{
+    const BYTE *stack = own_firm(firms, firm);
+    key_ctx month = {period, NULL, NULL}, line = {tag, NULL, NULL};
+    if (stack == NULL || map_walk(stack + RE_FIRM_STATEMENT + 0x20, 0x38, visit_key, &month) < 0)
+        return -1;
+    if (month.node == NULL)
+        return 0;
+    /* a month: its expenses by tag at +0x18, its income by tag at +0x28 */
+    if (map_walk(month.node + (income ? 0x28 : 0x18), 0x20, visit_key, &line) < 0)
+        return -1;
+    return line.node != NULL ? *(const long long *)(line.node + 0x18) : 0;
 }
 
 typedef struct {
@@ -2107,6 +2192,8 @@ static int visit_signed(const BYTE *n, void *vctx)
     s->type = *(const int *)(contract + RE_CONTRACT_TYPE);
     s->months = *(const int *)(contract + RE_CONTRACT_MONTHS);
     s->start = *(const int *)(contract + RE_CONTRACT_START);
+    s->payout = *(const long long *)(contract + RE_CONTRACT_FINAL) +
+                (long long)(s->months / 6 - 1) * *(const long long *)(contract + RE_CONTRACT_MILESTONE);
     s->hours = 0;
     for (int i = 0; i < listed.count; i++)
         s->hours += listed.hours[i];

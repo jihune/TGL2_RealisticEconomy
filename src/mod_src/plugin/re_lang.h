@@ -263,6 +263,10 @@ enum {
     /* above "Activity" in the hover text of an item of a business's purchase window (REQUEST.md [85]): %s what ten
      * hours of the ware cost, its price over its life and what it uses up, in the game's unit and words for those */
     RE_MSG_WARE_HOUR,
+    RE_MSG_AUTO_CLOSED,
+    RE_MSG_AUTO_CLOSED_TIP,
+    RE_MSG_AUTO_RELEASED_PREFIX,
+    RE_MSG_AUTO_RELEASED,
     RE_MSG_COUNT
 };
 

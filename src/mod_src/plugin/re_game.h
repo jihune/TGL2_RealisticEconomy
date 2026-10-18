@@ -120,6 +120,7 @@ int re_game_firm_fits(void *main_obj, re_firm_fit *out, int cap);
  * Returns how many were written (at most `cap`), -1 when the business cannot be read. Reads only. */
 typedef struct {
     int job, worked, allowed, overtime, outsourced;
+    int key; /* the number the business keeps the job under, what re_game_job_outsource takes */
 } re_job_hours;
 int re_game_firm_jobs(void *firms, int firm, re_job_hours *out, int cap);
 /* The contracts a business of the household has signed (note m32): `start` is the month it was signed in, year x 12
@@ -129,6 +130,7 @@ int re_game_firm_jobs(void *firms, int firm, re_job_hours *out, int cap);
  * `cap`. Reads only. */
 typedef struct {
     int id, type, months, start, hours;
+    long long payout; /* cents, all it pays: a payment every six months before the last one, then the final (note b26) */
 } re_signed;
 int re_game_firm_signed(void *firms, int firm, re_signed *out, int cap);
 /* How the hours a month of the business's contracts change from the month `month` to the one after it, by the job
@@ -173,6 +175,21 @@ int re_game_contract_sign(void *firms, int firm, const re_offered *offer);
  * cannot be read. `re_game_firm_refit` has the game work the two out again, as it does every game hour by itself. */
 int re_game_firm_factors(void *firms, int firm, int job, double *assets, double *furnishings);
 void re_game_firm_refit(void *firms, int firm);
+/* A job of a business of the household that the game's data lets it outsource (note b24): the job's own
+ * <business canOutsource>, then the business type's jobExtras/outsourceOverride. 1 or 0, -1 when unreadable. */
+int re_game_job_outsourceable(void *firms, int firm, int job);
+/* Where the household stands for the mod's business automation (REQUEST.md [91], note b25): the game's rich unlock
+ * (rivals, influence, policies and competition), 1 or 0, and how many companies the household has listed, those gone
+ * bankrupt since included. -1 when unreadable. */
+int re_game_rich(void *main_obj);
+int re_game_floated(void *main_obj);
+/* The job's outsourcing switch set as its box sets it, by the job's key (re_job_hours.key), and the business's
+ * efficiency and wanted assets worked out again. 1 when the switch is `on` afterwards. */
+int re_game_job_outsource(void *firms, int firm, int key, int on);
+/* What a business of the household booked under the finance tag `tag` in the month `period` (re_game_period's
+ * count), from its own statement (note b26): its income (`income` 1) or its expense, in cents; a month with nothing
+ * booked is 0. -1 when the statement cannot be read. */
+long long re_game_firm_booked(void *firms, int firm, int period, int tag, int income);
 /* The id of the household's business that `firm_stack` is; 0 when it is not one of the household's. */
 int re_game_firm_of(void *firms, const void *firm_stack);
 /* The game's own hiring of a candidate of the month's list of that job (note m22): the candidate joins the staff
