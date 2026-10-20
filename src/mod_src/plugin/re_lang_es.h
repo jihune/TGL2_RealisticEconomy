@@ -169,4 +169,7 @@ static const char *const LANG_ES[RE_MSG_COUNT] = {
     [RE_MSG_AUTO_CLOSED_TIP] = "\nMod: ceder negocios se abre tras la primera salida a bolsa (IPO) de tu hogar.",
     [RE_MSG_AUTO_RELEASED_PREFIX] = "Recuperado del mod: ",
     [RE_MSG_AUTO_RELEASED] = "%s%s. Ceder se abre tras la primera salida a bolsa (IPO) de tu hogar",
+    [RE_MSG_AUTO_REOPENED] = "Mod: tu hogar ha sacado una empresa a bolsa; ya puedes ceder negocios",
+    [RE_MSG_TYPE_MONTH_TIP] = "\nMod: con todos sus clientes, unos %s de ventas y %s de costes al mes.",
+    [RE_MSG_TYPE_CONTRACTS_TIP] = "\nMod: sin ventas propias; solo gana con contratos.",
 };

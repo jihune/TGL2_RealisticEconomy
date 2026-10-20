@@ -71,7 +71,9 @@
 #include "re_wording.h"
 #include "re_xp.h"
 
-#define PLUGIN_VERSION "1.4.0"
+#include "re_data_estimate.h"
+
+#define PLUGIN_VERSION "1.5.0"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -429,6 +431,7 @@ static void panel_line(void *main_obj, const char *prefix, const char *text, con
 #define KEY_ADVERT_TIP "clickToActivateDeactivate" /* the last sentence in the hover text of a bought advert's icon */
 #define KEY_XP_TIP "chartEffectivenessDecayTip"  /* the experience window's "?": experience decays by a share every month */
 #define KEY_ASSET_TIP "firmAutoAsset"            /* the hover text of a business window's box "buy worn-out assets again" */
+#define KEY_TYPE_ESTIMATE "firmEstimatedStartup2" /* the last sentence of a business type's "Estimate" */
 #define KEY_TRADING_FEE "stockTradingFee"        /* "10% trading fee": under the buttons of the shares and of the futures */
 
 enum {
@@ -457,6 +460,7 @@ enum {
     TEXT_ASSET_TIP, /* under the game's sentence about buying worn-out assets again: what the box does with the mod */
     TEXT_FUT_FEE, /* the label of the futures fee says what it is a part of: the margin */
     TEXT_WARE_HOUR, /* above "Activity" of an item in a business's purchase window: what ten hours of the ware cost */
+    TEXT_TYPE_ESTIMATE, /* under "Estimate" of a business type in the window that picks a new business's type */
     TEXT_WORDING /* + the entry of the wording table */
 };
 
@@ -608,6 +612,7 @@ static void business_keep(const char *what, int firm, int on)
  * again") work as in the game, without the mod's rules. What a save had handed over is taken back at its load
  * (automation_release, REQUEST.md [92]). `[business] automationEarly=1` opens it from the start. */
 static int g_auto_early;
+static int g_type_estimate = 1; /* [business] typeEstimate: a business type's month under its "Estimate" (REQUEST.md [95]) */
 
 static int automation_open(void)
 {
@@ -624,6 +629,26 @@ static int advert_tip_firm(const re_text_regs *regs)
         return 0;
     int firm = *(const int *)(*icon + RE_ADVERT_WINDOW_FIRM);
     return re_game_firm_name(firms, firm, name, sizeof name) ? firm : 0;
+}
+
+/* The business type whose hover text is being built, when it is a row of the window that picks a new business's type:
+ * FUN_005f2ef0 is called from that list (the other callers are a business's own window, the IPO window and the list
+ * of businesses), and the table has the type. NULL otherwise. */
+static const re_type_month *type_tip(const re_text_regs *regs)
+{
+    const unsigned *back = (const unsigned *)(UINT_PTR)(regs->ebp + RE_TYPE_TIP_FRAME_RETURN);
+    const BYTE *const *slot = (const BYTE *const *)(UINT_PTR)(regs->ebp + RE_TYPE_TIP_FRAME_RECORD);
+    if (!re_readable(back, 4) || va_of(*back) != RE_VA_CALL_TYPE_ROW_TIP + 5 || !re_readable(slot, 4) ||
+        !re_readable(*slot, RE_TYPE_RECORD_ID + 4))
+        return NULL;
+    int type = *(const int *)(*slot + RE_TYPE_RECORD_ID);
+    for (size_t i = 0; i < sizeof RE_TYPE_MONTHS / sizeof RE_TYPE_MONTHS[0]; i++)
+        if (RE_TYPE_MONTHS[i].type == type)
+            return &RE_TYPE_MONTHS[i];
+    static int told;
+    if (told++ < 5)
+        re_log("business: the hover text of business type %d is built in the type list; the mod's table does not have that type", type);
+    return NULL;
 }
 
 /* The grade goes next to rates that follow it: the two loan windows and the tooltip of a variable-rate personal loan
@@ -686,6 +711,9 @@ static int text_want(const char *key, unsigned len, unsigned caller, const re_te
         return TEXT_FUT_FEE;
     if (g_on_business && g_asset_fill_hooked && len == sizeof KEY_ASSET_TIP - 1 && memcmp(key, KEY_ASSET_TIP, len) == 0)
         return TEXT_ASSET_TIP;
+    if (g_on_business && g_type_estimate && from == RE_VA_CALL_TYPE_ESTIMATE + 5 && len == sizeof KEY_TYPE_ESTIMATE - 1 &&
+        memcmp(key, KEY_TYPE_ESTIMATE, len) == 0)
+        return type_tip(regs) != NULL ? TEXT_TYPE_ESTIMATE : 0;
     if (g_sort_hooked && from - RE_VA_STOCK_BUTTONS < RE_STOCK_BUTTONS_SIZE) {
         /* "Sort by company type", "by market capitalisation", "by earnings a share (%)", "by listing date": the
          * orders the mod replaces, the last only when its jump was redirected */
@@ -2014,6 +2042,38 @@ static unsigned text_edit(int want, char *text, unsigned len, unsigned cap, cons
         memcpy(text, line, (size_t)n);
         text[n] = '\n';
         return (unsigned)n + 1 + len;
+    }
+    if (want == TEXT_TYPE_ESTIMATE) {
+        /* under "Note startup costs are significantly lower if you can work the jobs yourself." of a business type in
+         * the window that picks a new business's type (REQUEST.md [95], note e21): what a business of the type takes
+         * in and pays out in a month once all its customers come, at today's prices in this city, to the nearest $100.
+         * A type that earns from contracts alone says so. */
+        static int told, last;
+        const re_type_month *t = type_tip(regs);
+        re_type_now now;
+        char line[400], sales[64], costs[64];
+        int n = 0, read = t != NULL && !t->contracts && re_game_type_now(g_main_obj, t, &now);
+        if (t != NULL && t->contracts)
+            n = snprintf(line, sizeof line, "%s", T(RE_MSG_TYPE_CONTRACTS_TIP));
+        else if (read)
+            n = snprintf(line, sizeof line, T(RE_MSG_TYPE_MONTH_TIP), money(g_main_obj, (now.sales + 5000) / 10000 * 10000, sales),
+                         money(g_main_obj, (now.wages + now.other + now.rent + 5000) / 10000 * 10000, costs));
+        if (!told++)
+            re_log("business: the hover text of a business type's estimate is asked for in the type list: its month at today's prices "
+                   "goes under it");
+        if (g_on_trace && t != NULL && t->type != last) {
+            last = t->type;
+            if (read)
+                re_log("business (trace): business type %d: price index %.4f (overall %.4f), difficulty %.2f, rent factor %.4f: sales %lld, "
+                       "wages %lld, inventory, assets and utilities %lld, rent %lld cents a month",
+                       t->type, now.index, now.overall, now.difficulty, now.rent_factor, now.sales, now.wages, now.other, now.rent);
+            else
+                re_log("business (trace): business type %d: %s", t->type, t->contracts ? "contracts only" : "the economy could NOT be read");
+        }
+        if (n <= 0 || len + (unsigned)n >= cap)
+            return len;
+        memcpy(text + len, line, (size_t)n);
+        return len + (unsigned)n;
     }
     if (want == TEXT_CASINO_TIP) {
         /* a line above "Activity: Play Slots" says what the game pays: the odds are nowhere else on screen */
@@ -4518,8 +4578,9 @@ static void staff_fill(void *main_obj, void *firms, int firm)
     int count = re_game_firm_staff(firms, firm, &first), kinds = re_game_firm_jobs(firms, firm, job, FILL_JOBS);
     int month = re_game_period(main_obj), clock = ticks >= 0 ? RE_MONTH_HOURS - (int)(ticks % RE_MONTH_HOURS) : 0;
     char name[64] = "", read[STAFF_MAX], managed[STAFF_MAX];
-    if (count <= 0 || kinds <= 0 || month < 0 || clock <= 0 || clock == RE_MONTH_HOURS || jobs == NULL || finance == NULL ||
-        g_playthrough[0] == 0)
+    /* a business nobody is employed in is the player's to staff, unless it is handed over whole (REQUEST.md [95]) */
+    if (count < 0 || (count == 0 && !business_kept("all", firm)) || kinds <= 0 || month < 0 || clock <= 0 || clock == RE_MONTH_HOURS ||
+        jobs == NULL || finance == NULL || g_playthrough[0] == 0)
         return;
     count = count > STAFF_MAX ? STAFF_MAX : count;
     for (int i = 0; i < count; i++) {
@@ -4529,6 +4590,7 @@ static void staff_fill(void *main_obj, void *firms, int firm)
     re_game_firm_name(firms, firm, name, sizeof name);
     re_coming coming[FILL_JOBS];
     int comings = re_game_firm_coming(firms, firm, month, coming, FILL_JOBS), whole = business_kept("all", firm);
+    int base = whole ? re_game_firm_base_job(firms, firm) : -1;
     static re_job_hours entry[FILL_JOBS]; /* each number of the business's own, for its outsourcing switch */
     static fill_job f[FILL_JOBS];
     int entries = kinds;
@@ -4572,11 +4634,24 @@ static void staff_fill(void *main_obj, void *firms, int firm)
                            job[j].job, todo, given, able, 100.0 * factor, people, under, job[j].outsourced ? ", outsourced" : "");
         if (j == kinds - 1 && g_on_trace)
             re_log("business: '%s' (firm %d), %d game hours left in the month:%s", name, firm, clock, seen);
-        /* a job nobody is employed for has no switch to look at. In a business handed over whole the work a signed
-         * contract lists for such a job is the mod's like the rest: the hire window is locked there, and a contract can
-         * bring a job the business never had (REQUEST.md [68], note m44). Anywhere else, and for work no contract
-         * lists (a job a member of the household works alone), the first person is the player's to hire. */
-        int first_of_job = people == 0 && whole && !g_trace_first_unseen && re_game_firm_listed(firms, firm, job[j].job) > 0;
+        /* a job nobody is employed for has no switch to look at. In a business handed over whole its first person is
+         * the mod's to hire: for the work a signed contract lists for it (the hire window is locked there, and a
+         * contract can bring a job the business never had: REQUEST.md [68], note m44), and for a job with work of the
+         * month nobody has done any of, as in a new business handed over before anyone works in it (REQUEST.md [95]).
+         * A job a member of the household works is left alone: its hours done that no employee did, this month or
+         * the last (the game books them like the staff's, note b27), or its work in a member's queue.
+         * Anywhere else the first person is the player's to hire. */
+        char self_key[48];
+        snprintf(self_key, sizeof self_key, "selff%dj%d", firm, job[j].job);
+        int self = people == 0 && !job[j].outsourced && job[j].worked > 0;
+        if (self)
+            re_state_set(g_playthrough, self_key, month);
+        else if (people == 0)
+            self = re_state_get(g_playthrough, self_key, -10) >= month - 1;
+        for (int e = 0; !self && people == 0 && whole && e < entries; e++)
+            self = entry[e].job == job[j].job && re_game_household_work(re_game_people(main_obj), firm, entry[e].key) > 0;
+        int first_of_job = people == 0 && whole && !g_trace_first_unseen &&
+                           (re_game_firm_listed(firms, firm, job[j].job) > 0 || (job[j].worked == 0 && todo > 0 && !self));
         f[j].eligible = (under > 0 || first_of_job) && assets > RE_ASSETS_LEAST + 1e-6;
         if ((under == 0 && !first_of_job) || job[j].outsourced)
             continue;
@@ -4594,6 +4669,38 @@ static void staff_fill(void *main_obj, void *firms, int firm)
         int look_ahead = ahead > 0 && re_state_get(g_playthrough, ahead_key, 0) != (long long)month * 100000 + ahead;
         if (!short_now && !look_ahead)
             continue;
+        if (short_now && factor < 1.0 && first_of_job && job[j].job == base) {
+            /* the first person of the base job comes before its assets: the game's switch "buy worn-out assets again"
+             * buys only with 20 hours a month of a base-job employee (FUN_004f5380), and without the assets nobody
+             * would be hired below. The game's hire of that person takes the hours; the assets are bought next. */
+            BYTE *list[3];
+            long long wage[WAGE_CANDIDATES], fee = -1;
+            int hours[WAGE_CANDIDATES];
+            double efficiency[WAGE_CANDIDATES];
+            int n = job_candidates(firms, jobs, firm, job[j].job, 1.0, list, c, wage, hours, efficiency);
+            int pick = re_business_fill_pick(wage, hours, efficiency, n, (double)todo, clock, &cost);
+            if (pick >= 0)
+                fee = fill_hire(main_obj, firms, finance, firm, job[j].job, c[pick].id, month);
+            if (pick < 0)
+                re_log("business: '%s' (firm %d), job %d: nobody works the base job, %d hours of its work are to do and its assets leave "
+                       "%.0f%% of an hour's work; none of its %d candidate(s) can be hired",
+                       name, firm, job[j].job, todo, 100.0 * factor, n);
+            else
+                re_log("business: '%s' (firm %d), job %d: nobody works the base job, %d hours of its work are to do and its assets leave "
+                       "%.0f%% of an hour's work, which the game's switch buys only with the hours of a base-job employee: %s (candidate "
+                       "%d, %lld cents a month for %d hours at efficiency %.4f) %s first, the hiring cost %lld cents, automatic "
+                       "management %s",
+                       name, firm, job[j].job, todo, 100.0 * factor, c[pick].name, c[pick].id, c[pick].wage, c[pick].hours,
+                       c[pick].efficiency, fee >= 0 ? "is hired" : "COULD NOT be hired", fee >= 0 ? fee : 0,
+                       fee >= 0 && re_game_staff_auto(firms, firm, c[pick].id) ? "on" : "OFF");
+            if (fee >= 0) {
+                people = under = 1;
+                hands = (hours[pick] < clock ? hours[pick] : clock) * efficiency[pick];
+                month_able += hours[pick] * efficiency[pick];
+                able = hands * factor;
+            }
+            ((list_end_fn)AT(RE_VA_STAFF_LIST_END))(list);
+        }
         if (short_now && factor < 1.0) {
             /* once a block for the business: its missing assets are bought, when the game's switch for that is on */
             int units = looked || !g_asset_fill_hooked ? 0 : assets_fill(main_obj, 1, firm);
@@ -4617,7 +4724,7 @@ static void staff_fill(void *main_obj, void *firms, int firm)
             look_ahead = look_ahead && !none;
             f[j].factor = factor;
             f[j].missing = todo > able ? todo - able : 0.0;
-            f[j].eligible = f[j].eligible && !none;
+            f[j].eligible = (under > 0 || first_of_job) && !none;
             if (!short_now && !look_ahead)
                 continue;
         }
@@ -4827,8 +4934,16 @@ static void adverts_keep(void *firms, int firm)
                name, firm);
         return;
     }
-    /* a closed business takes no work, so its adverts would be paid for nothing: off until it is open again */
-    int open = re_game_firm_open(firms, firm) != 0, want = open && awareness < g_ads_upto;
+    /* a closed business takes no work, so its adverts would be paid for nothing: off until it is open again. Nor
+     * would the work they bring be done in a business nobody works in yet - no employee and none of the month's work
+     * done (the hours a member of the household works count) - and work left undone costs reputation (REQUEST.md
+     * [94]): off until somebody works there */
+    static re_job_hours hours[FILL_JOBS];
+    BYTE *first = NULL;
+    int open = re_game_firm_open(firms, firm) != 0, worked = re_game_firm_staff(firms, firm, &first) != 0;
+    for (int j = 0, kinds = worked ? 0 : re_game_firm_jobs(firms, firm, hours, FILL_JOBS); j < kinds; j++)
+        worked |= hours[j].worked > 0;
+    int want = open && worked && awareness < g_ads_upto;
     for (int i = 0; i < count; i++)
         if (re_game_advert_on(firms, firm, advert[i]) != want) {
             re_game_advert_switch(firms, firm, advert[i], want);
@@ -4840,7 +4955,8 @@ static void adverts_keep(void *firms, int firm)
     }
     if (g_on_trace || switched)
         re_log("business: '%s' (firm %d): awareness %.2f%%, adverts up to %.2f%%%s: its %d advert(s) are %s (%d switched)", name, firm,
-               100.0 * awareness, 100.0 * g_ads_upto, open ? "" : ", the business is closed", count, want ? "on" : "off", switched);
+               100.0 * awareness, 100.0 * g_ads_upto, !open ? ", the business is closed" : !worked ? ", nobody works in the business yet" : "",
+               count, want ? "on" : "off", switched);
 }
 
 /* Just before a month end: what looking after the adverts cost. An advert on for a whole month is eight turns and
@@ -5504,20 +5620,43 @@ __attribute__((force_align_arg_pointer)) static void __fastcall offers_window_wr
     ((window_fn)AT(RE_VA_OFFERS_WINDOW))(window, first, second, firm);
 }
 
+/* The game's box "buy inventory" of a business handed over whole (REQUEST.md [97]): a job whose stock is out is not
+ * worked (note b19), and the game's daily purchase keeps the stock. Switched on with the hand-over; taken back, it is
+ * switched off only when the mod was the one that switched it on ("stockf" + business). */
+static int whole_stock(void *firms, int firm, int now)
+{
+    char key[40];
+    snprintf(key, sizeof key, "stockf%d", firm);
+    if (now) {
+        int was = re_game_firm_auto_stock_on(firms, firm);
+        if (was == 0)
+            re_state_set(g_playthrough, key, 1);
+        return was;
+    }
+    if (re_state_get(g_playthrough, key, 0) != 1)
+        return -2;
+    re_state_set(g_playthrough, key, 0);
+    return re_game_firm_auto_stock_off(firms, firm);
+}
+
 /* The Ctrl+Shift-click on an advert icon: everything of the business at once. The adverts' part is the caller's. */
 static void business_all(void *firms, int firm, const char *name, int now, const char *why)
 {
     int staff = now ? re_game_firm_manage(firms, firm) : re_game_firm_unmanage(firms, firm);
     int assets = now ? re_game_firm_auto_assets_on(firms, firm) : re_game_firm_auto_assets_off(firms, firm);
+    int stock = whole_stock(firms, firm, now);
     business_keep("contracts", firm, now);
     business_keep("premises", firm, now);
     business_keep("all", firm, now);
     if (!now)
         outsource_back(firms, firm, name, "the business is the player's again", re_game_period(g_main_obj));
     re_log("business: '%s' (firm %d): %s: all of it is %s: the automatic management of %d employee(s) "
-           "switched %s, \"buy worn-out assets again\" was %s and is %s, its contracts and its floor space are %s",
+           "switched %s, \"buy worn-out assets again\" was %s and is %s, \"buy inventory\" %s, its contracts and its floor space are %s",
            name, firm, why, now ? "the mod's from now on" : "the player's again", staff, now ? "on" : "off",
-           assets > 0 ? "on" : assets == 0 ? "off" : "unreadable", now ? "on" : "off", now ? "the mod's" : "the player's");
+           assets > 0 ? "on" : assets == 0 ? "off" : "unreadable", now ? "on" : "off",
+           now ? (stock > 0 ? "was on and is on" : stock == 0 ? "was off and is on" : "unreadable")
+           : stock == -2 ? "is the player's and stays as it is" : stock >= 0 ? "was the mod's and is off" : "unreadable",
+           now ? "the mod's" : "the player's");
 }
 
 /* ---- a business closed and opened again (REQUEST.md [49], note m34)
@@ -6187,9 +6326,11 @@ static void handed_over_hold(void *main_obj)
         if (!business_kept("all", own[f].id))
             continue;
         int staff = re_game_firm_manage(firms, own[f].id), assets = re_game_firm_auto_assets_on(firms, own[f].id);
+        int stock = whole_stock(firms, own[f].id, 1);
         re_log("business (load): '%s' (firm %d) is handed over whole: the save has %d of its employee(s) outside the automatic "
-               "management and \"buy worn-out assets again\" %s; both are on now, as the hand-over left them",
-               own[f].name, own[f].id, staff, assets > 0 ? "on" : assets == 0 ? "off" : "unreadable");
+               "management, \"buy worn-out assets again\" %s and \"buy inventory\" %s; all are on now, as the hand-over leaves them",
+               own[f].name, own[f].id, staff, assets > 0 ? "on" : assets == 0 ? "off" : "unreadable",
+               stock > 0 ? "on" : stock == 0 ? "off" : "unreadable");
     }
 }
 
@@ -6254,6 +6395,10 @@ static void automation_release(void *main_obj)
         snprintf(text, sizeof text, T(RE_MSG_AUTO_RELEASED), prefix, names);
         panel_line(main_obj, prefix, text, "UIIconFirmContract", 1);
     }
+    /* the line of an earlier load that took businesses back stays for the month and says handing over is not open
+     * yet; once the household has listed a company that is no longer so (REQUEST.md [94]) */
+    if (open && g_can_text && re_game_replace_event(main_obj, T(RE_MSG_AUTO_RELEASED_PREFIX), NULL) == 1)
+        panel_line(main_obj, T(RE_MSG_AUTO_RELEASED_PREFIX), T(RE_MSG_AUTO_REOPENED), "UIIconFirmContract", 1);
 }
 
 /* The casino games in the queues of a save from before the mod (REQUEST.md [45] and [48], note m27). The game books a
@@ -7104,6 +7249,7 @@ static void load_settings(void)
     g_hire_ahead = re_ini_int("business", "autoHireAhead", 1);
     g_cover = re_ini_int("business", "autoCover", 1);
     g_auto_early = re_ini_int("business", "automationEarly", 0);
+    g_type_estimate = re_ini_int("business", "typeEstimate", 1);
     g_lock = re_ini_int("business", "lockHandedOver", 1);
     g_on_memory = re_ini_int("features", "memory", 1);
     g_on_property = re_ini_int("features", "property", 1);

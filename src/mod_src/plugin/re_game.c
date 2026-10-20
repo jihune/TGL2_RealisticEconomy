@@ -444,6 +444,46 @@ int re_game_queue_take_out(void *people, int (*wanted)(int activity, int gone), 
     return taken;
 }
 
+int re_game_household_work(void *people, int firm, int job_key)
+{
+    typedef struct {
+        void **functions;
+        volatile LONG use, weak;
+    } counted;
+    typedef struct {
+        BYTE *person;
+        counted *count;
+    } shared;
+    typedef shared *(__thiscall * person_fn)(void *people, shared * out, int id, char report);
+    typedef void(__thiscall * gone_fn)(void *self);
+    BYTE *p = (BYTE *)people;
+    if (!re_readable(p, RE_PEOPLE_HOUSEHOLD + 8))
+        return -1;
+    const int *begin = *(const int *const *)(p + RE_PEOPLE_HOUSEHOLD), *end = *(const int *const *)(p + RE_PEOPLE_HOUSEHOLD + 4);
+    if (end < begin || end - begin > 64 || (end != begin && !re_readable(begin, (SIZE_T)(end - begin) * sizeof *begin)))
+        return -1;
+    int found = 0;
+    for (const int *id = begin; id != end && !found; id++) {
+        shared who = {NULL, NULL};
+        ((person_fn)AT(RE_VA_PERSON_OF))(people, &who, *id, 0);
+        if (re_readable(who.person, RE_PERSON_QUEUE + 8)) {
+            BYTE **head = *(BYTE ***)(who.person + RE_PERSON_QUEUE);
+            for (BYTE **node = re_readable(head, 8) ? (BYTE **)head[0] : head; node != head && !found; node = (BYTE **)node[0]) {
+                if (!re_readable(node, RE_QUEUE_NODE_BYTES))
+                    break;
+                const BYTE *record = (const BYTE *)(node + 2);
+                found = *(const int *)(record + RE_RECORD_FIRM) == firm && *(const int *)(record + RE_RECORD_JOB) == job_key;
+            }
+        }
+        if (who.count != NULL && InterlockedDecrement(&who.count->use) == 0) { /* the pointer handed out is given back */
+            ((gone_fn)who.count->functions[1])(who.count);
+            if (InterlockedDecrement(&who.count->weak) == 0)
+                ((gone_fn)who.count->functions[2])(who.count);
+        }
+    }
+    return found;
+}
+
 long long re_game_activity_money(void *prices, void *object)
 {
     /* two std::string by value, short enough to sit in the string itself; the callee destroys them */
@@ -1064,6 +1104,76 @@ int re_game_firm_auto_assets_on(void *firms, int firm)
         ((supply_fn)AT(RE_VA_FIRM_SUPPLY))(stack);
     }
     return was;
+}
+
+int re_game_firm_auto_stock_on(void *firms, int firm)
+{
+    typedef void(__fastcall * supply_fn)(void *business);
+    BYTE *stack = (BYTE *)(UINT_PTR)own_firm(firms, firm);
+    if (stack == NULL)
+        return -1;
+    int was = stack[RE_FIRM_AUTO_STOCK] != 0;
+    if (!was) { /* the two steps of the click that turns it on (FUN_005d74d0 L52-L55) */
+        stack[RE_FIRM_AUTO_STOCK] = 1;
+        ((supply_fn)AT(RE_VA_FIRM_SUPPLY))(stack);
+    }
+    return was;
+}
+
+int re_game_firm_auto_stock_off(void *firms, int firm)
+{
+    BYTE *stack = (BYTE *)(UINT_PTR)own_firm(firms, firm);
+    if (stack == NULL)
+        return -1;
+    int was = stack[RE_FIRM_AUTO_STOCK] != 0;
+    stack[RE_FIRM_AUTO_STOCK] = 0;
+    return was;
+}
+
+int re_game_type_now(void *main_obj, const re_type_month *t, re_type_now *out)
+{
+    typedef long long(__thiscall * wage_fn)(void *jobs, int job);
+    BYTE *firms = (BYTE *)re_game_firms(main_obj);
+    void *jobs = firms != NULL ? re_game_jobs(firms) : NULL;
+    memset(out, 0, sizeof *out);
+    if (jobs == NULL || !re_readable(firms, RE_FIRMS_SETTINGS + 4))
+        return 0;
+    const BYTE *economy = *(const BYTE *const *)(firms + RE_FIRMS_ECONOMY), *settings = *(const BYTE *const *)(firms + RE_FIRMS_SETTINGS);
+    if (!re_readable(economy, RE_ECON_INDEX + 8) || !re_readable(settings, RE_POLICY_VALUES + 8))
+        return 0;
+    key_ctx overall = {RE_FUT_OVERALL, NULL, NULL}, rent = {RE_TAG_RENT_POLICY, NULL, NULL};
+    if (map_walk(economy + RE_ECON_INDEX, 0x18, visit_key, &overall) < 0 || overall.node == NULL ||
+        map_walk(settings + RE_POLICY_VALUES, 0x18, visit_key, &rent) < 0)
+        return 0;
+    out->overall = *(const float *)(overall.node + 0x14);
+    /* FUN_004d4820 L49-L65: each industry's index by its share, and what the shares leave below 1 at the overall
+     * index; an industry the map does not have counts 0, as the map's operator[] there makes it */
+    double shares = 0.0;
+    for (int i = 0; i < t->industries; i++) {
+        key_ctx industry = {t->industry[i], NULL, NULL};
+        if (map_walk(economy + RE_ECON_INDEX, 0x18, visit_key, &industry) < 0)
+            return 0;
+        out->index += t->share[i] * (industry.node != NULL ? *(const float *)(industry.node + 0x14) : 0.0f);
+        shares += t->share[i];
+    }
+    if (shares < 1.0)
+        out->index += (1.0 - shares) * out->overall;
+    out->rent_factor = rent.node != NULL ? *(const float *)(rent.node + 0x14) : 1.0;
+    out->difficulty = *(const float *)(settings + RE_SETTINGS_REVENUE);
+    for (int i = 0; i < t->rows; i++)
+        out->wages += t->hours[i] * ((wage_fn)AT(RE_VA_JOB_WAGE))(jobs, t->job[i]);
+    /* what a business is paid goes with 0.7 + 0.4 x its reputation (defaultData.xml reputationIncomeMinXer and
+     * GrowthXer): 1.1 at 100%, where the table's 1.0 is the income of 0.75 */
+    out->sales = (long long)((double)t->income * 1.1 * out->difficulty * out->index);
+    out->other = (long long)((double)t->other * out->index);
+    out->rent = (long long)((double)t->rent * out->overall * out->rent_factor);
+    return 1;
+}
+
+int re_game_firm_base_job(void *firms, int firm)
+{
+    BYTE *stack = (BYTE *)(UINT_PTR)own_firm(firms, firm);
+    return stack != NULL ? *(const int *)(stack + RE_FIRM_BASE_JOB) : -1;
 }
 
 int re_game_firm_manage(void *firms, int firm)

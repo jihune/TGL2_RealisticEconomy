@@ -1,6 +1,6 @@
 # Realistic Economy
 
-A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.4.0. Not made by the game's developer.
+A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.5.0. Not made by the game's developer.
 
 Other languages: [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ A company's chart opens with the share price alone. Each line has its own colour
 
 ![The hover text of an advert icon](img/en/automation.png)
 
-Staff, assets, adverts and contracts can be handed to the mod one by one, for each business. Ctrl+Shift-click an advert icon to hand over everything. The icons' hover texts tell you the clicks. Handing over opens once your household has listed a company of its own (IPO). What is still short of hands is outsourced or hired for when that costs less than the reputation it keeps.
+Staff, assets, adverts and contracts can be handed to the mod one by one, for each business. Ctrl+Shift-click an advert icon to hand over everything. The icons' hover texts tell you the clicks. Handing over opens once your household has listed a company of its own (IPO). What is still short of hands is outsourced or hired for when that costs less than the reputation it keeps. A new business with nobody in it, handed over whole, is started by the mod: its first staff, its assets and its inventory.
 
 ![The hire tab](img/en/hire.png)
 
@@ -81,6 +81,7 @@ Each can be switched off in the settings file.
 
 - The month's job candidates stay the same after a load
 - A notice when a property is for sale well under its value
+- In the window that picks a new business's type: a month's sales and costs once all its customers come
 
 ## Install
 

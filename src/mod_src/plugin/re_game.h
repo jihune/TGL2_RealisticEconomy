@@ -299,6 +299,9 @@ typedef struct {
     int activity, hours, gone;
 } re_queued;
 int re_game_queue_take_out(void *people, int (*wanted)(int activity, int gone), re_queued *out, int cap);
+/* 1 when a member of the household has work at the business `firm` in the queue, for the job the business keeps
+ * under `job_key` (note b27), 0 when nobody has, -1 when the household cannot be read. Reads only. */
+int re_game_household_work(void *people, int firm, int job_key);
 
 /* What the game's lists show as the money of an activity: its `action.money` through the game's price chain, in
  * cents, negative for a cost. `prices` is the object at RE_ACTION_PRICES of a person's actions. */
@@ -393,6 +396,36 @@ int re_game_firm_auto_assets_off(void *firms, int firm);
  * switch was). -1 when the business cannot be read. */
 int re_game_firm_manage(void *firms, int firm);
 int re_game_firm_auto_assets_on(void *firms, int firm);
+/* The box next to it, "buy inventory", the same way (its click FUN_005d74d0 writes +0x1b4 and then the same step):
+ * returns what the box was, -1 when the business cannot be read. */
+int re_game_firm_auto_stock_on(void *firms, int firm);
+int re_game_firm_auto_stock_off(void *firms, int firm);
+/* A business type's month as the game's own table data/statsFirm.txt has it (note e21; the rows are re_data_estimate.h,
+ * written by analysis/scripts/type_estimate.py): its first variant at prices of 1, awareness 100% and the income of a
+ * reputation of 0.75, in cents a month - income, inventory, assets and utilities together (`other`), rent - its
+ * industries with their shares, and the hours of every job of its chain. `contracts`: a type that earns from
+ * contracts alone. */
+#define RE_TYPE_ROWS 12
+#define RE_TYPE_INDUSTRIES 4
+typedef struct {
+    int type, contracts;
+    long long income, other, rent;
+    int industries, industry[RE_TYPE_INDUSTRIES];
+    float share[RE_TYPE_INDUSTRIES];
+    int rows, job[RE_TYPE_ROWS], hours[RE_TYPE_ROWS];
+} re_type_month;
+/* That month at today's prices in this city, once all the customers come and the reputation is 100%: the sales at the
+ * type's price index (its industries' indices by their shares, as FUN_004d4820 weighs them) and the difficulty, the
+ * wages at the game's hourly wage of each job, the rest at the type's price index, the rent at the overall index and
+ * the city's rent factor. Cents a month. 0 when the economy cannot be read. Reads only. */
+typedef struct {
+    double index, overall, rent_factor, difficulty;
+    long long sales, wages, other, rent;
+} re_type_now;
+int re_game_type_now(void *main_obj, const re_type_month *t, re_type_now *out);
+/* The business's base job (the job of the game's data whose employees do its purchases), -1 when not read. The
+ * game's hire of a person for it takes the month's 20 staff hours for the purchases, when they are not taken yet. */
+int re_game_firm_base_job(void *firms, int firm);
 /* The record of one employee inside the game's list; NULL when the business has no such person. */
 BYTE *re_game_employee(void *firms, int firm, int staff);
 /* The name of a business of the household by its id. 0 when there is none or the name cannot be read. */

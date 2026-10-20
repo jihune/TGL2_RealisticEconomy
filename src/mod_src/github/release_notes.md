@@ -1,6 +1,13 @@
-Realistic Economy 1.4.0 for This Grand Life 2, game version v1.03.22.
+Realistic Economy 1.5.0 for This Grand Life 2, game version v1.03.22.
 
-**New in 1.4.0: a business's reputation and its last few hours of work, and the automation opens later.** Each has its own setting in `RealisticEconomy.ini`.
+**New in 1.5.0: a new business handed over whole gets started, and the window that picks a business's type shows its month.**
+
+- A business nobody works in yet. A business handed over whole (Ctrl+Shift-click on an advert icon) with nobody in it, such as a new one, stayed empty until you hired its first people, and its adverts ran while nobody worked, so its reputation fell. Now the mod hires the first person for each job that has work and nobody doing it, the base job first, and then buys the assets that are short. A job a household member works gets no one. The adverts handed over stay off until someone works.
+- Inventory. The game does not work a job whose inventory is out. Handing a whole business over now also switches on the game's box that buys inventory; taking the business back switches the box off only if the mod switched it on.
+- A business type's month. In the window that picks the type of a new business, the hover text of a type's coin icon has, under the game's start-up estimate, a month's sales and costs once all its customers come, at your city's prices of today. A new business makes less in its first months. The costs count only the wages of the hours its work needs, so a real business pays more. A type that earns from contracts only says so. `typeEstimate=0` under `[business]`.
+- A save loaded after your household's first listing no longer keeps the monthly summary's line that handing over opens after a listing: it says that handing over is open now.
+
+**From 1.4.0: a business's reputation and its last few hours of work, and the automation opens later.** Each has its own setting in `RealisticEconomy.ini`.
 
 - The month's bonus for completed work fades with the work left undone. At a month end the game takes 0.2 times the share of the month's work left undone from a business's reputation, and gives 3.6 points only for a month with nothing left: one hour left of a month's two thousand lost the whole bonus, as much as 18% left costs in penalty. Now the 3.6 points go down with that share and are gone at 2%; the penalty stays the game's. The reputation's hover text in the business window lists both, "completed work" and "incomplete work". Your businesses only. `reputationBonusFade=0` under `[balance]` is the game.
 - The last few hours. What the mod's hiring leaves without hands - too little for a hire, no candidate left, or work that comes in after the month's last look - is covered the cheapest way that costs less than the reputation it keeps: the game's outsourcing, where the business may outsource the job (three times the job's standard wage an hour), or a candidate (two months' wages and the hiring cost). Otherwise the reputation is lost. The price of reputation comes from what the business's customers and contracts pay. `autoCover=0` under `[business]`.
@@ -23,12 +30,12 @@ Realistic Economy 1.4.0 for This Grand Life 2, game version v1.03.22.
 
 **A matter of taste, and how to switch it off**: the README has one table of every feature that changes a rule or a number of the game, with the line of `RealisticEconomy.ini` that switches it off. The description inside the zip begins with the same list in more detail.
 
-**Coming from an earlier version**: extract and run the same file. It replaces the mod's files and leaves your settings file as it was (the saves are not copied a second time). The new features work without a line in an older settings file; to keep the game as it was, add `influence=0` and `coaching=0` under `[features]`, `competitionWeight=1` and `reputationBonusFade=0` under `[balance]`, and `automationEarly=1` and `autoCover=0` under `[business]`.
+**Coming from an earlier version**: extract and run the same file. It replaces the mod's files and leaves your settings file as it was (the saves are not copied a second time). The new features work without a line in an older settings file; to keep the game as it was, add `influence=0` and `coaching=0` under `[features]`, `competitionWeight=1` and `reputationBonusFade=0` under `[balance]`, and `automationEarly=1`, `autoCover=0` and `typeEstimate=0` under `[business]`.
 
-**Install**: close the game, extract `RealisticEconomy-1.4.0.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
+**Install**: close the game, extract `RealisticEconomy-1.5.0.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
 
 What the mod adds and how to use it is in the README of this repository, in the game's eight languages: English, 한국어, Deutsch, Español, Français, Português (Brasil), 日本語, 简体中文.
 
-The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.4.0.zip.sha256.txt`.
+The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.5.0.zip.sha256.txt`.
 
 An antivirus may question `version.dll`: it is the public Ultimate ASI Loader (MIT), the file that loads the mod when the game starts.

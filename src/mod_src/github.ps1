@@ -79,7 +79,7 @@ foreach ($script in 'build.ps1', 'package.ps1', 'github.ps1') {
 }
 New-Item -ItemType Directory -Force (Join-Path $src 'mod_src\github') | Out-Null
 Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'github') -File | Copy-Item -Destination (Join-Path $src 'mod_src\github') # the pictures are at the top once
-foreach ($script in 'lang_placeholders.py', 'ticker_fit.py') { # ticker_fit.py is run by build.ps1
+foreach ($script in 'lang_placeholders.py', 'ticker_fit.py', 'tip_fit.py') { # the two fits are run by build.ps1
     Copy-Item -LiteralPath (Join-Path $root "analysis\scripts\$script") (Join-Path $src "analysis\scripts\$script")
 }
 

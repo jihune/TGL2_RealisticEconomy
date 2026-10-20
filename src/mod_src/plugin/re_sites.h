@@ -360,6 +360,12 @@ enum {
 #define RE_RECORD_GONE 8
 #define RE_VA_RECORD_ACTIVITY 0x00668b2eu  /* lea eax, [ebx + 0x6c]: "a_actionObjInfoID" */
 #define RE_RECORD_ACTIVITY 0x6c
+/* the same record's job and business, for the work a member of the household does in a business of the household
+ * (an "ActionWork" with a business, note b27): the number the business keeps the job under, and the business */
+#define RE_VA_RECORD_JOB 0x00668b68u  /* lea eax, [ebx + 0x78]: "a_actionTagID" */
+#define RE_RECORD_JOB 0x78
+#define RE_VA_RECORD_FIRM 0x00668c34u /* lea eax, [ebx + 0x7c]: "a_actionFirmID" */
+#define RE_RECORD_FIRM 0x7c
 /* ... and then tells the windows: FUN_006a3ec0, ecx = the object at person + 0x5d8; the id at + 8 of the object at
  * person + 0x640, and a copy of the record by value, which the callee releases (ret 0xa0: 4 and the record's
  * 0x9c). FUN_0042f290 makes the copy: ecx = where, the record (ret 4). Without it the queue's row of icons keeps
@@ -638,6 +644,7 @@ enum {
 #define RE_FIRMS_SETTINGS 0x78     /* the object that also holds RE_POLICY_VALUES */
 #define RE_SETTINGS_REVENUE 0x40   /* float: the difficulty's factor on what a business is paid */
 #define RE_TAG_WAGE_POLICY 5061    /* in RE_POLICY_VALUES: a city policy's factor on wages, 1 = none */
+#define RE_TAG_RENT_POLICY 5046    /* in RE_POLICY_VALUES: a city's factor on rents (FUN_0054d190 L100; note e21) */
 #define RE_DATA_SPECIALS 0x1f4
 #define RE_SPECIALS_ID_VALUE 0x14  /* in a node of the two outer maps */
 #define RE_SPECIALS_TEXT_VALUE 0x28 /* in a node of the two inner maps */
@@ -779,6 +786,18 @@ enum {
 #define RE_VA_JOB_WORKED 0x004f67d5u        /* sub esi, [eax + 0x58] */
 #define RE_VA_JOB_ALLOWED 0x004f67d8u       /* add esi, [eax + 0x5c] */
 #define RE_VA_CALL_ADVERT_TIP 0x005c74a0u   /* translate "clickToActivateDeactivate", the end of an advert icon's hover text */
+/* The hover text of a business type's coin icon, built by FUN_005f2ef0 (notes e13 Q3b, e21): the translate call of
+ * its last sentence "firmEstimatedStartup2" (the key pushed at 0x005f4766 as [edi + 0x54]'s argument, 0x8e7158); the
+ * call of that function in the list of the window that picks a new business's type (FUN_005df550), told apart by the
+ * return address the prologue copies to [ebp + 4]; and the frame slot of the type record, its first argument. */
+#define RE_VA_CALL_TYPE_ESTIMATE 0x005f476au /* call 0x81d7c0 */
+#define RE_VA_TYPE_TIP 0x005f2ef0u
+#define RE_VA_TYPE_TIP_RETURN 0x005f2efdu    /* mov ebp, [ebx + 4]; mov [esp + 4], ebp; mov ebp, esp */
+#define RE_TYPE_TIP_FRAME_RETURN 4
+#define RE_VA_TYPE_TIP_RECORD 0x005f2f5du    /* mov [ebp - 0x154], esi (esi = [ebx + 8], the first argument) */
+#define RE_TYPE_TIP_FRAME_RECORD (-0x154)
+#define RE_TYPE_RECORD_ID 0xc                /* the type's id in that record (note e13, to be seen in the game) */
+#define RE_VA_CALL_TYPE_ROW_TIP 0x005df9feu  /* call 0x5f2ef0 in FUN_005df550, a row of the type list */
 #define RE_VA_ADVERT_TIP_WINDOW 0x005c7490u /* mov ecx, [edi]: edi = the icon's object, its first word the business window */
 #define RE_VA_ADVERT_TIP_FIRM 0x005c5ae1u   /* mov eax, [ecx + 0xfc]: the id of the business that window shows */
 #define RE_FIRM_ADVERTS 0x220
@@ -961,6 +980,10 @@ enum {
 #define RE_VA_FIRM_SUPPLY 0x004f5380u
 #define RE_VA_CALL_FIRM_SUPPLY 0x005d7a16u
 #define RE_FIRM_SUPPLY_HOURS 0x1c0
+/* the business's base job, the one whose employees do the purchases: FUN_004f5380 L16 `iVar1 = *(int *)(param_1 +
+ * 0x1d8)` against a person's job at +0xdc; the hire FUN_004e9f70 L51 `param_2 != piVar3[0x76]` calls the supply step
+ * after the hire of one */
+#define RE_FIRM_BASE_JOB 0x1d8
 /* Jobs of the game's data (data/jobs, listed in the game's own data/statsJob.txt) whose standard hourly wage prices
  * what the mod does in a person's place (REQUEST.md [39]): hiring for a business, the monthly look at the property
  * market, the research of a listed company. */

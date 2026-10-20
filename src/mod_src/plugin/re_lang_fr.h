@@ -173,4 +173,7 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_AUTO_CLOSED_TIP] = "\nMod : confier des entreprises s'ouvre après votre première entrée en bourse (IPO).",
     [RE_MSG_AUTO_RELEASED_PREFIX] = "Repris au mod : ",
     [RE_MSG_AUTO_RELEASED] = "%s%s. Confier s'ouvre après votre première entrée en bourse (IPO)",
+    [RE_MSG_AUTO_REOPENED] = "Mod : votre foyer a introduit une société en bourse, vous pouvez désormais confier des entreprises",
+    [RE_MSG_TYPE_MONTH_TIP] = "\nMod : avec tous ses clients, environ %s de ventes et %s de coûts par mois.",
+    [RE_MSG_TYPE_CONTRACTS_TIP] = "\nMod : pas de ventes propres ; ne gagne qu'avec des contrats.",
 };

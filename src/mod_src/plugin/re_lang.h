@@ -267,6 +267,11 @@ enum {
     RE_MSG_AUTO_CLOSED_TIP,
     RE_MSG_AUTO_RELEASED_PREFIX,
     RE_MSG_AUTO_RELEASED,
+    RE_MSG_AUTO_REOPENED,
+    /* under "Estimate" in the hover text of a business type (REQUEST.md [95], note e21): a month once all its customers
+     * come, sales and costs; a type that earns from contracts alone */
+    RE_MSG_TYPE_MONTH_TIP,
+    RE_MSG_TYPE_CONTRACTS_TIP,
     RE_MSG_COUNT
 };
 

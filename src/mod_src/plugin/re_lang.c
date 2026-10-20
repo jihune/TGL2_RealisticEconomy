@@ -354,6 +354,16 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
     [RE_MSG_AUTO_RELEASED_PREFIX] = {"Taken back from the mod: ", "모드에서 되찾은 사업체: ", NULL, NULL, NULL, NULL},
     [RE_MSG_AUTO_RELEASED] = {"%s%s. Handing over opens after your household's first listing (IPO)",
                               "%s%s. 맡기기는 우리 가계가 처음 상장(IPO)한 뒤에 열립니다", NULL, NULL, NULL, NULL},
+    /* that line once the household has listed a company: it said handing over was not open (REQUEST.md [94]) */
+    [RE_MSG_AUTO_REOPENED] = {"Mod: your household has listed a company, so businesses can be handed over now",
+                              "모드: 우리 가계가 상장해서 이제 사업체를 맡길 수 있습니다", NULL, NULL, NULL, NULL},
+    /* under "Estimate" in the hover text of a business type (REQUEST.md [95], note e21): the month once all its
+     * customers come, at today's prices in this city; costs are the wages of the hours the work takes, which real
+     * staff of whole persons exceed (e21 2.1) */
+    [RE_MSG_TYPE_MONTH_TIP] = {"\nMod: with all its customers, about %s of sales and %s of costs a month.",
+                               "\n모드: 손님이 다 차면 한 달에 대략\n매출 %s, 비용 %s", NULL, NULL, NULL, NULL},
+    [RE_MSG_TYPE_CONTRACTS_TIP] = {"\nMod: no sales of its own; it earns from contracts only.",
+                                   "\n모드: 손님 매출이 없고\n계약으로만 법니다.", NULL, NULL, NULL, NULL},
 };
 
 /* What the table does not have: one file a language, `[RE_MSG_...] = "text"` a line. */

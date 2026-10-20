@@ -78,7 +78,9 @@ game again. "[features] balance=0" means: under the line [features], change bala
           - the game's two switches ("automatic staff management", "buy worn-out assets again"): where they are
             on, the mod's rules are added (hiring and letting go, buying assets that are missing);
           - Shift-click on an advert icon: the adverts; Shift-click on the contract icon: signing contracts;
-          - Ctrl+Shift-click on an advert icon: the whole business.
+          - Ctrl+Shift-click on an advert icon: the whole business. The game's "buy inventory" is switched on too
+            (since 1.5.0), and a new business nobody works in yet is started by the mod, its first people first
+            (since 1.5.0).
        The same click takes it back. What is handed over costs a fee (the list near the end, "What the mod does
        in your place, its switches and what it costs").
      - A business handed over whole is locked against your own changes (hiring, letting go, assets, contracts)
@@ -620,6 +622,24 @@ What it does
            the game expects, and with them the assets it wants.
          · The three worst businesses are named, with " and 2 more" behind them when there are others. What to
            buy is in the game's hover text of that furnishings icon. Off with [business] efficiencyAlert=0.
+     - A business type's month (since 1.5.0): in the window that picks the type of a new business, the hover text
+       of a type's coin icon has under the game's "Estimated startup cost" a line such as "Mod: with all its
+       customers, about $101,800.00 of sales and $68,300.00 of costs a month": what a business of that type takes
+       in and pays out once all its customers come and its reputation is 100%, at today's prices in this city, to
+       the nearest $100.
+         · The numbers come from the game's own table of each type (data/statsFirm.txt: the hours of its work, its
+           income, inventory, assets and utilities, rent). The sales go with the type's industry price index and the
+           difficulty, the wages with this city's hourly wage of each job, the rest with the type's price index, the
+           rent with the overall price level and the city's rent factor.
+         · The sales are the ceiling with all the customers. A new business starts at an awareness of 25% and a
+           reputation of 25%, so its first months earn much less. Against real businesses the number came out at
+           0.8 to 1.1 times what they were paid.
+         · The costs are the wages of the hours the work takes. Staff are paid their monthly hours whatever the
+           work, so the real wages are higher (1.3 times in one business). The premises are taken as a rented one
+           of the type's base size.
+         · A type without sales of its own that lives on contracts (Game Studio, Security Contractor, Auditing
+           Services, Building Construction) says "Mod: no sales of its own; it earns from contracts only."
+         · Off with [business] typeEstimate=0.
      - Automatic management for a person you hire: the game's automatic staff management (the round-arrow icon
        at the top right of the staff tab) is switched on person by person, so somebody hired later is outside
        it until you click again. With the mod, a person hired through the hire window gets it at once when at
@@ -908,12 +928,30 @@ What it does
            "S-Con: the mod runs all of it now". Another Ctrl+Shift-click takes all of it back ("S-Con: all of it
            is yours again"). The hover text of an advert icon ends with how to click.
          · What handing over does: every employee of the business is put under the game's automatic management,
-           "buy worn-out assets again" is switched on, and the adverts and the signing are handed over exactly
-           as by their own Shift-clicks. Taking it back is switching the whole thing off: the automatic
-           management and "buy worn-out assets again" go off, also where you had them on before, and the adverts
-           and the signing are yours again; the adverts stay as the mod last set them.
+           "buy worn-out assets again" and "buy inventory" (since 1.5.0) are switched on, and the adverts and the
+           signing are handed over exactly as by their own Shift-clicks. Taking it back is switching the whole
+           thing off: the automatic management and "buy worn-out assets again" go off, also where you had them on
+           before, and the adverts and the signing are yours again; "buy inventory" goes off only where the mod
+           switched it on. The adverts stay as the mod last set them.
+         · Inventory (since 1.5.0): the game does not work a job whose stock is out at all (it is not slowed, it is
+           refused). So a business handed over whole keeps its stock with the game's "buy inventory": every game
+           day the game buys, at list price, what is below 0.8 times what was used since the last purchase or
+           below the item's default amount. The mod buys none itself.
          · Handing over costs nothing by itself. A hiring, an advert that is on and a contract signed cost what
            they cost when handed over one by one.
+         · A business nobody works in yet (since 1.5.0): handed over whole, a business such as a new one is started
+           by the mod. A job with work of the month that nobody did any of gets its first person by the hiring rule
+           above. The first person of the base job (the electrician of Electrical Services) comes before the
+           assets, because the game's "buy worn-out assets again" buys only with 20 hours of a base-job employee;
+           the missing assets are bought right after that hire, and the game buys the stock from the next day.
+             · A job a member of your household works gets nobody: one with hours done this month or the last and
+               no employee, or with that work in a member's schedule. A job set only by a priority that the member
+               has not worked yet this month is not seen, and the mod may hire one person for it.
+             · While nobody works there the mod keeps the adverts handed to it off: the customers they bring would
+               find nobody, and the work left undone costs reputation.
+             · Seen in a copy of the user's save: before this, a new Electrical Services stayed empty for two
+               months with only its adverts on, and its reputation fell from 25% to 1%. Now the first look hired two
+               electricians and bought the assets ($169,237.87), and 3.8% of that month's work was left undone.
          · A save loaded later: the hand-over is kept with the playthrough, in RealisticEconomy.state, not in a
            save. So a business handed over whole is still handed over when you load an older save. Where that
            save has the automatic management or "buy worn-out assets again" off, the load switches them on again
@@ -945,7 +983,8 @@ What it does
                are set in a person's own windows too, so it cannot be locked in the business window alone. The
                mod staffs the jobs of a business handed over whole as if nobody of your household worked there:
                where a member did part of the work, the mod hires for that part and the member finds less to
-               do. A job with its outsourcing on is left alone by the mod, so there a member works as before.
+               do. A job with its outsourcing on is left alone by the mod, so there a member works as before. A
+               job that has no employee and that a member works gets no first person (since 1.5.0).
              · To switch the lock alone off: [business] lockHandedOver=0.
          · A business with only the game's switches on (the automatic staff management, "buy worn-out assets
            again") and not handed over whole is not locked. What you do by hand there:

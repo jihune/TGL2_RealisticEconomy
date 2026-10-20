@@ -189,4 +189,7 @@ static const char *const LANG_JP[RE_MSG_COUNT] = {
     [RE_MSG_AUTO_CLOSED_TIP] = "\nMOD: 事業を任せるのは\n初めての上場（IPO）後に開きます。",
     [RE_MSG_AUTO_RELEASED_PREFIX] = "MODから取り戻したビジネス: ",
     [RE_MSG_AUTO_RELEASED] = "%s%s。任せられるのは、世帯が初めて上場（IPO）した後です",
+    [RE_MSG_AUTO_REOPENED] = "MOD: 世帯が上場したので、ビジネスを任せられるようになりました",
+    [RE_MSG_TYPE_MONTH_TIP] = "\nMOD: 客が満ちれば月におよそ\n売上 %s、費用 %s",
+    [RE_MSG_TYPE_CONTRACTS_TIP] = "\nMOD: 店の売上はなく、\n契約だけで稼ぎます。",
 };
