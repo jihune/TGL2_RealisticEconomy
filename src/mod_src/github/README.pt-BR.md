@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.5.0 do mod. Não é do desenvolvedor do jogo.
+Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.5.1 do mod. Não é do desenvolvedor do jogo.
 
 Outros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ O gráfico de uma empresa abre só com o preço da ação. Cada linha tem a sua 
 
 ![O texto de um ícone de anúncio](img/pt-BR/automation.png)
 
-Funcionários, ativos, anúncios e contratos podem ser entregues ao mod um a um, em cada empresa. Ctrl+Shift-clique em um ícone de anúncio entrega tudo. Os textos dos ícones informam os cliques. Entregar abre depois que sua família abriu o capital de uma empresa própria (IPO). O que ainda falta de mãos é terceirizado ou contratado quando isso custa menos que a reputação que mantém. Uma empresa nova sem ninguém, entregue inteira, é iniciada pelo mod: os primeiros funcionários, os ativos e o estoque.
+Funcionários, ativos, anúncios e contratos podem ser entregues ao mod um a um, em cada empresa. Ctrl+Shift-clique em um ícone de anúncio entrega tudo. Os textos dos ícones informam os cliques. Entregar abre depois que sua família abriu o capital de uma empresa própria (IPO). O que ainda falta de mãos é terceirizado ou contratado quando isso custa menos que a reputação que mantém. Uma empresa nova sem ninguém, entregue inteira, é iniciada pelo mod: os primeiros funcionários, os ativos e o estoque. O mod verifica logo depois de carregar ou de entregar uma empresa, e na primeira hora de cada mês contrata para o mês inteiro. Perto do fim do mês, só contrata se a reputação mantida valer um mês de salário.
 
 ![A aba de contratação](img/pt-BR/hire.png)
 

@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Un mod pour This Grand Life 2. Uniquement pour la version v1.03.22 du jeu, version 1.5.0 du mod. Il n'est pas du développeur du jeu.
+Un mod pour This Grand Life 2. Uniquement pour la version v1.03.22 du jeu, version 1.5.1 du mod. Il n'est pas du développeur du jeu.
 
 Autres langues : [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ Le graphique d'une entreprise s'ouvre avec le seul cours de l'action. Chaque lig
 
 ![L'info-bulle d'une icône de publicité](img/fr/automation.png)
 
-Les salariés, les actifs, les publicités et les contrats peuvent être confiés au mod un par un, pour chaque entreprise. Ctrl+Maj+clic sur une icône de publicité confie tout. Les info-bulles des icônes indiquent les clics. Confier s'ouvre une fois que votre foyer a introduit en bourse une entreprise à lui (IPO). Ce qui manque encore de bras est sous-traité ou embauché quand cela coûte moins que la réputation gardée. Une nouvelle entreprise sans personne, confiée en entier, est lancée par le mod : ses premiers salariés, ses actifs et ses stocks.
+Les salariés, les actifs, les publicités et les contrats peuvent être confiés au mod un par un, pour chaque entreprise. Ctrl+Maj+clic sur une icône de publicité confie tout. Les info-bulles des icônes indiquent les clics. Confier s'ouvre une fois que votre foyer a introduit en bourse une entreprise à lui (IPO). Ce qui manque encore de bras est sous-traité ou embauché quand cela coûte moins que la réputation gardée. Une nouvelle entreprise sans personne, confiée en entier, est lancée par le mod : ses premiers salariés, ses actifs et ses stocks. Le mod regarde dès le chargement ou dès qu'une entreprise est confiée, et à la première heure de chaque mois il embauche pour tout le mois. Près de la fin du mois, il n'embauche que si la réputation gardée vaut un mois de salaire.
 
 ![L'onglet d'embauche](img/fr/hire.png)
 

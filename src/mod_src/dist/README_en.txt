@@ -652,8 +652,23 @@ What it does
        autoManageWholeBusiness). Everything the mod does about staff applies to employees who have it.
      - Staff filled in (jobs that have employees under the automatic management; [business] autoHire): in the
        game people work their month's hours off early in the month, so a job that is short of people stands still
-       from about a quarter of the month on, with work left. Seven times a month (every 91 game hours) the mod
-       looks at each job's "work still to do this month" and "hours its people have left".
+       from about a quarter of the month on, with work left. Eight times a month (every 91 game hours, the first in
+       the month's first hour) the mod looks at each job's "work still to do this month" and "hours its people
+       have left".
+         · Right after a load and right after a business is handed over whole (since 1.5.1, [business]
+           autoHireNow) it looks once more, a game hour later, without waiting for the next 91st hour. A save just
+           before a month end, or a new business nobody works in, no longer leaves its work undone for up to 91
+           hours. In the user's save (55 hours before a month end) a new business that did none of its month's work
+           left 27% of it, and started the next month at a reputation of 18.8% instead of 4.3%.
+         · The other jobs' work counted ahead (since 1.5.1, [business] autoHirePlan): in the game the month's work
+           of the base job (for Electrical Services, the electricians) is drawn at the month end for the coming
+           month, and the work of the other jobs (apprentices, a bookkeeper) comes by chance while the base job is
+           worked. The mod counts that work still to come from the base job's customers' work still to do, in the
+           shares of the business type's table (Electrical Services: apprentices 144 to electricians 480), so that
+           the month's first look hires for the whole month (the user's save: 41 apprentice hours counted from 137
+           electrician hours; 27 came). When less comes, the people to spare go at the month end by the rule below.
+           The work contracts bring the other jobs, a type the table does not have and a business whose base job
+           is not the table's are hired for when the work is there, as before.
          · When the work is more, by at least 8 hours and by more than 5% of the job's month ([business]
            autoHireShort), a candidate is hired, and when one is not enough the next one too, there and then,
            until the work has hands or the month's candidates are used up.
@@ -673,6 +688,15 @@ What it does
            it: "S-Con (a job stands still: one of its assets is missing altogether)".
          · A person hired like this who is one too many in the next month (as under "A staff that fits the work"
            below) is let go at that month end, without the wait of three months and without severance.
+         · Near a month end (since 1.5.1): the game pays a whole month's wage at the month end for a person hired
+           at any hour of the month (an electrician hired 55 hours before a month end was paid the month's $4,120.05).
+           So when fewer game hours are left than a candidate's hours of a month, nobody is hired by this rule; the
+           shortage goes to the comparison of "The last few hours" below (the reputation the hours keep against what
+           they cost). When the job's present people do not cover its month's work (the person is needed next month
+           too), a hiring costs one month's wage there: the hiring and next month's wage would come at the next
+           month start anyway. Otherwise two months' wages and the hiring cost. The first person of a base job in a
+           new business is still hired: the missing assets need that person's hours. With autoCover=0 hiring is as
+           before.
          · A job you have outsourced yourself and a job without an automatically managed employee are left alone. One
            exception (since 1.2.0): in a business handed over whole, a job that a signed contract brings work for
            and that has no employee at all gets its first person from the mod. The hire window of such a business
@@ -689,9 +713,14 @@ What it does
            with its reputation (0.7 times at 0%, 1.1 times at 100%).
          · The mod puts a price on reputation: what the customers paid last month and what the signed contracts pay
            a month, a point of reputation moving about 0.4% of that, counted over a year as the reputation fades.
+           What the customers pay is the larger of what they paid last month and what the business type's table
+           makes of the customers its awareness brings (since 1.5.1; the game draws the next month's customers'
+           work from the awareness at the month end). A new business was paid nothing last month, so before, its
+           reputation had a price of $0 and its last hours were always left undone.
          · When the hours can be covered for less than that, the cheapest way is taken: the game's outsourcing (only
            for a job the business may outsource; an hour costs three times the job's standard wage, and it does one
-           hour a game hour) or a candidate (two months' wages and hireFeeHours). When both cost more, or there is
+           hour a game hour) or a candidate (two months' wages and hireFeeHours; one month's wage when the job is
+           short of people for next month too). When both cost more, or there is
            neither, the reputation is lost.
          · In the month's last look a job the business may outsource is outsourced when the reputation an hour keeps
            is more than the hour costs. The game outsources only once the job's people have fewer than 11 hours
@@ -719,7 +748,7 @@ What it does
            change. After giving up a contract the work is less from the next month, and the people to spare leave
            by the rule above, three month ends later (their wages are paid until then; a lower spareMonths makes
            it sooner). After signing one the work is more from the next month start, and the first look of that
-           month (its 91st hour) hires for a job that is short of hands ("Staff filled in" above).
+           month (its first hour) hires for a job that is short of hands ("Staff filled in" above).
          · At the end of a month in which a contract was signed nobody of that business is let go or replaced,
            also when that month end is the third in a row. The next month, which has the new contract's work, is
            measured first. Otherwise a person would be let go and the same job filled again a month later.
@@ -1381,6 +1410,10 @@ What the mod does in your place, its switches and what it costs:
                                          job of one (letting go is free, the hiring costs hireFeeHours; 0 = off)
          [business] autoHire             a candidate hired for a job with more work than hours (hireFeeHours
                                          each time)
+         [business] autoHireNow          the same look right after a load and a whole hand-over (hireFeeHours
+                                         each time)
+         [business] autoHirePlan         the other jobs' work of the month counted ahead by the type's table
+                                         (hireFeeHours each time)
          [business] autoManageWholeBusiness  the automatic-management icon for the whole business (free)
          [business] missingAssetsBought  missing assets bought (no charge of the mod's; the game's shop price)
          [business] missingAssetsOnDebt  what the cash does not cover of them becomes a debt of the game's (1 by

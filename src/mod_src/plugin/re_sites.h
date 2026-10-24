@@ -815,6 +815,10 @@ enum {
 #define RE_VA_FIRM_TICK 0x004f7a40u      /* ecx = a business (plain ret): pays what its adverts left to pay last time */
 #define RE_VA_FIRM_TICK_RET 0x004f7bccu
 #define RE_VA_CALL_FIRM_TICK 0x004e5882u /* in the hourly work of the household's businesses, every 91st hour */
+/* that hourly work (FUN_004e5580, ecx = FirmM, plain ret at 0x004e593e), called once an update before the update's
+ * test for the month end (0x0068eba1 .. 0x0068ebb2): a look right after a load or a hand-over goes in front of it */
+#define RE_VA_FIRMS_HOUR 0x004e5580u
+#define RE_VA_CALL_FIRMS_HOUR 0x0068eb9cu /* mov ecx, [edi + 0x394] before it */
 #define RE_VA_FIRM_TICK_FIRM 0x004e587fu /* lea ecx, [esi + 0x18]: esi = the node of the business */
 #define RE_VA_JOB_OUTSOURCED 0x004f3224u /* cmp dword ptr [esi + 0x48], 0: the game does the hours of such a job itself, for money */
 #define RE_VA_JOB_KIND 0x004f326eu       /* push dword ptr [esi + 0x20]: the job of the game's data; the map's key is a number of the business's own */

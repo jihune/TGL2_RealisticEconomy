@@ -557,6 +557,8 @@ static const site SITES[] = {
     {RE_GROUP_BUSINESS, "firm tick entry", RE_VA_FIRM_TICK, 0, {0x55, 0x8b, 0xec, 0x6a, 0xff, 0x68, 0x10, 0x3c}, 8},
     {RE_GROUP_BUSINESS, "firm tick: plain ret", RE_VA_FIRM_TICK_RET, 0, {0xc3}, 1},
     {RE_GROUP_BUSINESS, "call firm tick", RE_VA_CALL_FIRM_TICK, RE_VA_FIRM_TICK, {0}, 0},
+    {RE_GROUP_BUSINESS, "firms hour entry", RE_VA_FIRMS_HOUR, 0, {0x55, 0x8b, 0xec, 0x6a, 0xff, 0x68, 0xb0, 0x2e}, 8},
+    {RE_GROUP_BUSINESS, "call firms hour", RE_VA_CALL_FIRMS_HOUR, RE_VA_FIRMS_HOUR, {0}, 0},
     {RE_GROUP_BUSINESS, "firm tick: the firm", RE_VA_FIRM_TICK_FIRM, 0, {0x8d, 0x4e}, 2},
     {RE_GROUP_BUSINESS, "job: outsourced", RE_VA_JOB_OUTSOURCED, 0, {0x83, 0x7e}, 2},
     {RE_GROUP_BUSINESS, "job: its kind", RE_VA_JOB_KIND, 0, {0xff, 0x76}, 2},

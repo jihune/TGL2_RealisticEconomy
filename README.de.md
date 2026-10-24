@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.5.0. Nicht vom Entwickler des Spiels.
+Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.5.1. Nicht vom Entwickler des Spiels.
 
 Andere Sprachen: [English](README.md), [한국어](README.ko.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ Das Diagramm eines Unternehmens öffnet sich nur mit dem Aktienkurs. Jede Linie 
 
 ![Der Hinweistext eines Werbesymbols](img/de/automation.png)
 
-Mitarbeiter, Vermögenswerte, Werbung und Verträge lassen sich einzeln an den Mod übergeben, für jedes Geschäft. Ein Strg+Umschalt-Klick auf ein Werbesymbol übergibt alles. Die Hinweistexte der Symbole nennen die Klicks. Die Übergabe öffnet sich, sobald dein Haushalt ein eigenes Unternehmen an die Börse gebracht hat (IPO). Was noch an Händen fehlt, wird ausgelagert oder eingestellt, wenn das weniger kostet als der Ruf, den es hält. Ein neues Geschäft ohne Mitarbeiter, ganz übergeben, startet der Mod selbst: erste Mitarbeiter, Vermögenswerte und Inventar.
+Mitarbeiter, Vermögenswerte, Werbung und Verträge lassen sich einzeln an den Mod übergeben, für jedes Geschäft. Ein Strg+Umschalt-Klick auf ein Werbesymbol übergibt alles. Die Hinweistexte der Symbole nennen die Klicks. Die Übergabe öffnet sich, sobald dein Haushalt ein eigenes Unternehmen an die Börse gebracht hat (IPO). Was noch an Händen fehlt, wird ausgelagert oder eingestellt, wenn das weniger kostet als der Ruf, den es hält. Ein neues Geschäft ohne Mitarbeiter, ganz übergeben, startet der Mod selbst: erste Mitarbeiter, Vermögenswerte und Inventar. Der Mod schaut gleich nach dem Laden und nach einer Übergabe nach und stellt in der ersten Stunde eines Monats für den ganzen Monat ein. Kurz vor Monatsende stellt er nur ein, wenn der gehaltene Ruf einen Monatslohn wert ist.
 
 ![Der Reiter zum Einstellen](img/de/hire.png)
 

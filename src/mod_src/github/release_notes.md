@@ -1,6 +1,13 @@
-Realistic Economy 1.5.0 for This Grand Life 2, game version v1.03.22.
+Realistic Economy 1.5.1 for This Grand Life 2, game version v1.03.22.
 
-**New in 1.5.0: a new business handed over whole gets started, and the window that picks a business's type shows its month.**
+**New in 1.5.1: staff looked after at once, a month planned ahead, and hirings near a month end weighed.**
+
+- A look right away. The mod looked at a business only in the game's block every 91 game hours, and passed over the month's first. A save loaded near a month end, or a business just handed over with nobody in it, waited up to 91 hours with its work undone: in one save a new business left its whole month undone and its reputation fell from 24% to 4%. Now it looks in the hour after a load and after a whole hand-over, and at a month's first hour. In the same save the month left 27% undone and the reputation stayed at 19%. `autoHireNow=0` under `[business]`.
+- The month planned ahead. The work of a business's other jobs (an electrician's apprentices, its bookkeeper) comes by chance while the base job is worked, so they were hired one look after another. Now that work is counted ahead from the base job's customers' work, in the shares of the game's own table for the business type, and the month's first look hires for the whole month. Work contracts bring, and a type the table does not have, are hired for when they come. `autoHirePlan=0` under `[business]`.
+- Hirings near a month end are weighed. The game pays a whole month's wage at the month end for a person hired at any hour of the month (an electrician hired 55 hours before one was paid the month's $4,120.05). When fewer game hours are left than a candidate's month, nobody is hired for any shortage: the mod weighs the hiring against the reputation the hours keep, as it does for the last few hours, at one month's wage when the job needs the person next month too.
+- The reputation of a new business has a price. What its customers pay is the larger of last month's payments and what the business type's table makes of the customers its awareness brings: a new business was paid nothing last month, so its reputation was worth $0 to the mod and its last hours were left undone.
+
+**From 1.5.0: a new business handed over whole gets started, and the window that picks a business's type shows its month.**
 
 - A business nobody works in yet. A business handed over whole (Ctrl+Shift-click on an advert icon) with nobody in it, such as a new one, stayed empty until you hired its first people, and its adverts ran while nobody worked, so its reputation fell. Now the mod hires the first person for each job that has work and nobody doing it, the base job first, and then buys the assets that are short. A job a household member works gets no one. The adverts handed over stay off until someone works.
 - Inventory. The game does not work a job whose inventory is out. Handing a whole business over now also switches on the game's box that buys inventory; taking the business back switches the box off only if the mod switched it on.
@@ -30,12 +37,12 @@ Realistic Economy 1.5.0 for This Grand Life 2, game version v1.03.22.
 
 **A matter of taste, and how to switch it off**: the README has one table of every feature that changes a rule or a number of the game, with the line of `RealisticEconomy.ini` that switches it off. The description inside the zip begins with the same list in more detail.
 
-**Coming from an earlier version**: extract and run the same file. It replaces the mod's files and leaves your settings file as it was (the saves are not copied a second time). The new features work without a line in an older settings file; to keep the game as it was, add `influence=0` and `coaching=0` under `[features]`, `competitionWeight=1` and `reputationBonusFade=0` under `[balance]`, and `automationEarly=1`, `autoCover=0` and `typeEstimate=0` under `[business]`.
+**Coming from an earlier version**: extract and run the same file. It replaces the mod's files and leaves your settings file as it was (the saves are not copied a second time). The new features work without a line in an older settings file; to keep the game as it was, add `influence=0` and `coaching=0` under `[features]`, `competitionWeight=1` and `reputationBonusFade=0` under `[balance]`, and `automationEarly=1`, `autoCover=0`, `typeEstimate=0`, `autoHireNow=0` and `autoHirePlan=0` under `[business]`.
 
-**Install**: close the game, extract `RealisticEconomy-1.5.0.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
+**Install**: close the game, extract `RealisticEconomy-1.5.1.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
 
 What the mod adds and how to use it is in the README of this repository, in the game's eight languages: English, 한국어, Deutsch, Español, Français, Português (Brasil), 日本語, 简体中文.
 
-The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.5.0.zip.sha256.txt`.
+The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.5.1.zip.sha256.txt`.
 
 An antivirus may question `version.dll`: it is the public Ultimate ASI Loader (MIT), the file that loads the mod when the game starts.

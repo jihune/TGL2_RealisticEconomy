@@ -73,7 +73,7 @@
 
 #include "re_data_estimate.h"
 
-#define PLUGIN_VERSION "1.5.0"
+#define PLUGIN_VERSION "1.5.1"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -166,6 +166,8 @@ static double g_idle_share = 0.5;   /* ... or a person alone in a job has to lea
 static int g_fill = 1, g_fill_hooked; /* business: a job with more work than its people have hours for gets a candidate hired */
 static double g_fill_share = 0.05;    /* ... when more than this share of the job's month is without hands */
 static int g_hire_ahead = 1;          /* ... and ahead of contract work that a month's candidates will not staff */
+static int g_hire_now = 1;            /* ... looked at in the hour after a load or a hand-over, not at the next block */
+static int g_hire_plan = 1;           /* ... and for the work the base job's still brings the other jobs this month */
 static double g_trace_pool = 1.0;     /* trace: what a month's candidates count for when hiring ahead (`[trace] poolShare`) */
 static int g_auto_whole = 1, g_auto_whole_patched; /* business: a click on a row's switch is for the whole business */
 /* business: the adverts of a business rest for a month after one in which more than this share of the work was left
@@ -198,6 +200,7 @@ static double g_rep_fade = 0.02;           /* the share of a month's work left u
 static int g_rep_fade_on;                  /* ... and that rule is in force */
 static int g_cover = 1; /* what is still without hands is outsourced or hired for when that costs less than the reputation (fill_rest) */
 static int g_trace_cover_out; /* trace: fill_rest never hires (`[trace] coverByOutsourcing`), so that a test sees outsourced hours */
+static int g_trace_paid_only; /* trace: fill_rest values reputation by last month's payments alone (`[trace] reputationPaidOnly`) */
 static int g_rent_market = 1; /* a renewed lease takes the market's rent, lower as well as higher */
 static double g_start_awareness = 0.25; /* the awareness of a business the player starts; the game's is 0 */
 static int g_fee_label; /* the futures fee's label is put in the mod's words (text_want) */
@@ -631,6 +634,15 @@ static int advert_tip_firm(const re_text_regs *regs)
     return re_game_firm_name(firms, firm, name, sizeof name) ? firm : 0;
 }
 
+/* A business type's row of the mod's table (re_data_estimate.h), NULL when the table does not have the type. */
+static const re_type_month *type_month_of(int type)
+{
+    for (size_t i = 0; i < sizeof RE_TYPE_MONTHS / sizeof RE_TYPE_MONTHS[0]; i++)
+        if (RE_TYPE_MONTHS[i].type == type)
+            return &RE_TYPE_MONTHS[i];
+    return NULL;
+}
+
 /* The business type whose hover text is being built, when it is a row of the window that picks a new business's type:
  * FUN_005f2ef0 is called from that list (the other callers are a business's own window, the IPO window and the list
  * of businesses), and the table has the type. NULL otherwise. */
@@ -642,9 +654,9 @@ static const re_type_month *type_tip(const re_text_regs *regs)
         !re_readable(*slot, RE_TYPE_RECORD_ID + 4))
         return NULL;
     int type = *(const int *)(*slot + RE_TYPE_RECORD_ID);
-    for (size_t i = 0; i < sizeof RE_TYPE_MONTHS / sizeof RE_TYPE_MONTHS[0]; i++)
-        if (RE_TYPE_MONTHS[i].type == type)
-            return &RE_TYPE_MONTHS[i];
+    const re_type_month *row = type_month_of(type);
+    if (row != NULL)
+        return row;
     static int told;
     if (told++ < 5)
         re_log("business: the hover text of business type %d is built in the type list; the mod's table does not have that type", type);
@@ -4319,9 +4331,31 @@ static void wage_places(void *main_obj)
  * people hired: of the job's candidates of the month, the one with whom an hour of the missing work costs least,
  * then the next, until the work has hands or no candidate is left. There is no limit a month (REQUEST.md [45]); the
  * month's candidates are the limit. The hiring is the game's own; the business pays for each what a hiring by the
- * mod costs (hireFeeHours). The block of the month's first hour is passed over: the month's numbers are not settled
- * there. Seen in the game (run 122): people work their hours off early in a month, so a job that is short stands
- * still from the second or third block on, with its work left and no hours.
+ * mod costs (hireFeeHours). Seen in the game (run 122): people work their hours off early in a month, so a job that
+ * is short stands still from the second or third block on, with its work left and no hours.
+ *
+ * When the mod looks (REQUEST.md [99]). The game's update does the hour of the household's businesses, with this
+ * block in it, before its test for the month end (`0x0068eb9c`, `0x0068ebb2`), and the block of a month's first hour
+ * comes in the update after the month end and start: the base job's work of the month is drawn by then (note b19
+ * "B4"), so that block is the month's first look. A load and a business handed over whole get a look of their own in
+ * the game's next hour (autoHireNow, looks_now), so that a save near a month end, or a business handed over with
+ * nobody in it, does not wait up to 91 hours with its work undone.
+ *
+ * The month ahead (REQUEST.md [99], autoHirePlan). The work of a job other than the base job comes while the base
+ * job is worked: an hour of the base job brings the others theirs by chance (the type's jobGen, note b19 "B4"), in
+ * the shares the type's table has for a whole month (re_data_estimate.h, note e21). So a job's work still to come is
+ * what the base job still has to do of its customers' work (what signed contracts list for the base job is not),
+ * times that job's hours over the base job's in the table; it is counted with what is to do now, and the first look
+ * of a month staffs the whole month. What contracts bring the other jobs, and a business whose type the table does
+ * not have or whose base job is not the table's, are seen when the work comes, as before.
+ *
+ * Late in a month (REQUEST.md [100]). The game pays a whole month's wage at the month end for a person hired at any
+ * hour of it (run2589). When fewer game hours are left than a candidate's hours of a month, that wage buys less than
+ * the person's month, and the hiring is no longer made for any shortage: it is left to fill_rest, which weighs it
+ * against the reputation the hours keep, at one month's wage where the job's people do not cover its month's work
+ * (the person is needed next month, and would be hired at its first look anyway), at two and the hiring cost where
+ * they do. The first person of a base job nobody works in a business handed over whole is still hired (its missing
+ * assets need that person's hours). Without autoCover such hirings are made as before.
  *
  * An hour of a person is worth less work while the business is short of assets (re_business_asset_factor), and the
  * hands are counted with that. Where a job is short and assets are part of why, the assets come first: what the
@@ -4396,7 +4430,10 @@ static long long fill_hire(void *main_obj, void *firms, void *finance, int firm,
  * reputation it keeps: outsourced, where the data lets the business outsource the job (an hour at three times the
  * job's standard wage, one hour a game hour, so no more hours than the month has left; note b24), or a candidate
  * hired (two months' wages and the hiring cost: a person hired for a shortage stays to the next month's end, when
- * staff_sizing lets such a person go if not needed). Otherwise the reputation is lost. In the month's last look a job the
+ * staff_sizing lets such a person go if not needed; one month's wage when the job's people do not cover its month's
+ * work, so that the person is needed next month too and the hiring and next month's wage would come anyway: the
+ * game pays a whole month's wage at the month end for a person hired at any hour of it, run2589). Otherwise the
+ * reputation is lost. In the month's last look a job the
  * mod may outsource is outsourced when an hour of it keeps more than it costs, so that work that comes in after the
  * last look gets done too. A job the mod outsourced is switched back when that is no longer so, and at the next
  * month start (outsource_back). */
@@ -4404,6 +4441,7 @@ static long long fill_hire(void *main_obj, void *firms, void *finance, int firm,
 typedef struct {
     int job, eligible, outsourced;
     double missing, factor; /* hours of work without hands; what the assets leave of an hour */
+    int needed_next;        /* its people's whole month does not cover its month's work: a person hired now is needed next month */
 } fill_job;
 
 static const char *outsource_key(char key[48], int firm, int number)
@@ -4434,8 +4472,15 @@ static int outsourced_by_mod(int firm, int job, const re_job_hours *entry, int e
     return 0;
 }
 
+/* `row`: the business's type in the mod's table when its base job is the table's. What the customers pay a month is
+ * the larger of what they paid last month and what the table makes of the customers its awareness brings - the
+ * base job's hours of a month are drawn from the awareness, amt x (0.05 + 0.95 x awareness) (note b19 "B4") - at
+ * its reputation (REQUEST.md [99], [100]): a new business was paid nothing last month, a growing one less than its
+ * customers bring now, and at last month's $0 a point was worth nothing, so a new business never had its last hours
+ * covered (run2589: a month after one of 16 hours, 4 of 196 hours were left at 2.04%, and the month's bonus with
+ * them, for $530 of outsourcing). */
 static void fill_rest(void *main_obj, void *firms, void *jobs, void *finance, int firm, const char *name, int month, int clock, fill_job *f,
-                      int kinds, const re_job_hours *entry, int entries, double work)
+                      int kinds, const re_job_hours *entry, int entries, double work, const re_type_month *row)
 {
     typedef void(__thiscall * list_end_fn)(BYTE **list);
     static re_staff_read c[WAGE_CANDIDATES];
@@ -4460,13 +4505,25 @@ static void fill_rest(void *main_obj, void *firms, void *jobs, void *finance, in
         contracts += s[i].months > 0 ? s[i].payout / s[i].months : 0;
     sales = sales > 0 ? sales : 0;
     re_game_firm_reputation(firms, firm, &reputation, &influence);
-    double point = re_business_reputation_worth((double)(sales + contracts), reputation, RE_REPUTATION_MONTHS); /* cents for 1.0 */
+    /* the table's sales are at 100% awareness and a reputation of 100% (re_game_type_now): the customers of the
+     * awareness, and 0.7 + 0.4 x the reputation over the 1.1 of 100% */
+    long long expected = 0;
+    double awareness = re_game_firm_awareness(firms, firm);
+    re_type_now now;
+    if (!g_trace_paid_only && row != NULL && awareness >= 0.0 && re_game_type_now(main_obj, row, &now) && now.sales > 0)
+        expected = (long long)((double)now.sales * (0.05 + 0.95 * awareness) * (0.7 + 0.4 * reputation) / 1.1);
+    long long customers = expected > sales ? expected : sales;
+    double point = re_business_reputation_worth((double)(customers + contracts), reputation, RE_REPUTATION_MONTHS); /* cents for 1.0 */
     double share = undone / work;
+    char instead[160] = "";
+    if (expected > sales)
+        snprintf(instead, sizeof instead, "; for the customers the type's table counts $%.2f a month at its awareness of %.1f%%",
+                 dollars(expected), 100.0 * awareness);
     re_log("business: '%s' (firm %d), %d game hours left in the month: %.0f of the month's %.0f hours of work so far have no hands "
            "(%.2f%%); a point of its reputation (%.2f%% now) is worth $%.2f over %d months: its customers paid $%.2f last month, its %d "
-           "contract(s) pay $%.2f a month",
+           "contract(s) pay $%.2f a month%s",
            name, firm, clock, undone, work, 100.0 * share, 100.0 * reputation, dollars((long long)(point / 100.0)), RE_REPUTATION_MONTHS,
-           dollars(sales), signs > 0 ? signs : 0, dollars(contracts));
+           dollars(sales), signs > 0 ? signs : 0, dollars(contracts), instead);
     /* what is without hands now: outsourced, hired for or left, the cheapest way that keeps more than it costs */
     for (int j = 0; j < kinds; j++) {
         if (!f[j].eligible || f[j].outsourced || f[j].missing < 1.0)
@@ -4485,10 +4542,10 @@ static void fill_rest(void *main_obj, void *firms, void *jobs, void *finance, in
             int pick = g_trace_cover_out ? -1 : re_business_fill_pick(wage, hours, efficiency, n, f[j].missing, clock, &per_hour);
             double in = pick >= 0 ? (hours[pick] < clock ? hours[pick] : clock) * efficiency[pick] : 0.0;
             in = in < f[j].missing ? in : f[j].missing;
-            double in_cost = pick >= 0 ? 2.0 * (double)wage[pick] + (double)(fee > 0 ? fee : 0) : 0.0;
+            double in_cost = pick < 0 ? 0.0 : f[j].needed_next ? (double)wage[pick] : 2.0 * (double)wage[pick] + (double)(fee > 0 ? fee : 0);
             double in_keeps = point * (re_business_mark(share - in / work, bonus, rate, fade) - before);
             double out_net = out > 0.0 ? out_keeps - out_cost : -1.0, in_net = pick >= 0 ? in_keeps - in_cost : -1.0;
-            char outsourcing[160], hiring[200];
+            char outsourcing[160], hiring[260];
             if (!can)
                 snprintf(outsourcing, sizeof outsourcing, "the data does not let the business outsource the job");
             else
@@ -4497,8 +4554,10 @@ static void fill_rest(void *main_obj, void *firms, void *jobs, void *finance, in
             if (pick < 0)
                 snprintf(hiring, sizeof hiring, "none of the month's %d candidate(s) is left", n);
             else
-                snprintf(hiring, sizeof hiring, "%s (candidate %d) does %.0f of them for $%.2f, two months' wages and the hiring cost, and keeps $%.2f",
-                         c[pick].name, c[pick].id, in, in_cost / 100.0, in_keeps / 100.0);
+                snprintf(hiring, sizeof hiring, "%s (candidate %d) does %.0f of them for $%.2f, %s, and keeps $%.2f", c[pick].name,
+                         c[pick].id, in, in_cost / 100.0,
+                         f[j].needed_next ? "a month's wage, the job needs the person next month too" : "two months' wages and the hiring cost",
+                         in_keeps / 100.0);
             const char *verdict = "neither: losing the reputation costs less";
             done = 1;
             if (out_net > 0.0 && out_net >= in_net) {
@@ -4579,8 +4638,8 @@ static void staff_fill(void *main_obj, void *firms, int firm)
     int month = re_game_period(main_obj), clock = ticks >= 0 ? RE_MONTH_HOURS - (int)(ticks % RE_MONTH_HOURS) : 0;
     char name[64] = "", read[STAFF_MAX], managed[STAFF_MAX];
     /* a business nobody is employed in is the player's to staff, unless it is handed over whole (REQUEST.md [95]) */
-    if (count < 0 || (count == 0 && !business_kept("all", firm)) || kinds <= 0 || month < 0 || clock <= 0 || clock == RE_MONTH_HOURS ||
-        jobs == NULL || finance == NULL || g_playthrough[0] == 0)
+    if (count < 0 || (count == 0 && !business_kept("all", firm)) || kinds <= 0 || month < 0 || clock <= 0 || jobs == NULL ||
+        finance == NULL || g_playthrough[0] == 0)
         return;
     count = count > STAFF_MAX ? STAFF_MAX : count;
     for (int i = 0; i < count; i++) {
@@ -4590,7 +4649,7 @@ static void staff_fill(void *main_obj, void *firms, int firm)
     re_game_firm_name(firms, firm, name, sizeof name);
     re_coming coming[FILL_JOBS];
     int comings = re_game_firm_coming(firms, firm, month, coming, FILL_JOBS), whole = business_kept("all", firm);
-    int base = whole ? re_game_firm_base_job(firms, firm) : -1;
+    int base = re_game_firm_base_job(firms, firm);
     static re_job_hours entry[FILL_JOBS]; /* each number of the business's own, for its outsourcing switch */
     static fill_job f[FILL_JOBS];
     int entries = kinds;
@@ -4614,10 +4673,25 @@ static void staff_fill(void *main_obj, void *firms, int firm)
         }
     }
     kinds = distinct;
+    /* the month ahead: the base job's work still to do that customers brought, and the table's shares of it */
+    const re_type_month *row = type_month_of(re_game_firm_type(firms, firm));
+    double foot_left = 0.0;
+    if (row != NULL && (row->rows < 1 || row->job[0] != base || row->hours[0] <= 0))
+        row = NULL;
+    for (int j = 0; row != NULL && j < kinds; j++)
+        if (job[j].job == base) {
+            int given = job[j].allowed + job[j].overtime, listed = re_game_firm_listed(firms, firm, base);
+            double customers = listed < 0 || given <= 0 ? 0.0 : (double)(given - listed > 0 ? given - listed : 0) / given;
+            foot_left = (given - job[j].worked) * customers;
+        }
     char seen[900] = ""; /* trace: what was looked at, job by job */
     int at = 0, looked = 0;
     for (int j = 0; j < kinds; j++) {
         int given = job[j].allowed + job[j].overtime, todo = given - job[j].worked, people = 0, under = 0;
+        double later = 0.0; /* hours of its work the base job's still brings this month */
+        for (int r = 1; g_hire_plan && row != NULL && job[j].job != base && r < row->rows; r++)
+            later += row->job[r] == job[j].job ? foot_left * row->hours[r] / row->hours[0] : 0.0;
+        int to_come = (int)(later + 0.5), planned = todo + to_come; /* the job's work of the month still to do, with that */
         double hands = 0.0, cost = 0.0, assets = 1.0, furnishings = 1.0; /* hands: hours x skill, in the time there is */
         for (int i = 0; i < count; i++)
             if (read[i] && m[i].job == job[j].job) {
@@ -4628,7 +4702,7 @@ static void staff_fill(void *main_obj, void *firms, int firm)
         re_game_firm_factors(firms, firm, job[j].job, &assets, &furnishings);
         double factor = re_business_asset_factor(assets, furnishings), able = hands * factor;
         work += given;
-        f[j] = (fill_job){job[j].job, 0, job[j].outsourced, todo > able ? todo - able : 0.0, factor};
+        f[j] = (fill_job){job[j].job, 0, job[j].outsourced, todo > able ? todo - able : 0.0, factor, 0};
         if (g_on_trace && (size_t)at < sizeof seen - 110)
             at += snprintf(seen + at, sizeof seen - (size_t)at, " job %d: %d of %d to do, hands for %.0f (assets leave %.0f%%), %d people (%d managed)%s;",
                            job[j].job, todo, given, able, 100.0 * factor, people, under, job[j].outsourced ? ", outsourced" : "");
@@ -4651,13 +4725,18 @@ static void staff_fill(void *main_obj, void *firms, int firm)
         for (int e = 0; !self && people == 0 && whole && e < entries; e++)
             self = entry[e].job == job[j].job && re_game_household_work(re_game_people(main_obj), firm, entry[e].key) > 0;
         int first_of_job = people == 0 && whole && !g_trace_first_unseen &&
-                           (re_game_firm_listed(firms, firm, job[j].job) > 0 || (job[j].worked == 0 && todo > 0 && !self));
+                           (re_game_firm_listed(firms, firm, job[j].job) > 0 || (job[j].worked == 0 && planned > 0 && !self));
         f[j].eligible = (under > 0 || first_of_job) && assets > RE_ASSETS_LEAST + 1e-6;
         if ((under == 0 && !first_of_job) || job[j].outsourced)
             continue;
         /* hiring ahead (REQUEST.md [49]): what the business's contracts add to this job's work from the next month
          * on, looked at once for a month and an amount */
-        int short_now = re_business_short(given, todo, able, g_fill_share), ahead = 0;
+        int short_now = re_business_short(given + to_come, planned, able, g_fill_share), ahead = 0;
+        if (short_now && to_come > 0)
+            re_log("business: '%s' (firm %d), job %d: %d hours of its work are still to come this month from the %.0f hours of customers' "
+                   "work the base job %d has still to do (the type's table: %d to %d hours): %d to do with them",
+                   name, firm, job[j].job, to_come, foot_left, base, (int)(later * row->hours[0] / foot_left + 0.5), row->hours[0],
+                   planned);
         double month_able = 0.0; /* what the job's people do in a whole month */
         char ahead_key[48];
         for (int k = 0; k < comings; k++)
@@ -4665,6 +4744,7 @@ static void staff_fill(void *main_obj, void *firms, int firm)
         for (int i = 0; i < count; i++)
             if (read[i] && m[i].job == job[j].job)
                 month_able += m[i].hours * m[i].efficiency;
+        f[j].needed_next = re_business_short(given + to_come, given + to_come, month_able * factor, g_fill_share);
         snprintf(ahead_key, sizeof ahead_key, "aheadf%dj%d", firm, job[j].job);
         int look_ahead = ahead > 0 && re_state_get(g_playthrough, ahead_key, 0) != (long long)month * 100000 + ahead;
         if (!short_now && !look_ahead)
@@ -4711,11 +4791,11 @@ static void staff_fill(void *main_obj, void *firms, int firm)
             re_game_firm_factors(firms, firm, job[j].job, &assets, &furnishings);
             factor = re_business_asset_factor(assets, furnishings);
             able = hands * factor;
-            int still = re_business_short(given, todo, able, g_fill_share), none = assets <= RE_ASSETS_LEAST + 1e-6;
+            int still = re_business_short(given + to_come, planned, able, g_fill_share), none = assets <= RE_ASSETS_LEAST + 1e-6;
             re_log("business: '%s' (firm %d), job %d: %d hours of work still to do this month; the job's assets at %.2f and the "
                    "furnishings at %.2f left %.0f%% of an hour's work. %d unit(s) of missing assets bought in this block: assets %.2f, "
                    "furnishings %.2f, %.0f%% now; its %d people have hours for %.0f, %s",
-                   name, firm, job[j].job, todo, assets_was, furnishings_was, 100.0 * was, units, assets, furnishings, 100.0 * factor, people,
+                   name, firm, job[j].job, planned, assets_was, furnishings_was, 100.0 * was, units, assets, furnishings, 100.0 * factor, people,
                    able,
                    !still ? "that is enough, nobody is hired"
                    : none ? "but an asset of the job is missing altogether and the game does not work such a job: nobody is hired"
@@ -4737,12 +4817,25 @@ static void staff_fill(void *main_obj, void *firms, int firm)
         for (int k = 0; k < n; k++)
             pool += hours[k] * efficiency[k];
         for (int taken = 0; short_now; taken++) { /* one candidate a turn; a taken one has no wage and is not picked again */
-            double need = (double)todo - able;
+            double need = (double)planned - able;
             int pick = re_business_fill_pick(wage, hours, efficiency, n, need, clock, &cost);
             if (pick < 0) {
                 re_log("business: '%s' (firm %d), job %d: %d hours of work still to do this month and its %d people have hours for %.0f, "
                        "%d game hours left in the month; %d hired in this block, none of the %d other candidate(s) can be hired for it",
-                       name, firm, job[j].job, todo, people + taken, able, clock, taken, n - taken);
+                       name, firm, job[j].job, planned, people + taken, able, clock, taken, n - taken);
+                break;
+            }
+            /* late in the month a month's wage buys fewer hours than the person's month: the game pays a whole month's
+             * wage at the month end for a person hired at any hour of it (run2589). Such a hiring is left to the
+             * comparison with the reputation (fill_rest), at one month's wage where the job needs the person next
+             * month too (REQUEST.md [100]) */
+            if (g_cover && clock < hours[pick]) {
+                f[j].needed_next = re_business_short(given + to_come, given + to_come, month_able * factor + gained, g_fill_share);
+                re_log("business: '%s' (firm %d), job %d: %d hours of work still to do this month and its %d people have hours for %.0f, "
+                       "%d game hours left in the month: %s (candidate %d) would work %d of %d hours for a month's wage; what is without "
+                       "hands is left to the comparison with the reputation, the job's people %s its month's work",
+                       name, firm, job[j].job, planned, people + taken, able, clock, c[pick].name, c[pick].id, clock, hours[pick],
+                       f[j].needed_next ? "do not cover" : "cover");
                 break;
             }
             long long fee = fill_hire(main_obj, firms, finance, firm, job[j].job, c[pick].id, month);
@@ -4751,7 +4844,7 @@ static void staff_fill(void *main_obj, void *firms, int firm)
                    "%d game hours left in the month; %.0f hours are without hands: %s (candidate %d, %lld cents a month for %d hours "
                    "at efficiency %.4f, of which the assets leave %.0f%%, an hour of the missing work %.1f cents) %s, hiring %d of this "
                    "look, the hiring cost %lld cents (%.0f hours of a store manager), automatic management %s",
-                   name, firm, job[j].job, todo, people + taken, able, clock, need, c[pick].name, c[pick].id, c[pick].wage, c[pick].hours,
+                   name, firm, job[j].job, planned, people + taken, able, clock, need, c[pick].name, c[pick].id, c[pick].wage, c[pick].hours,
                    c[pick].efficiency, 100.0 * factor, cost, hired ? "is hired" : "COULD NOT be hired", taken + 1, hired ? fee : 0,
                    g_hire_hours, hired && re_game_staff_auto(firms, firm, c[pick].id) ? "on" : "OFF");
             if (!hired)
@@ -4760,7 +4853,8 @@ static void staff_fill(void *main_obj, void *firms, int firm)
             gained += hours[pick] * efficiency[pick];
             wage[pick] = 0;
             f[j].missing = todo > able ? todo - able : 0.0;
-            if (!re_business_short(given, todo, able, g_fill_share))
+            f[j].needed_next = re_business_short(given + to_come, given + to_come, month_able * factor + gained, g_fill_share);
+            if (!re_business_short(given + to_come, planned, able, g_fill_share))
                 break;
         }
         if (look_ahead) {
@@ -4797,7 +4891,7 @@ static void staff_fill(void *main_obj, void *firms, int firm)
         }
         ((list_end_fn)AT(RE_VA_STAFF_LIST_END))(list); /* the copies the list function made for this look */
     }
-    fill_rest(main_obj, firms, jobs, finance, firm, name, month, clock, f, kinds, entry, entries, work);
+    fill_rest(main_obj, firms, jobs, finance, firm, name, month, clock, f, kinds, entry, entries, work, row);
 }
 
 /* trace: all but one of the people of one job of one business leave right after the first load, so that a test has
@@ -4841,6 +4935,53 @@ __attribute__((force_align_arg_pointer)) static void __fastcall firm_tick_wrappe
         adverts_keep(firms, firm);
     time_add(TIME_FIRM_BLOCK, since);
     ((tick_fn)AT(RE_VA_FIRM_TICK))(firm_stack);
+}
+
+/* Looks of their own (REQUEST.md [99], autoHireNow): after a load every business of the household, after a hand-over
+ * the business handed over. They come in the game's next hour, before the businesses work it: in the game's update,
+ * as the block's look does, not inside the load's code or the click's, whose window holds the business's lists. */
+#define LOOKS_MAX 8
+static int g_look_hooked, g_look_all, g_look_firm[LOOKS_MAX], g_looks;
+static const char *g_look_why = "";
+
+static void look_soon(int firm, const char *why) /* firm 0: every business of the household */
+{
+    if (!g_look_hooked)
+        return;
+    if (firm != 0 && g_looks < LOOKS_MAX)
+        g_look_firm[g_looks++] = firm;
+    else
+        g_look_all = 1;
+    g_look_why = why;
+}
+
+static void looks_now(void *main_obj)
+{
+    static re_firm_fit own[OWN_FIRMS];
+    void *firms = re_game_firms(main_obj);
+    int owned = firms != NULL && automation_open() ? re_game_firm_fits(main_obj, own, OWN_FIRMS) : 0;
+    for (int f = 0; f < owned; f++) {
+        int asked = g_look_all;
+        for (int k = 0; !asked && k < g_looks; k++)
+            asked = g_look_firm[k] == own[f].id;
+        if (!asked || re_game_firm_open(firms, own[f].id) == 0)
+            continue;
+        re_log("business: '%s' (firm %d): a look of its own in the hour after %s", own[f].name, own[f].id, g_look_why);
+        staff_fill(main_obj, firms, own[f].id);
+    }
+    g_look_all = g_looks = 0;
+}
+
+/* In place of the game's call for the hour of the household's businesses, once an update (note m22 1.) */
+__attribute__((force_align_arg_pointer)) static void __fastcall firms_hour_wrapper(void *firms_m)
+{
+    typedef void(__fastcall * hour_fn)(void *firms_m);
+    if ((g_look_all || g_looks > 0) && g_main_obj != NULL) {
+        long long since = time_now();
+        looks_now(g_main_obj);
+        time_add(TIME_FIRM_BLOCK, since);
+    }
+    ((hour_fn)AT(RE_VA_FIRMS_HOUR))(firms_m);
 }
 
 /* ---- adverts handed to the mod (REQUEST.md [43], note m22) */
@@ -5194,6 +5335,8 @@ __attribute__((force_align_arg_pointer)) static int __fastcall advert_on_wrapper
         }
         if (all) {
             business_all(firms, firm, name, now, "Ctrl+Shift-click on an advert icon");
+            if (now)
+                look_soon(firm, "it was handed over");
             snprintf(text, sizeof text, T(now ? RE_MSG_ALL_KEPT : RE_MSG_ALL_BACK), name);
             re_game_post_message(g_main_obj, text);
         }
@@ -6205,6 +6348,12 @@ static void business_install(void)
         re_log("business: the game's block for a business every 91st hour %s; a job of automatically managed staff with more than "
                "%.1f%% of its month's work without hands gets a candidate hired, a hiring costs %.0f hours of a store manager",
                g_fill_hooked ? "redirected" : "NOT redirected", 100.0 * g_fill_share, g_hire_hours);
+        if (g_fill_hooked && g_hire_now)
+            g_look_hooked = re_patch_call(AT(RE_VA_CALL_FIRMS_HOUR), AT(RE_VA_FIRMS_HOUR), firms_hour_wrapper);
+        re_log("business: a look of its own in the game's hour after a load and after a business is handed over whole: %s; the work "
+               "the base job still brings the other jobs this month is counted ahead by the type's table: %s",
+               !g_hire_now ? "off (settings)" : g_look_hooked ? "the call for the hour of the household's businesses redirected" : "NOT redirected",
+               g_hire_plan ? "on" : "off (settings)");
         re_log("business: what is still without hands after that is outsourced or hired for when that costs less than the reputation "
                "it keeps, and in the month's last look a job is outsourced when an hour keeps more than it costs: %s",
                !g_cover ? "off (settings)" : g_fill_hooked ? "on" : "NOT on");
@@ -6599,6 +6748,8 @@ static void after_game_step(void *main_obj, const char *why, int why_is_load)
         if (g_on_business)
             automation_release(main_obj); /* before handed_over_hold: a business taken back has no switches to hold */
         handed_over_hold(main_obj);
+        if (g_on_business)
+            look_soon(0, "a load");
     }
     if (why_is_load && g_on_trace && free_money_trace(main_obj))
         snapshot(main_obj, &h); /* the cash account changed */
@@ -7247,6 +7398,8 @@ static void load_settings(void)
     re_ini_doubles("business", "autoHireShort", &g_fill_share, 1);
     g_fill_share = g_fill_share < 0.0 ? 0.0 : g_fill_share > 1.0 ? 1.0 : g_fill_share;
     g_hire_ahead = re_ini_int("business", "autoHireAhead", 1);
+    g_hire_now = re_ini_int("business", "autoHireNow", 1);
+    g_hire_plan = re_ini_int("business", "autoHirePlan", 1);
     g_cover = re_ini_int("business", "autoCover", 1);
     g_auto_early = re_ini_int("business", "automationEarly", 0);
     g_type_estimate = re_ini_int("business", "typeEstimate", 1);
@@ -7329,6 +7482,9 @@ static void load_settings(void)
     g_trace_cover_out = g_on_trace && re_ini_int("trace", "coverByOutsourcing", 0);
     if (g_trace_cover_out)
         re_log("business: TEST SETTING: what is still without hands is never hired for, only outsourced where that is worth it");
+    g_trace_paid_only = g_on_trace && re_ini_int("trace", "reputationPaidOnly", 0);
+    if (g_trace_paid_only)
+        re_log("business: TEST SETTING: a point of reputation is valued at what the customers paid last month alone, as before REQUEST.md [99]");
     re_game_closed_unseen = g_on_trace && re_ini_int("trace", "closedUnseen", 0); /* the rules as before they knew a closed business */
     g_trace_hits = g_on_trace && re_ini_int("trace", "hits", 0);
     g_trace_end_company = g_on_trace && re_ini_int("trace", "endCompany", 0);

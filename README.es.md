@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Un mod para This Grand Life 2. Solo para la versión v1.03.22 del juego, versión 1.5.0 del mod. No es del desarrollador del juego.
+Un mod para This Grand Life 2. Solo para la versión v1.03.22 del juego, versión 1.5.1 del mod. No es del desarrollador del juego.
 
 Otros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -38,7 +38,7 @@ El gráfico de una empresa se abre solo con el precio de la acción. Cada línea
 
 ![El texto de un icono de anuncio](img/es/automation.png)
 
-Empleados, activos, anuncios y contratos se pueden dejar al mod uno por uno, en cada negocio. Con Ctrl+Mayús+clic en un icono de anuncio se deja todo. Los textos de los iconos indican los clics. Ceder se abre cuando tu hogar ha sacado a bolsa una empresa propia (IPO). Lo que aún falta de manos se externaliza o se contrata cuando cuesta menos que la reputación que conserva. Un negocio nuevo sin nadie, cedido entero, lo pone en marcha el mod: sus primeros empleados, sus activos y su inventario.
+Empleados, activos, anuncios y contratos se pueden dejar al mod uno por uno, en cada negocio. Con Ctrl+Mayús+clic en un icono de anuncio se deja todo. Los textos de los iconos indican los clics. Ceder se abre cuando tu hogar ha sacado a bolsa una empresa propia (IPO). Lo que aún falta de manos se externaliza o se contrata cuando cuesta menos que la reputación que conserva. Un negocio nuevo sin nadie, cedido entero, lo pone en marcha el mod: sus primeros empleados, sus activos y su inventario. El mod revisa justo después de cargar o de ceder un negocio, y en la primera hora de cada mes contrata para todo el mes. Cerca del fin de mes solo contrata si la reputación que conserva vale un mes de sueldo.
 
 ![La pestaña de contratación](img/es/hire.png)
 
