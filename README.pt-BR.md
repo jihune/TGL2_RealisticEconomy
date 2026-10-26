@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.6.0 do mod. Não é do desenvolvedor do jogo.
+Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.6.1 do mod. Não é do desenvolvedor do jogo.
 
 Outros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -61,7 +61,6 @@ Estas são todas as funções que mudam uma regra ou um número do jogo. Coloque
 | Função | O que muda em relação ao jogo | Desligar |
 |---|---|---|
 | Balanceamento | Taxa de ações 2% (jogo: 1%), taxa de futuros 10% da margem (1%), juros maiores na poupança e juros sobre o dinheiro, um aluguel que também pode cair na renovação, uma empresa nova começa com 25% de conscientização (0%) | `[features] balance=0` |
-| Bloqueio de negociação depois de carregar | Depois de carregar um jogo salvo anterior, ações e futuros ficam bloqueados até aquele mês passar de novo. Os preços das ações e os imóveis à venda do mês continuam os mesmos depois de carregar | `[features] guard=0` |
 | Juros pela nota de crédito | Os juros de um empréstimo seguem a nota de crédito da família | `[features] credit=0` |
 | Abertura de capital | Você fica com 45% e recebe dinheiro pelo resto (jogo: 25%, sem dinheiro) | `[features] ipo=0` |
 | Cadeiras no Conselho | Uma cadeira garantida para cada 20% das ações | `[features] board=0` |
@@ -75,6 +74,8 @@ Estas são todas as funções que mudam uma regra ou um número do jogo. Coloque
 
 Cada número do balanceamento tem a sua linha em `[balance]`.
 
+Só quando ligado (desligado desde 1.6.1): o bloqueio de negociação depois de carregar. Com `[features] guard=1`, depois de carregar um jogo salvo anterior, ações e futuros ficam bloqueados até aquele mês passar de novo, e os preços das ações e os imóveis à venda do mês continuam os mesmos depois de carregar.
+
 ## Outras funções
 
 Cada uma pode ser desligada no arquivo de configurações.
@@ -82,7 +83,7 @@ Cada uma pode ser desligada no arquivo de configurações.
 - Os candidatos de um mês continuam os mesmos depois de carregar
 - Um aviso quando um imóvel está à venda bem abaixo do valor
 - Na janela que escolhe o tipo de uma empresa nova: as vendas e os custos de um mês com todos os clientes
-- Um aviso quando surge um emprego melhor para um membro da família: o mesmo emprego no mesmo local de trabalho por claramente mais por hora, ou o próximo passo da carreira para o qual ele já está qualificado
+- Um aviso quando surge um emprego melhor para um membro da família: o mesmo emprego no mesmo local de trabalho por mais por hora, ou o próximo passo da carreira para o qual ele já está qualificado
 
 ## Instalação
 

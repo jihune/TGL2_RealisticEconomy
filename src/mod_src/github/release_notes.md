@@ -1,8 +1,13 @@
-Realistic Economy 1.6.0 for This Grand Life 2, game version v1.03.22.
+Realistic Economy 1.6.1 for This Grand Life 2, game version v1.03.22.
 
-**New in 1.6.0: better jobs for your household, and a fair price that ends with its research.**
+**New in 1.6.1: loading a save costs nothing more, and the same job is told of at any raise.**
 
-- Better jobs. When a better job opens for a member of your household, one line of the monthly summary and a short one at the top of the screen say so. Two kinds: the same job at the place the member works, when the game would offer more than 6.7% over the pay now (it draws its offer a few percent either way), and the next step of the member's own line of jobs that the member qualifies for now, such as a Business Lawyer who can become a District Judge. A line is the jobs of one career file of the game that ask for the experience the member's job gives. The mod looks when the month's openings are made, after a "Find" for a job and once a game day: experience grows while the member works, so a step can come within reach in the month. `jobs=0` under `[features]`.
+- A load no longer locks trades or takes a research fee again. The trade lock after a load (shares and futures refused until a month end seen before has passed again, with that month end's prices fixed) and the research fee taken again after loading a save from before it are off from the start. A save loaded again is the game's own; the casino still keeps its results over a load. `guard=1` under `[features]` and `researchFeeKept=1` under `[stocks]` switch them back on.
+- The same job at the same workplace is told of when the game would offer any more than the pay now (1.6.0 asked for 6.7% more). The game draws its offer at the interview a few percent either way, so with a small raise the offer made can come out under the pay now.
+
+**From 1.6.0: better jobs for your household, and a fair price that ends with its research.**
+
+- Better jobs. When a better job opens for a member of your household, one line of the monthly summary and a short one at the top of the screen say so. Two kinds: the same job at the place the member works, when the game would offer more than the pay now (it draws its offer a few percent either way), and the next step of the member's own line of jobs that the member qualifies for now, such as a Business Lawyer who can become a District Judge. A line is the jobs of one career file of the game that ask for the experience the member's job gives. The mod looks when the month's openings are made, after a "Find" for a job and once a game day: experience grows while the member works, so a step can come within reach in the month. `jobs=0` under `[features]`.
 - Research of the month. A company's fair price, its blue name in the stock list, its place in the two fair-price orders and today's values in its research block show while its research is of this month. A subscription switched off ends them with the month; before, one research showed them for good.
 
 **From 1.5.1: staff looked after at once, a month planned ahead, and hirings near a month end weighed.**
@@ -42,12 +47,12 @@ Realistic Economy 1.6.0 for This Grand Life 2, game version v1.03.22.
 
 **A matter of taste, and how to switch it off**: the README has one table of every feature that changes a rule or a number of the game, with the line of `RealisticEconomy.ini` that switches it off. The description inside the zip begins with the same list in more detail.
 
-**Coming from an earlier version**: extract and run the same file. It replaces the mod's files and leaves your settings file as it was (the saves are not copied a second time). The new features work without a line in an older settings file; to keep the game as it was, add `influence=0`, `coaching=0` and `jobs=0` under `[features]`, `competitionWeight=1` and `reputationBonusFade=0` under `[balance]`, and `automationEarly=1`, `autoCover=0`, `typeEstimate=0`, `autoHireNow=0` and `autoHirePlan=0` under `[business]`.
+**Coming from an earlier version**: extract and run the same file. It replaces the mod's files and leaves your settings file as it was (the saves are not copied a second time). The new features work without a line in an older settings file; to keep the game as it was, add `influence=0`, `coaching=0` and `jobs=0` under `[features]`, `competitionWeight=1` and `reputationBonusFade=0` under `[balance]`, and `automationEarly=1`, `autoCover=0`, `typeEstimate=0`, `autoHireNow=0` and `autoHirePlan=0` under `[business]`. A settings file of 1.6.0 or earlier says `guard=1` under `[features]` and `researchFeeKept=1` under `[stocks]`, and those run as written: set them to 0 to drop the trade lock and the research fee taken again at a load.
 
-**Install**: close the game, extract `RealisticEconomy-1.6.0.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
+**Install**: close the game, extract `RealisticEconomy-1.6.1.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
 
 What the mod adds and how to use it is in the README of this repository, in the game's eight languages: English, 한국어, Deutsch, Español, Français, Português (Brasil), 日本語, 简体中文.
 
-The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.6.0.zip.sha256.txt`.
+The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.6.1.zip.sha256.txt`.
 
 An antivirus may question `version.dll`: it is the public Ultimate ASI Loader (MIT), the file that loads the mod when the game starts.

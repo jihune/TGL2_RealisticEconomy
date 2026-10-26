@@ -1,6 +1,6 @@
 # Realistic Economy
 
-A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.6.0. Not made by the game's developer.
+A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.6.1. Not made by the game's developer.
 
 Other languages: [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -61,7 +61,6 @@ These are all the features that change a rule or a number of the game. Set the v
 | Feature | What differs from the game | Off |
 |---|---|---|
 | Balance | Share fee 2% (the game: 1%), futures fee 10% of the margin (1%), a higher savings rate and interest on cash, a rent that can come down at a renewal, a new business starts with 25% awareness (0%) | `[features] balance=0` |
-| Trade lock after a load | After you load an earlier save, share and futures trades are refused until that month has passed again. The month's share prices and properties for sale stay the same after a load | `[features] guard=0` |
 | Loan rates by credit grade | A loan's rate follows the household's credit grade | `[features] credit=0` |
 | Listing | You keep 45% and get cash for the rest (the game: 25%, no cash) | `[features] ipo=0` |
 | Board seats | One guaranteed seat for every 20% of the shares | `[features] board=0` |
@@ -75,6 +74,8 @@ These are all the features that change a rule or a number of the game. Set the v
 
 Each number of the balance has its own line under `[balance]`.
 
+Off unless you switch it on (since 1.6.1): a trade lock after a load. With `[features] guard=1`, after you load an earlier save, share and futures trades are refused until that month has passed again, and the month's share prices and properties for sale stay the same after a load.
+
 ## Other features
 
 Each can be switched off in the settings file.
@@ -82,7 +83,7 @@ Each can be switched off in the settings file.
 - The month's job candidates stay the same after a load
 - A notice when a property is for sale well under its value
 - In the window that picks a new business's type: a month's sales and costs once all its customers come
-- A notice when a better job opens for a household member: the same job at the same workplace for clearly more an hour, or the next step of the member's career that the member qualifies for
+- A notice when a better job opens for a household member: the same job at the same workplace for more an hour, or the next step of the member's career that the member qualifies for
 
 ## Install
 

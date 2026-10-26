@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Un mod pour This Grand Life 2. Uniquement pour la version v1.03.22 du jeu, version 1.6.0 du mod. Il n'est pas du développeur du jeu.
+Un mod pour This Grand Life 2. Uniquement pour la version v1.03.22 du jeu, version 1.6.1 du mod. Il n'est pas du développeur du jeu.
 
 Autres langues : [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -61,7 +61,6 @@ Voici toutes les fonctions qui changent une règle ou un chiffre du jeu. Mettez 
 | Fonction | Ce qui change par rapport au jeu | Désactiver |
 |---|---|---|
 | Équilibrage | Frais sur les actions 2 % (jeu : 1 %), frais des contrats à terme 10 % de la marge (1 %), un taux d'épargne plus élevé et des intérêts sur les liquidités, un loyer qui peut aussi baisser au renouvellement, une nouvelle entreprise commence avec 25 % de sensibilisation (0 %) | `[features] balance=0` |
-| Blocage des transactions après un chargement | Après le chargement d'une sauvegarde antérieure, les transactions sur actions et contrats à terme sont refusées jusqu'à ce que ce mois soit de nouveau passé. Les cours et les biens en vente du mois restent les mêmes après un chargement | `[features] guard=0` |
 | Taux selon la note de crédit | Le taux d'un prêt suit la note de crédit du foyer | `[features] credit=0` |
 | Introduction en bourse | Vous gardez 45 % et recevez de l'argent pour le reste (jeu : 25 %, pas d'argent) | `[features] ipo=0` |
 | Sièges au conseil | Un siège garanti pour chaque tranche de 20 % des actions | `[features] board=0` |
@@ -75,6 +74,8 @@ Voici toutes les fonctions qui changent une règle ou un chiffre du jeu. Mettez 
 
 Chaque chiffre de l'équilibrage a sa propre ligne sous `[balance]`.
 
+Seulement si on l'active (désactivé depuis 1.6.1) : le blocage des transactions après un chargement. Avec `[features] guard=1`, après le chargement d'une sauvegarde antérieure, les transactions sur actions et contrats à terme sont refusées jusqu'à ce que ce mois soit de nouveau passé, et les cours et les biens en vente du mois restent les mêmes après un chargement.
+
 ## Autres fonctions
 
 Chacune peut être désactivée dans le fichier de réglages.
@@ -82,7 +83,7 @@ Chacune peut être désactivée dans le fichier de réglages.
 - Les candidats d'un mois restent les mêmes après un chargement
 - Un avis quand un bien est en vente nettement sous sa valeur
 - Dans la fenêtre qui choisit le type d'une nouvelle entreprise : les ventes et les coûts d'un mois avec tous ses clients
-- Un avis quand un meilleur emploi s'ouvre pour un membre du foyer : le même emploi au même lieu de travail pour nettement plus de l'heure, ou l'échelon suivant de sa carrière pour lequel il est qualifié
+- Un avis quand un meilleur emploi s'ouvre pour un membre du foyer : le même emploi au même lieu de travail pour plus de l'heure, ou l'échelon suivant de sa carrière pour lequel il est qualifié
 
 ## Installation
 

@@ -73,7 +73,7 @@
 
 #include "re_data_estimate.h"
 
-#define PLUGIN_VERSION "1.6.0"
+#define PLUGIN_VERSION "1.6.1"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -1032,8 +1032,9 @@ typedef void(__thiscall *research_fn)(void *market, int company);
  * company that is on record as paid for the month and has no research of that month is researched again and its
  * fee taken again, whatever the subscription is set to now. Cash that is short becomes the game's debt, as for the
  * month start's fee. A month paid before the trade lock moved the price stream (a rollback beyond its cap) is of
- * another course of prices and is not asked for again. [stocks] researchFeeKept=0 leaves the fee with the save. */
-static int g_research_fee_kept = 1;
+ * another course of prices and is not asked for again. [stocks] researchFeeKept=0, the default since 1.6.1
+ * (REQUEST.md [103]: taken again at a load it was more trouble than it was worth), leaves the fee with the save. */
+static int g_research_fee_kept;
 
 static void research_paid(int company, int month)
 {
@@ -6779,8 +6780,8 @@ __attribute__((force_align_arg_pointer)) static void money_sink_timed(void *self
  *   by its requirements and the member's experience as the game sums them (re_xp_job_share). A job of no career
  *   file (baseJobs.xml, jobs*.xml) has none.
  * The pay shown is the game's own offer without its draw, as the game's promotion asks it; the draw is a normal of
- * 1/30 either way (note b16), so the same job is told of only when its offer is more than two of that over the pay
- * now: the offer made would be more with a chance of 98% (the game's promotion asks 10% more).
+ * 1/30 either way (note b16). The same job is told of when that offer is any more than the pay now (the user's
+ * choice, REQUEST.md [103]; it was two draws, 6.7%, in 1.6.0): the offer made can come out under it.
  * It looks at the month start, after a search and once a game day: experience grows while a member works, and an
  * activity or a course adds to it, so an opening the member was short of at the month start can be one to apply for
  * later in the month (the user's District Judge, REQUEST.md [102]: 0.987 of the requirements at the month start,
@@ -6795,7 +6796,6 @@ __attribute__((force_align_arg_pointer)) static void money_sink_timed(void *self
 #define JOB_TOLD 6
 #define JOB_COMMON 4
 #define JOB_PAIRS 64
-#define JOB_SAME_MARGIN (1.0 + 2.0 / 30.0)
 static int g_on_jobs = 1, g_jobs_search_hooked;
 static double g_trace_job_pay = 1.0; /* trace: a member's pay counted at this share (`[trace] jobsPayShare`) */
 static int g_trace_job_days;         /* trace: a day's look logs every opening it looks at (`[trace] jobsDayLog`) */
@@ -6881,7 +6881,7 @@ static void job_alerts(void *main_obj, const char *why, int look)
                 continue;
             double share = same ? 1.0 : re_xp_job_share(need, g_job_group, g_job_groups, job_have, (void *)held[m].xp) + g_trace_job_share;
             long long offer = share >= 1.0 ? re_game_job_offer(jobs, open[o].job, held[m].xp) : -1;
-            int better = share >= 1.0 && offer >= 0 && !(same && (double)offer <= (double)held[m].pay * JOB_SAME_MARGIN);
+            int better = share >= 1.0 && offer >= 0 && !(same && offer <= held[m].pay);
             if (better && g_told_pairs < JOB_PAIRS) { /* the job's other openings go with it */
                 g_told_person[g_told_pairs] = held[m].person;
                 g_told_opening[g_told_pairs++] = open[o].id;
@@ -6895,7 +6895,7 @@ static void job_alerts(void *main_obj, const char *why, int look)
                    why, held[m].name, held[m].job, held[m].site, money(main_obj, held[m].pay, now), open[o].id, open[o].job, name,
                    open[o].site, same ? "the same job at the same site" : "a step up the member's line", share,
                    offer >= 0 ? money(main_obj, offer, offered) : "-",
-                   share < 1.0 ? "not qualified" : !better ? "not two draws (6.7%) more than now" : "told");
+                   share < 1.0 ? "not qualified" : !better ? "not more than now" : "told");
             if (!better)
                 continue;
             if (pairs < JOB_TOLD * 4) {
@@ -7587,7 +7587,7 @@ static void load_settings(void)
     g_on_credit = re_ini_int("features", "credit", 1);
     g_on_forecast = re_ini_int("features", "forecast", 1);
     g_on_wording = re_ini_int("features", "wording", 1);
-    g_on_guard = re_ini_int("features", "guard", 1);
+    g_on_guard = re_ini_int("features", "guard", 0); /* off since 1.6.1, REQUEST.md [103] */
     g_on_trace = re_ini_int("features", "trace", 0);
     g_guard_cap_months = re_ini_int("guard", "maxLockMonths", 2);
     if (g_guard_cap_months < 0)
@@ -7605,7 +7605,7 @@ static void load_settings(void)
     g_research_board = re_ini_int("stocks", "researchOnBoard", 1);
     g_research_sub = re_ini_int("stocks", "researchSubscription", 0);
     re_ini_doubles("stocks", "researchFeeHours", &g_research_hours, 1);
-    g_research_fee_kept = re_ini_int("stocks", "researchFeeKept", 1);
+    g_research_fee_kept = re_ini_int("stocks", "researchFeeKept", 0); /* off since 1.6.1, REQUEST.md [103] */
     g_sort_buttons = re_ini_int("stocks", "sortButtons", 1);
     g_chart_price = re_ini_int("stocks", "chartPriceOnly", 1);
     g_chart_one = re_ini_int("stocks", "chartEconomyOne", 1);

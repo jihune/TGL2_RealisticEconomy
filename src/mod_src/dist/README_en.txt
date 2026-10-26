@@ -55,16 +55,21 @@ game again. "[features] balance=0" means: under the line [features], change bala
           Back to the game: [credit] mortgageUpToApproval=0, [credit] transferNeedsCash=0
 
    What keeps a load from changing a result
-     - The trade lock after a load (3). After you load a save from before a month end you have already passed,
-       trades in shares and futures are refused until that month end has passed again. A nuisance for somebody
-       who goes back to earlier saves often.
-          Off: [features] guard=0 (the fixed month end below goes with it)
-          Once: [guard] release=1
-     - The fixed month end (3). The month's growth, share prices, a listing price and the next month's properties
-       for sale are the same after a load.
-          Off: [guard] monthEndFixed=0
-     - Casino results kept (8): [casino] keepResultsOnLoad=0
-     - The month's job candidates kept (9): [business] candidatesFixed=0
+     - Casino results kept (8). On by default.
+          Off: [casino] keepResultsOnLoad=0
+     - The month's job candidates kept (9). On by default.
+          Off: [business] candidatesFixed=0
+     - The trade lock after a load (3). Off by default since 1.6.1. When on, after you load a save from before a
+       month end you have already passed, trades in shares and futures are refused until that month end has passed
+       again. A nuisance for somebody who goes back to earlier saves often.
+          On: [features] guard=1 (the fixed month end below comes with it)
+          Once, while on: [guard] release=1
+     - The fixed month end (3). Only with the trade lock on. The month's growth, share prices, a listing price and
+       the next month's properties for sale are the same after a load.
+          Off, the lock kept: [guard] monthEndFixed=0
+     - Research fees kept (6). Off by default since 1.6.1. When on, a save from before a research fee was paid,
+       loaded again, has that month's fee taken again.
+          On: [stocks] researchFeeKept=1
 
    Business automation (9 below)
      - Handing businesses to the mod opens once your household has listed a company of its own (since 1.4.0). A
@@ -141,7 +146,7 @@ text of the thing you click (as the game's own Ctrl-click is).
        rate now" first.
      - The time button at the top right of a chart: 6 months -> 1 year -> 2 years -> 5 years -> the most.
 
-   The rest (loan rates, the trade lock, the fixed month end, the casino, fixed candidates and so on) works by
+   The rest (loan rates, the casino, fixed candidates, the trade lock when on and so on) works by
    itself once it is on. It is switched in RealisticEconomy.ini; the table is at the end, under "What the mod does
    in your place, its switches and what it costs".
 
@@ -187,7 +192,9 @@ What it does
    "This month end: cash needed $X". Loan payments are exact; wages, rent and the other month-end costs are what
    was really paid at the last month end. So in the first month with the mod the line names the loan payments only.
 
-3. Trade lock after a load
+3. Trade lock after a load (off by default since 1.6.1)
+   Since 1.6.1 it is off from the start: a loaded save trades shares and futures as usual, and a month end's
+   economy and share prices are drawn the game's own way. What follows is with guard=1 under [features].
    After you load a save from before a month end you have already passed, buying shares, selling shares and
    futures trades are refused until that month end has been passed again. This stops profits from prices seen in
    advance. A save made after the farthest month end you have passed never locks anything.
@@ -197,7 +204,7 @@ What it does
        loading it the auto transfer is refused too and the panel shows the lock, because a transfer rule made
        during a lock would buy at prices already seen.
      - While locked, the summary panel shows "Trade lock: another N hour(s) (stocks, futures)".
-     - If you do not want this feature, switch it off: see "Switching features on and off" below.
+     - To switch it on or off, see "Switching features on and off" below.
      - A lock lasts at most 2 months from the load. If you went further ahead than that, economic growth, the
        industries' cycles and share prices all take another course from the load on. Futures settle against growth
        and the cycles, so what they pay changes too. Loading the same save again gives that same course.
@@ -206,7 +213,7 @@ What it does
      - If you went ahead by mistake: set release=1 under [guard] in RealisticEconomy.ini and load. The record of
        that playthrough is cleared and the value goes back to 0 by itself.
 
-   A month end that a load does not change ([guard] monthEndFixed, on by default)
+   A month end that a load does not change ([guard] monthEndFixed, on together with the trade lock)
    At the month end the game draws the month's economic growth, the industries' cycles and the new share prices from
    random numbers. Other things use up the same numbers: a search for a property, opening the "create a public
    company" window, an activity with a random payment. So if you load a save, do one of them and then pass the
@@ -232,7 +239,7 @@ What it does
      - Not stopped: buying shares, seeing them fall that month, and going back to the save from before the
        purchase. That only undoes the purchase, and after the load the lock keeps you from buying anything else
        until that month has passed again.
-     - To switch it off: monthEndFixed=0 under [guard]. guard=0 switches it off as well.
+     - To switch it off: monthEndFixed=0 under [guard]. guard=0 (the default since 1.6.1) switches it off as well.
 
 4. Creating a public company (IPO)
    In the game itself a listing leaves you 25% of the shares and no cash. With the mod you keep 45% and sell the
@@ -430,10 +437,10 @@ What it does
              - The page of a company the mod has researched this month (subscribed, or on whose board you sit)
                has no "Research Stock" button of the game's: it would take five of your hours for a result
                that is there already. The button is back when the subscription ends.
-             - A fee once paid does not come back with an earlier save ([stocks] researchFeeKept, on). The
-               subscription belongs to the playthrough; the result and the fee you paid are in the save. A save
-               from before the fee therefore has the cash back while the fair prices you read still hold (share
-               prices run the same course again). To close that, right after a load the mod researches again
+             - A save from before a fee was paid, loaded again, has that fee back (the default since 1.6.1). The
+               subscription belongs to the playthrough; the result and the fee you paid are in the save, and the
+               fair prices you read still hold. With researchFeeKept=1 under [stocks] (the default up to 1.6.0) a
+               fee once paid does not come back: right after a load the mod researches again
                every company whose fee of this month was paid before, and takes that fee again - also when you
                ended the subscription before loading. The same at a month start that comes a second time: a
                company whose fee of that month was once paid is researched and paid for, subscribed or not.
@@ -1259,10 +1266,11 @@ What it does
    The game makes the month's job openings anew at every month start, and a "Find" for a job adds openings of that
    job at a few places. It does not say when one of them is better than what a member of your household has. The
    mod looks at the openings at those two moments and once a game day, and tells of two kinds:
-     - The same job at the place the member works, for clearly more an hour. The pay agreed at the hiring stays as
-       it was while the job's standard wage moves with the prices, so an opening of the same job can pay more. It
-       is told of when the game's offer to that member is more than 6.7% over the pay now: the game draws its offer
-       a few percent either way, and at 6.7% the offer made is the higher with a chance of about 98%.
+     - The same job at the place the member works, for more an hour. The pay agreed at the hiring stays as it was
+       while the job's standard wage moves with the prices, so an opening of the same job can pay more. It is told
+       of when the game's offer to that member is any more than the pay now (since 1.6.1; 1.6.0 asked for 6.7%
+       more). The game draws its offer at the interview a few percent either way, so with a small difference the
+       offer made can come out under the pay now.
      - A higher step of the member's own line of jobs, at any place, that the member qualifies for now. A line is
        the jobs of one career file of the game that ask for the experience the member's job gives: Legal Intern,
        Criminal Lawyer, Business Lawyer, District Judge, Federal Judge all ask for law experience. One file can hold
@@ -1363,13 +1371,14 @@ Switching features on and off
 -----------------------------
 
 Every feature has a switch under [features] in RealisticEconomy.ini: 0 turns it off, 1 turns it on again. A
-feature that is off leaves that part of the game alone. Keep only the ones you like.
+feature that is off leaves that part of the game alone. Keep only the ones you like. guard alone is 0 from the
+start (since 1.6.1).
 
      credit=0      no credit-grade rates: loan rates are the game's own again
      forecast=0    no "This month end: cash needed" line in the summary panel
-     guard=0       no trade lock after a load: stock and futures trades are never refused. The fixed month end
-                   goes with it: growth, share prices, a listing price and a new month's properties are drawn
-                   the game's own way
+     guard=0       (the default) no trade lock after a load: stock and futures trades are never refused. The fixed
+                   month end goes with it: growth, share prices, a listing price and a new month's properties are
+                   drawn the game's own way. guard=1 locks as in 3 above
      ipo=0         a listing works as in the game itself (you keep 25%, no cash)
      board=0       no guaranteed board seats
      stocks=0      nothing of 6 above: no ratios or fair price in the stock window, no research subscription, the
@@ -1396,10 +1405,14 @@ know when you switch something off:
      - casino=0 while a game begun under the mod is under way: that game ends without a result, no money moves.
      - wording=0: lines already written into a month's summary stay as they were written.
 
-The trade lock is a matter of taste. If you play by going back to earlier saves, set guard=0. To lift one lock and
-keep the feature, use release=1 under [guard] (see 3 above). To keep the lock and let a month end be drawn the
-game's own way, use monthEndFixed=0 under [guard] (see 3 above). To let a load undo casino games and keep the rest
-of the casino feature, use keepResultsOnLoad=0 under [casino] (see 8 above).
+The trade lock is a matter of taste, and since 1.6.1 it is off. To close the way of profiting from prices seen in
+advance, set guard=1. To lift one lock and keep the feature, use release=1 under [guard] (see 3 above). To keep
+the lock and let a month end be drawn the game's own way, use monthEndFixed=0 under [guard] (see 3 above). To let
+a load undo casino games and keep the rest of the casino feature, use keepResultsOnLoad=0 under [casino] (see 8
+above).
+Coming from 1.6.0 or earlier, the install leaves your RealisticEconomy.ini as it was. Where it says guard=1 under
+[features] or researchFeeKept=1 under [stocks], that is what runs; set them to 0 to drop the lock and the fee
+taken again.
 
 What the mod does in your place, its switches and what it costs:
      - Six switches are inside the game.
@@ -1425,7 +1438,8 @@ What the mod does in your place, its switches and what it costs:
                                          20 hours of a store manager, [business] hireFeeHours)
          [business] candidatesFixed      candidates that a load does not change (free)
          [guard] monthEndFixed           a month's growth, cycles and share prices, a listing price, and a new
-                                         month's properties and offers that a load does not change (free)
+                                         month's properties and offers that a load does not change (free; only
+                                         with guard=1 under [features])
          [stocks] researchOnBoard        the research of a company you sit on the board of, every month (free)
          [stocks] researchSubscription   whether the subscription for "every company" is on from the start (0
                                          by default; it is switched in the game; 5 hours of a bank analyst a

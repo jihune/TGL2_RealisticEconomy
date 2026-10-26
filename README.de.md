@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.6.0. Nicht vom Entwickler des Spiels.
+Ein Mod für This Grand Life 2. Nur für die Spielversion v1.03.22, Mod-Version 1.6.1. Nicht vom Entwickler des Spiels.
 
 Andere Sprachen: [English](README.md), [한국어](README.ko.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -61,7 +61,6 @@ Das sind alle Funktionen, die eine Regel oder eine Zahl des Spiels ändern. Setz
 | Funktion | Was anders ist als im Spiel | Aus |
 |---|---|---|
 | Balance | Aktiengebühr 2% (Spiel: 1%), Gebühr für Termingeschäfte 10% der Marge (1%), höherer Sparzins und Zinsen auf Bargeld, eine Miete, die bei der Verlängerung auch sinken kann, ein neues Geschäft beginnt mit 25% Bekanntheit (0%) | `[features] balance=0` |
-| Handelssperre nach dem Laden | Nach dem Laden eines früheren Spielstands sind Aktien- und Termingeschäfte gesperrt, bis dieser Monat wieder vorbei ist. Aktienkurse und Immobilienangebote des Monats bleiben nach dem Laden dieselben | `[features] guard=0` |
 | Kreditzinsen nach Bonität | Der Zins eines Kredits richtet sich nach der Bonität des Haushalts | `[features] credit=0` |
 | Börsengang | Du behältst 45% und bekommst für den Rest Bargeld (Spiel: 25%, kein Bargeld) | `[features] ipo=0` |
 | Sitze im Direktorium | Je 20% der Aktien ein garantierter Sitz | `[features] board=0` |
@@ -75,6 +74,8 @@ Das sind alle Funktionen, die eine Regel oder eine Zahl des Spiels ändern. Setz
 
 Jede Zahl der Balance hat ihre eigene Zeile unter `[balance]`.
 
+Nur wenn eingeschaltet (seit 1.6.1 aus): die Handelssperre nach dem Laden. Mit `[features] guard=1` sind nach dem Laden eines früheren Spielstands Aktien- und Termingeschäfte gesperrt, bis dieser Monat wieder vorbei ist, und Aktienkurse und Immobilienangebote des Monats bleiben nach dem Laden dieselben.
+
 ## Weitere Funktionen
 
 Jede lässt sich in der Einstellungsdatei abschalten.
@@ -82,7 +83,7 @@ Jede lässt sich in der Einstellungsdatei abschalten.
 - Die Kandidaten eines Monats bleiben nach dem Laden dieselben
 - Ein Hinweis, wenn eine Immobilie deutlich unter ihrem Wert angeboten wird
 - Im Fenster, in dem man die Art eines neuen Geschäfts wählt: Umsatz und Kosten eines Monats mit allen Kunden
-- Ein Hinweis, wenn sich für ein Haushaltsmitglied eine bessere Stelle auftut: dieselbe Stelle am selben Arbeitsplatz für deutlich mehr pro Stunde oder die nächste Stufe seiner Laufbahn, für die es qualifiziert ist
+- Ein Hinweis, wenn sich für ein Haushaltsmitglied eine bessere Stelle auftut: dieselbe Stelle am selben Arbeitsplatz für mehr pro Stunde oder die nächste Stufe seiner Laufbahn, für die es qualifiziert ist
 
 ## Installation
 
