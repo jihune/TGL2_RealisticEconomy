@@ -516,6 +516,30 @@ int re_game_chart_page(void *chart, int *series, unsigned char *ticked, int coun
 typedef void (*re_xp_visit)(int tag, long long gained, long long lost, long long *effective, void *ctx);
 void re_game_xp_decay(void *statement, float factor);
 int re_game_xp_walk(void *statement, re_xp_visit visit, void *ctx);
+/* The number of a kind that requirements are measured against; 0 when the person has none. Reads only. */
+long long re_game_xp_of(const void *statement, int tag);
+/* The jobs of household members and the openings of the month (REQUEST.md [100], note b28). `jobs` is the job
+ * manager (re_game_jobs). An opening names a site and a job, no employer, and carries the job's standard wage of an
+ * hour; a member's job the wage of an hour the member was hired at or raised to. All cents. Read only.
+ * - openings: how many were written (at most `cap`), -1 when the list cannot be read.
+ * - member jobs: every job of every member of the household, with the member's experience statement and name.
+ * - offer: the wage of an hour the game would offer that person for that job (FUN_0051b480 without its draw, as the
+ *   game's own promotion asks it: seed -1 writes nothing), -1 when not read.
+ * - job name: the job's name in the game's language, empty when not read. */
+typedef struct {
+    int id, site, job;
+    long long pay;
+} re_opening;
+typedef struct {
+    int person, site, job;
+    long long pay;
+    const void *xp;
+    char name[64];
+} re_member_job;
+int re_game_openings(void *jobs, re_opening *out, int cap);
+int re_game_member_jobs(void *main_obj, void *jobs, re_member_job *out, int cap);
+long long re_game_job_offer(void *jobs, int job, const void *statement);
+void re_game_job_name(void *main_obj, int job, char *out, unsigned cap);
 int re_game_chart_set(void *chart, const int *keep, int count);
 int re_game_chart_series(const void *chart, int series);
 int re_game_chart_cap(void *chart, int months);

@@ -1,6 +1,11 @@
-Realistic Economy 1.5.1 for This Grand Life 2, game version v1.03.22.
+Realistic Economy 1.6.0 for This Grand Life 2, game version v1.03.22.
 
-**New in 1.5.1: staff looked after at once, a month planned ahead, and hirings near a month end weighed.**
+**New in 1.6.0: better jobs for your household, and a fair price that ends with its research.**
+
+- Better jobs. When a better job opens for a member of your household, one line of the monthly summary and a short one at the top of the screen say so. Two kinds: the same job at the place the member works, when the game would offer more than 6.7% over the pay now (it draws its offer a few percent either way), and the next step of the member's own line of jobs that the member qualifies for now, such as a Business Lawyer who can become a District Judge. A line is the jobs of one career file of the game that ask for the experience the member's job gives. The mod looks when the month's openings are made, after a "Find" for a job and once a game day: experience grows while the member works, so a step can come within reach in the month. `jobs=0` under `[features]`.
+- Research of the month. A company's fair price, its blue name in the stock list, its place in the two fair-price orders and today's values in its research block show while its research is of this month. A subscription switched off ends them with the month; before, one research showed them for good.
+
+**From 1.5.1: staff looked after at once, a month planned ahead, and hirings near a month end weighed.**
 
 - A look right away. The mod looked at a business only in the game's block every 91 game hours, and passed over the month's first. A save loaded near a month end, or a business just handed over with nobody in it, waited up to 91 hours with its work undone: in one save a new business left its whole month undone and its reputation fell from 24% to 4%. Now it looks in the hour after a load and after a whole hand-over, and at a month's first hour. In the same save the month left 27% undone and the reputation stayed at 19%. `autoHireNow=0` under `[business]`.
 - The month planned ahead. The work of a business's other jobs (an electrician's apprentices, its bookkeeper) comes by chance while the base job is worked, so they were hired one look after another. Now that work is counted ahead from the base job's customers' work, in the shares of the game's own table for the business type, and the month's first look hires for the whole month. Work contracts bring, and a type the table does not have, are hired for when they come. `autoHirePlan=0` under `[business]`.
@@ -37,12 +42,12 @@ Realistic Economy 1.5.1 for This Grand Life 2, game version v1.03.22.
 
 **A matter of taste, and how to switch it off**: the README has one table of every feature that changes a rule or a number of the game, with the line of `RealisticEconomy.ini` that switches it off. The description inside the zip begins with the same list in more detail.
 
-**Coming from an earlier version**: extract and run the same file. It replaces the mod's files and leaves your settings file as it was (the saves are not copied a second time). The new features work without a line in an older settings file; to keep the game as it was, add `influence=0` and `coaching=0` under `[features]`, `competitionWeight=1` and `reputationBonusFade=0` under `[balance]`, and `automationEarly=1`, `autoCover=0`, `typeEstimate=0`, `autoHireNow=0` and `autoHirePlan=0` under `[business]`.
+**Coming from an earlier version**: extract and run the same file. It replaces the mod's files and leaves your settings file as it was (the saves are not copied a second time). The new features work without a line in an older settings file; to keep the game as it was, add `influence=0`, `coaching=0` and `jobs=0` under `[features]`, `competitionWeight=1` and `reputationBonusFade=0` under `[balance]`, and `automationEarly=1`, `autoCover=0`, `typeEstimate=0`, `autoHireNow=0` and `autoHirePlan=0` under `[business]`.
 
-**Install**: close the game, extract `RealisticEconomy-1.5.1.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
+**Install**: close the game, extract `RealisticEconomy-1.6.0.zip` into the game folder (the one that holds `TGL2.exe`) and double-click `RealisticEconomy_install.bat`. It copies your saves to `saves_before_RealisticEconomy_1` first. To remove the mod, run `RealisticEconomy_uninstall.bat`.
 
 What the mod adds and how to use it is in the README of this repository, in the game's eight languages: English, 한국어, Deutsch, Español, Français, Português (Brasil), 日本語, 简体中文.
 
-The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.5.1.zip.sha256.txt`.
+The full description is inside the zip (`RealisticEconomy_README_en.txt`, `RealisticEconomy_README_ko.txt`). The SHA256 of the zip is in `RealisticEconomy-1.6.0.zip.sha256.txt`.
 
 An antivirus may question `version.dll`: it is the public Ultimate ASI Loader (MIT), the file that loads the mod when the game starts.

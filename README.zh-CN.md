@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.5.1。不是游戏开发商制作的。
+This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.6.0。不是游戏开发商制作的。
 
 其他语言：[English](README.md)、[한국어](README.ko.md)、[Deutsch](README.de.md)、[Español](README.es.md)、[Français](README.fr.md)、[Português (Brasil)](README.pt-BR.md)、[日本語](README.ja.md)
 
@@ -82,6 +82,7 @@ This Grand Life 2 的模组。仅适用于游戏 v1.03.22，模组版本 1.5.1�
 - 当月的求职候选人读档后不变
 - 有房产以远低于价值的价格出售时给出提示
 - 选择新业务类型的窗口里，客满时一个月的销售额和成本
+- 家庭成员有更好的工作时的提醒：同一工作地点的同一职业且时薪明显更高的职位，或已具备资格的同一职业路线的上一级职位
 
 ## 安装
 

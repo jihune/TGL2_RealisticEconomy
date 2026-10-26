@@ -272,6 +272,15 @@ enum {
      * come, sales and costs; a type that earns from contracts alone */
     RE_MSG_TYPE_MONTH_TIP,
     RE_MSG_TYPE_CONTRACTS_TIP,
+    /* a better job for a household member at the site of the member's job (REQUEST.md [100], note b28): the line's
+     * start; the same job for more an hour, or another job the member qualifies for (%s the member, the job, the
+     * offer and the pay now); between two of them; what is left out; the ticker's short one (%s the member, the job) */
+    RE_MSG_JOB_PREFIX,
+    RE_MSG_JOB_SAME,
+    RE_MSG_JOB_UP,
+    RE_MSG_JOB_JOIN,
+    RE_MSG_JOB_MORE,
+    RE_MSG_JOB_TICK,
     RE_MSG_COUNT
 };
 

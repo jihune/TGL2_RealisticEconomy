@@ -29,7 +29,7 @@ from PIL import ImageFont
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 BUDGET = 960.0
-SITES = 26
+SITES = 27
 FONT = {
     "ko": "NotoSansKR-Regular.ttf",
     "jp": "NotoSansJP-Regular.ttf",
@@ -120,6 +120,24 @@ def widest(lang, texts):
     return max(texts, key=lambda text: raw(lang, text))
 
 
+def better_job(lang):
+    # the member and the widest job name of the game's data in that language (English: data/jobs, the others: their
+    # translation), and "and <n> more"; the offers are in the monthly summary's line
+    if lang == "en":
+        files = (ROOT / "data/jobs").glob("*.xml")
+        pattern = r'<desc category="Job" name="([^"]+)"'
+    else:
+        folder = {"pt_br": "pt-br"}.get(lang, lang)
+        files = [ROOT / "modsLanguages" / folder / "data/jobs/translated.xml"]
+        pattern = r'<desc name="([^"]+)"'
+    names = [n for f in files for n in re.findall(pattern, f.read_text(encoding="utf-8"))]
+    return (
+        t("RE_MSG_JOB_PREFIX", lang)
+        + t("RE_MSG_JOB_TICK", lang, NAME, widest(lang, names))
+        + t("RE_MSG_JOB_MORE", lang)
+    )
+
+
 def game(lang):
     return widest(
         lang,
@@ -187,6 +205,7 @@ LINES = {
     "coaching: a like already": lambda g: coaching(g, "RE_MSG_COACH_NONE"),
     "coaching: one a year": lambda g: coaching(g, "RE_MSG_COACH_YEAR"),
     "coaching: cash short": lambda g: coaching(g, "RE_MSG_COACH_CASH"),
+    "a better job": better_job,
 }
 
 

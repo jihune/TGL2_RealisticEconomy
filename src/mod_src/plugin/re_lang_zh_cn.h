@@ -187,6 +187,12 @@ static const char *const LANG_ZH_CN[RE_MSG_COUNT] = {
     [RE_MSG_AUTO_RELEASED_PREFIX] = "从模组收回的业务：",
     [RE_MSG_AUTO_RELEASED] = "%s%s。交给模组将在你的家庭首次上市（IPO）后开放",
     [RE_MSG_AUTO_REOPENED] = "模组：你的家庭已有公司上市，现在可以把业务交给模组",
+    [RE_MSG_JOB_PREFIX] = "更好的工作：",
+    [RE_MSG_JOB_SAME] = "%s：同一工作地点的%s职位 时薪约%s（现在%s）",
+    [RE_MSG_JOB_UP] = "%s：可以应聘%s 时薪约%s（现在%s）",
+    [RE_MSG_JOB_JOIN] = "；",
+    [RE_MSG_JOB_MORE] = " 等%d项",
+    [RE_MSG_JOB_TICK] = "%s（%s）",
     [RE_MSG_TYPE_MONTH_TIP] = "\n模组：客满时每月大约\n销售 %s，成本 %s",
     [RE_MSG_TYPE_CONTRACTS_TIP] = "\n模组：没有店面销售，只靠合同赚钱。",
 };

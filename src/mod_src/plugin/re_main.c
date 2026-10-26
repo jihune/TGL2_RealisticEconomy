@@ -73,7 +73,7 @@
 
 #include "re_data_estimate.h"
 
-#define PLUGIN_VERSION "1.5.1"
+#define PLUGIN_VERSION "1.6.0"
 #define MAX_TAG_LIST 16
 #define TRACE_LINE_LIMIT 6000
 #define MONTH_TICKS 728 /* hours in the game's month; the month-end routine runs when the hour of the month is 727 */
@@ -738,10 +738,21 @@ static int text_want(const char *key, unsigned len, unsigned caller, const re_te
     return entry ? TEXT_WORDING + entry - 1 : 0;
 }
 
+/* A company's research counts for the mod's fair price, the company's blue in the list, the order by the fair price
+ * and today's values in the research block in the month it was made (REQUEST.md [102]), as the game's research is of
+ * its month: a subscription makes it anew at every month start, and switched off it ends with the month. Before, one
+ * research showed them for good. `research_month` is the game's (0: never). */
+static int g_trace_research_good; /* trace: research of any month counts, as before (`[trace] researchForGood`) */
+
+static int research_fresh(int research_month, int now)
+{
+    return research_month != 0 && (research_month == now || g_trace_research_good);
+}
+
 /* What a company's numbers say about its share: the company comes from the frame of the window code that asked.
- * `target` gets the price target as the game writes amounts, for a company the player has had researched
- * (REQUEST.md [27]: the ratios for all, the target for those); it stays empty otherwise. Returns 0 when the
- * company or the calendar cannot be read. */
+ * `target` gets the price target as the game writes amounts, for a company with research of this month
+ * (REQUEST.md [27]: the ratios for all, the target for those; [102]: of this month); it stays empty otherwise.
+ * Returns 0 when the company or the calendar cannot be read. */
 static int stock_view(const re_text_regs *regs, int frame_slot, int back, const char *where, re_stock_view *v, char target[64],
                       int *company_id)
 {
@@ -765,7 +776,7 @@ static int stock_view(const re_text_regs *regs, int frame_slot, int back, const 
     v->has_change = before > 0 && s.price > 0;
     v->change = v->has_change ? (double)s.price / (double)before - 1.0 : 0.0;
     target[0] = 0;
-    if (s.research_month != 0)
+    if (research_fresh(s.research_month, now))
         money(g_main_obj, v->target, target);
     if (g_on_trace && g_stock_lines++ < STOCK_TRACE_LINES)
         re_log("stocks: %s, company %d: price $%.2f, equity $%.2f, earnings $%.2f, dividend $%.2f a share; researched in month %d, "
@@ -824,8 +835,10 @@ static void stock_industry_row(const re_text_regs *regs, void *value)
 {
     const BYTE *node = (const BYTE *)(UINT_PTR)regs->esi; /* of the map the research stored: industry, value */
     const BYTE *const *slot = (const BYTE *const *)(UINT_PTR)(regs->ebp + RE_STOCK_RESEARCH_FRAME_COMPANY);
-    if (!re_readable(node, 0x18) || !re_readable(slot, 4) || !re_readable(*slot, RE_COMPANY_ID + 4))
-        return;
+    int now = g_main_obj != NULL ? re_game_period(g_main_obj) : -1;
+    if (!re_readable(node, 0x18) || !re_readable(slot, 4) || !re_readable(*slot, RE_COMPANY_SIZE) ||
+        !research_fresh(*(const int *)(*slot + RE_COMPANY_RESEARCH_MONTH), now))
+        return; /* research of an earlier month: the game's row, the value of that month */
     int id = *(const int *)(*slot + RE_COMPANY_ID), industry = *(const int *)(node + 0x10);
     long long equity = *(const long long *)(*slot + RE_COMPANY_EQUITY);
     re_industry list[STOCK_INDUSTRIES];
@@ -1436,7 +1449,7 @@ __attribute__((force_align_arg_pointer)) static void *__fastcall stock_item_name
                : research_on_board(listed)   ? RE_STOCK_KEPT_BOARD
                : research_subscribed(listed) ? RE_STOCK_KEPT_SUBSCRIBED
                                              : RE_STOCK_KEPT_NOT;
-    int researched = stock.research_month != 0 && v.has_pbr;
+    int researched = research_fresh(stock.research_month, now) && v.has_pbr;
     memcpy(text, shown, size);
     unsigned added = re_stock_item(&v, researched, kept, g_lang, text + size, (unsigned)sizeof text - size);
     g_item_blue = researched;
@@ -1495,7 +1508,7 @@ static void stock_sort(BYTE *first, BYTE *last, int by)
         re_stock_read(company, &s);
         re_stock_view_of(&s, now, &v);
         long long before = re_game_company_price_at(market, *(const int *)(company + RE_COMPANY_ID), now - 1);
-        rank[i].researched = s.research_month != 0 && v.has_pbr;
+        rank[i].researched = research_fresh(s.research_month, now) && v.has_pbr;
         rank[i].gap = v.gap;
         rank[i].has_change = before > 0 && s.price > 0;
         rank[i].change = rank[i].has_change ? (double)s.price / (double)before - 1.0 : 0.0;
@@ -4972,7 +4985,10 @@ static void looks_now(void *main_obj)
     g_look_all = g_looks = 0;
 }
 
-/* In place of the game's call for the hour of the household's businesses, once an update (note m22 1.) */
+static void jobs_day(void *main_obj);
+
+/* In place of the game's call for the hour of the household's businesses, once an update (note m22 1.): the looks
+ * of their own, and the day's look at the openings for the household's members */
 __attribute__((force_align_arg_pointer)) static void __fastcall firms_hour_wrapper(void *firms_m)
 {
     typedef void(__fastcall * hour_fn)(void *firms_m);
@@ -4981,7 +4997,19 @@ __attribute__((force_align_arg_pointer)) static void __fastcall firms_hour_wrapp
         looks_now(g_main_obj);
         time_add(TIME_FIRM_BLOCK, since);
     }
+    if (g_main_obj != NULL)
+        jobs_day(g_main_obj);
     ((hour_fn)AT(RE_VA_FIRMS_HOUR))(firms_m);
+}
+
+static int g_hour_hooked;
+
+/* The call above redirected once, for the looks of their own or for the jobs */
+static int hour_hook(void)
+{
+    if (!g_hour_hooked)
+        g_hour_hooked = re_patch_call(AT(RE_VA_CALL_FIRMS_HOUR), AT(RE_VA_FIRMS_HOUR), firms_hour_wrapper);
+    return g_hour_hooked;
 }
 
 /* ---- adverts handed to the mod (REQUEST.md [43], note m22) */
@@ -6349,7 +6377,7 @@ static void business_install(void)
                "%.1f%% of its month's work without hands gets a candidate hired, a hiring costs %.0f hours of a store manager",
                g_fill_hooked ? "redirected" : "NOT redirected", 100.0 * g_fill_share, g_hire_hours);
         if (g_fill_hooked && g_hire_now)
-            g_look_hooked = re_patch_call(AT(RE_VA_CALL_FIRMS_HOUR), AT(RE_VA_FIRMS_HOUR), firms_hour_wrapper);
+            g_look_hooked = hour_hook();
         re_log("business: a look of its own in the game's hour after a load and after a business is handed over whole: %s; the work "
                "the base job still brings the other jobs this month is counted ahead by the type's table: %s",
                !g_hire_now ? "off (settings)" : g_look_hooked ? "the call for the hour of the household's businesses redirected" : "NOT redirected",
@@ -6738,6 +6766,204 @@ __attribute__((force_align_arg_pointer)) static void money_sink_timed(void *self
     time_add(TIME_MONEY, since);
 }
 
+/* ---- better jobs for household members (REQUEST.md [100], [101], note b28)
+ *
+ * The game makes the month's openings anew at every month start, and a completed "Find" for a job adds openings of
+ * that job at a few sites. An opening names a site and a job. Two kinds are told of:
+ * - the same job as a member's for more an hour, at the site of the member's job (the way to work stays the same):
+ *   the pay agreed at the hiring stays, the standard wage moves with the prices and the member's skill;
+ * - a step up the member's line of jobs, at any site: a job of the same career file of the game's data
+ *   (data/jobs/career*.xml: Legal Intern, Criminal Lawyer, Business Lawyer, District Judge, Federal Judge) that asks
+ *   for experience the member's job gives (re_xp_job_follows: a file can hold two lines, careerTransport.xml the
+ *   drivers' and the mechanics'), with a higher standard wage than the member's job, which the member qualifies for
+ *   by its requirements and the member's experience as the game sums them (re_xp_job_share). A job of no career
+ *   file (baseJobs.xml, jobs*.xml) has none.
+ * The pay shown is the game's own offer without its draw, as the game's promotion asks it; the draw is a normal of
+ * 1/30 either way (note b16), so the same job is told of only when its offer is more than two of that over the pay
+ * now: the offer made would be more with a chance of 98% (the game's promotion asks 10% more).
+ * It looks at the month start, after a search and once a game day: experience grows while a member works, and an
+ * activity or a course adds to it, so an opening the member was short of at the month start can be one to apply for
+ * later in the month (the user's District Judge, REQUEST.md [102]: 0.987 of the requirements at the month start,
+ * hired in the month's first 207 hours). An opening is told of once for a member: the member's better openings are
+ * kept until the month start makes the openings anew, those of a job told of with it; a load takes the ones better
+ * already as told. The monthly summary gets a line of all, the ticker a short one. Nothing of the game's is written.
+ * `[features] jobs`. */
+#define JOB_HELD 16
+#define JOB_OPENINGS 1024
+#define JOB_DATA 192
+#define JOB_GROUPS 16
+#define JOB_TOLD 6
+#define JOB_COMMON 4
+#define JOB_PAIRS 64
+#define JOB_SAME_MARGIN (1.0 + 2.0 / 30.0)
+static int g_on_jobs = 1, g_jobs_search_hooked;
+static double g_trace_job_pay = 1.0; /* trace: a member's pay counted at this share (`[trace] jobsPayShare`) */
+static int g_trace_job_days;         /* trace: a day's look logs every opening it looks at (`[trace] jobsDayLog`) */
+static double g_trace_job_share;     /* trace: added to the requirements' share of a step up (`[trace] jobsShareAdd`) */
+static re_xp_job g_job_need[JOB_DATA], g_job_group[JOB_GROUPS];
+static int g_job_needs = -1, g_job_groups;
+static int g_job_seen = -1; /* the highest opening id looked at in this game, for the count of new ones; -1: none */
+static int g_job_careers;   /* the career files of the data, numbered from 1 as read */
+static int g_job_common[JOB_COMMON], g_job_commons; /* the kinds of experience every career file's jobs give */
+static int g_told_person[JOB_PAIRS], g_told_opening[JOB_PAIRS], g_told_pairs; /* better openings told of, by member */
+static long long g_job_day = -1; /* the game hour of the last day's look */
+
+enum { JOB_LOAD, JOB_TELL, JOB_DAY }; /* a load takes what is better as told; a day's look logs only what it tells */
+
+static int job_told(int person, int opening)
+{
+    for (int k = 0; k < g_told_pairs; k++)
+        if (g_told_person[k] == person && g_told_opening[k] == opening)
+            return 1;
+    return 0;
+}
+
+static void job_data_file(const char *text, unsigned len, void *ctx)
+{
+    const wchar_t *name = re_data_file_name();
+    int career = name != NULL && _wcsnicmp(name, L"career", 6) == 0 ? ++g_job_careers : 0;
+    (void)ctx;
+    if (re_xp_jobs_scan(text, len, career, g_job_need, JOB_DATA, &g_job_needs, g_job_group, JOB_GROUPS, &g_job_groups) < 0)
+        re_log("jobs: the data has more jobs or requirement groups than the table takes (%d, %d)", JOB_DATA, JOB_GROUPS);
+}
+
+static long long job_have(int tag, void *statement)
+{
+    return re_game_xp_of(statement, tag);
+}
+
+static void job_alerts(void *main_obj, const char *why, int look)
+{
+    static re_member_job held[JOB_HELD];
+    static re_opening open[JOB_OPENINGS];
+    void *firms = re_game_firms(main_obj), *jobs = firms != NULL ? re_game_jobs(firms) : NULL;
+    int members = jobs != NULL ? re_game_member_jobs(main_obj, jobs, held, JOB_HELD) : -1;
+    int openings = jobs != NULL ? re_game_openings(jobs, open, JOB_OPENINGS) : -1, from = g_job_seen, told = 0, more = 0, fresh = 0;
+    if (members < 0 || openings < 0) {
+        re_log("jobs (%s): the jobs of the household or the month's openings CANNOT be read, nothing is told", why);
+        return;
+    }
+    for (int m = 0; m < members; m++)
+        held[m].pay = (long long)((double)held[m].pay * g_trace_job_pay);
+    if (g_job_needs < 0) {
+        g_job_needs = 0;
+        int files = re_data_files(job_data_file, NULL);
+        g_job_commons = re_xp_jobs_common(g_job_need, g_job_needs, g_job_careers, g_job_common, JOB_COMMON);
+        re_log("jobs: the requirements of %d job(s) and %d requirement group(s) read from %d file(s) of the game's data, %d of them a "
+               "career file; %d kind(s) of experience the jobs of every career file give (the first %d) join no line of jobs",
+               g_job_needs, g_job_groups, files, g_job_careers, g_job_commons, g_job_commons > 0 ? g_job_common[0] : 0);
+    }
+    for (int o = 0; o < openings; o++) {
+        fresh += open[o].id > from;
+        g_job_seen = open[o].id > g_job_seen ? open[o].id : g_job_seen;
+    }
+    char line[1400] = "", first[400] = "", item[400], name[64], offered[64], now[64];
+    int told_person[JOB_TOLD * 4], told_job[JOB_TOLD * 4], pairs = 0, there = 0;
+    for (int m = 0; m < members; m++) {
+        const re_xp_job *mine = re_xp_job_of(g_job_need, g_job_needs, held[m].job);
+        long long standard = mine != NULL && mine->career > 0 ? re_game_job_wage(jobs, held[m].job) : 0;
+        if (look == JOB_LOAD)
+            re_log("jobs (load): %s holds job %d at site %d for %s an hour", held[m].name, held[m].job, held[m].site,
+                   money(main_obj, held[m].pay, now));
+        for (int o = 0; o < openings; o++) {
+            int same = open[o].job == held[m].job, holds = 0, again = 0;
+            const re_xp_job *need = same ? NULL : re_xp_job_of(g_job_need, g_job_needs, open[o].job);
+            if ((same && open[o].site != held[m].site) || job_told(held[m].person, open[o].id))
+                continue;
+            if (!same && (mine == NULL || need == NULL || !re_xp_job_follows(need, mine, g_job_group, g_job_groups, g_job_common, g_job_commons) ||
+                          open[o].pay <= standard))
+                continue; /* no step up the member's line */
+            for (int k = 0; k < members; k++)
+                holds |= held[k].person == held[m].person && held[k].job == open[o].job && !same;
+            for (int k = 0; k < pairs; k++)
+                again |= told_person[k] == held[m].person && told_job[k] == open[o].job;
+            if (holds)
+                continue;
+            double share = same ? 1.0 : re_xp_job_share(need, g_job_group, g_job_groups, job_have, (void *)held[m].xp) + g_trace_job_share;
+            long long offer = share >= 1.0 ? re_game_job_offer(jobs, open[o].job, held[m].xp) : -1;
+            int better = share >= 1.0 && offer >= 0 && !(same && (double)offer <= (double)held[m].pay * JOB_SAME_MARGIN);
+            if (better && g_told_pairs < JOB_PAIRS) { /* the job's other openings go with it */
+                g_told_person[g_told_pairs] = held[m].person;
+                g_told_opening[g_told_pairs++] = open[o].id;
+            }
+            there += better;
+            if (again || look == JOB_LOAD || (look == JOB_DAY && !better && !g_trace_job_days))
+                continue;
+            re_game_job_name(main_obj, open[o].job, name, sizeof name);
+            re_log("jobs (%s): %s, job %d at site %d for %s an hour: opening %d of job %d (%s) at site %d, %s, the requirements' share "
+                   "%.3f, offered %s an hour: %s",
+                   why, held[m].name, held[m].job, held[m].site, money(main_obj, held[m].pay, now), open[o].id, open[o].job, name,
+                   open[o].site, same ? "the same job at the same site" : "a step up the member's line", share,
+                   offer >= 0 ? money(main_obj, offer, offered) : "-",
+                   share < 1.0 ? "not qualified" : !better ? "not two draws (6.7%) more than now" : "told");
+            if (!better)
+                continue;
+            if (pairs < JOB_TOLD * 4) {
+                told_person[pairs] = held[m].person;
+                told_job[pairs++] = open[o].job;
+            }
+            snprintf(item, sizeof item, T(same ? RE_MSG_JOB_SAME : RE_MSG_JOB_UP), held[m].name, name, money(main_obj, offer, offered),
+                     money(main_obj, held[m].pay, now));
+            if (told == 0)
+                snprintf(first, sizeof first, T(RE_MSG_JOB_TICK), held[m].name, name);
+            if (told < JOB_TOLD) {
+                size_t at = strlen(line);
+                snprintf(line + at, sizeof line - at, "%s%s", told > 0 ? T(RE_MSG_JOB_JOIN) : "", item);
+            } else
+                more++;
+            told++;
+        }
+    }
+    if (look == JOB_LOAD)
+        re_log("jobs (load): %d opening(s) of the month, %d job(s) of the household's members, %d better opening(s) there already: "
+               "taken as told",
+               openings, members, there);
+    else if (look == JOB_TELL || told > 0)
+        re_log("jobs (%s): %d opening(s) of the month, %d of them new, %d job(s) of the household's members: %d better job(s) told of",
+               why, openings, fresh, members, told);
+    if (told == 0)
+        return;
+    char text[1600], extra[48] = "";
+    if (more > 0)
+        snprintf(extra, sizeof extra, T(RE_MSG_JOB_MORE), more);
+    snprintf(text, sizeof text, "%s%s%s", T(RE_MSG_JOB_PREFIX), line, extra);
+    /* the whole line as the prefix: a search's line goes under the month start's instead of in its place */
+    panel_line(main_obj, text, text, "UIIconWork", 0);
+    if (told > 1)
+        snprintf(extra, sizeof extra, T(RE_MSG_JOB_MORE), told - 1);
+    else
+        extra[0] = 0;
+    snprintf(text, sizeof text, "%s%s%s", T(RE_MSG_JOB_PREFIX), first, extra);
+    if (g_can_text)
+        re_game_post_message(main_obj, text);
+}
+
+/* In place of the game's search for openings of one job, at the end of a "Find" (note b28): the search, then what
+ * it found told of. The caller does not read what the search returns. */
+__attribute__((force_align_arg_pointer)) static void __fastcall job_search_wrapper(void *jobs, void *edx, void *found, int job)
+{
+    typedef void(__thiscall * search_fn)(void *jobs, void *found, int job);
+    (void)edx;
+    ((search_fn)AT(RE_VA_JOB_SEARCH))(jobs, found, job);
+    if (g_main_obj != NULL && g_on_jobs) {
+        long long since = time_now();
+        job_alerts(g_main_obj, "a search", JOB_TELL);
+        time_add(TIME_TEXT, since);
+    }
+}
+
+/* Once a game day, in the hour of the household's businesses (firms_hour_wrapper) */
+static void jobs_day(void *main_obj)
+{
+    long long hour = g_on_jobs ? re_game_ticks(main_obj) : -1;
+    if (hour < 0 || hour % 24 != 0 || hour == g_job_day)
+        return;
+    long long since = time_now();
+    g_job_day = hour;
+    job_alerts(main_obj, "a day's look", JOB_DAY);
+    time_add(TIME_TEXT, since);
+}
+
 static void after_game_step(void *main_obj, const char *why, int why_is_load)
 {
     static re_household h; /* too large for the game's stack */
@@ -6750,6 +6976,12 @@ static void after_game_step(void *main_obj, const char *why, int why_is_load)
         handed_over_hold(main_obj);
         if (g_on_business)
             look_soon(0, "a load");
+        if (g_on_jobs) {
+            g_job_seen = -1; /* another game: its openings are numbered its own way */
+            g_told_pairs = 0;
+            g_job_day = -1;
+            job_alerts(main_obj, "load", JOB_LOAD);
+        }
     }
     if (why_is_load && g_on_trace && free_money_trace(main_obj))
         snapshot(main_obj, &h); /* the cash account changed */
@@ -7234,6 +7466,10 @@ __attribute__((force_align_arg_pointer)) static void __fastcall monthstart_wrapp
         fit_alert(main_obj, "month start");
     if (g_on_property)
         property_alert(main_obj, "month start");
+    if (g_on_jobs) { /* the month's openings are made anew in the game's month start */
+        g_told_pairs = 0;
+        job_alerts(main_obj, "month start", JOB_TELL);
+    }
     if (g_on_forecast && g_shown_due >= 0) {
         /* a bankruptcy at the month change pays or deletes the debts after the month end's line was written. The
          * line is written again here, where the panel is not built yet; left to the look during the month it would
@@ -7441,6 +7677,7 @@ static void load_settings(void)
     g_data_fix[RE_DATA_VOTE_INTERVAL] = g_on_influence && re_ini_int("influence", "voteEvery12Months", 1);
     g_data_add[RE_ADD_DONATION_YEARLY] = g_on_influence && re_ini_int("influence", "donationOncePerYear", 1);
     g_on_coaching = re_ini_int("features", "coaching", 1);
+    g_on_jobs = re_ini_int("features", "jobs", 1);
     g_data_add[RE_ADD_COACHING] = g_on_coaching;
     re_ini_doubles("balance", "competitionWeight", &g_competition_weight, 1);
     g_competition_weight = g_competition_weight < 1.0 ? 1.0 : g_competition_weight > 3.0 ? 3.0 : g_competition_weight;
@@ -7485,6 +7722,20 @@ static void load_settings(void)
     g_trace_paid_only = g_on_trace && re_ini_int("trace", "reputationPaidOnly", 0);
     if (g_trace_paid_only)
         re_log("business: TEST SETTING: a point of reputation is valued at what the customers paid last month alone, as before REQUEST.md [99]");
+    if (g_on_trace)
+        re_ini_doubles("trace", "jobsPayShare", &g_trace_job_pay, 1);
+    if (g_trace_job_pay != 1.0)
+        re_log("jobs: TEST SETTING: a household member's pay is counted at %.2f of what it is", g_trace_job_pay);
+    g_trace_research_good = g_on_trace && re_ini_int("trace", "researchForGood", 0);
+    if (g_trace_research_good)
+        re_log("stocks: TEST SETTING: a company's research of any month shows its fair price and its blue, as before REQUEST.md [102]");
+    if (g_on_trace)
+        re_ini_doubles("trace", "jobsShareAdd", &g_trace_job_share, 1);
+    if (g_trace_job_share != 0.0)
+        re_log("jobs: TEST SETTING: %.3f is added to the requirements' share of a step up", g_trace_job_share);
+    g_trace_job_days = g_on_trace && re_ini_int("trace", "jobsDayLog", 0);
+    if (g_trace_job_days)
+        re_log("jobs: TEST SETTING: a day's look logs every opening it looks at");
     re_game_closed_unseen = g_on_trace && re_ini_int("trace", "closedUnseen", 0); /* the rules as before they knew a closed business */
     g_trace_hits = g_on_trace && re_ini_int("trace", "hits", 0);
     g_trace_end_company = g_on_trace && re_ini_int("trace", "endCompany", 0);
@@ -7952,6 +8203,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     g_transfer_sites = re_sites_verify(g_base, RE_GROUP_TRANSFER, report_site) == 0 && business;
     int balance = re_sites_verify(g_base, RE_GROUP_BALANCE, report_site) == 0;
     int coaching = re_sites_verify(g_base, RE_GROUP_COACHING, report_site) == 0;
+    int jobs = re_sites_verify(g_base, RE_GROUP_JOBS, report_site) == 0;
 
     re_log("  feature credit:   %s", state_of(g_on_credit, core && finance && credit));
     re_log("  feature forecast: %s", state_of(g_on_forecast, core && finance && money));
@@ -7970,6 +8222,8 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     re_log("  feature balance:  %s", state_of(g_on_balance, core && finance && money && data));
     re_log("  feature influence: %s", state_of(g_on_influence, data));
     re_log("  feature coaching: %s", state_of(g_on_coaching, core && finance && money && text && data && coaching));
+    /* a person and the game's data are reached through the business group's sites, so is the reference wage */
+    re_log("  feature jobs:     %s", state_of(g_on_jobs, core && text && business && jobs));
     /* the letters: no site of the game's file, two functions of libcocos2d.dll; the names: two functions of the game */
     re_log("  feature fonts:    %s; its names in Latin letters: %s", state_of(g_on_fonts, 1), state_of(g_on_fonts, text && names));
     re_log("  feature trace:    %s", state_of(g_on_trace, core && finance && credit && money && trace));
@@ -7999,6 +8253,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     /* the activity only with the hook that ends it: without it a person would pay and nothing would change */
     g_on_coaching = g_on_coaching && core && finance && money && text && data && coaching;
     g_data_add[RE_ADD_COACHING] = g_on_coaching;
+    g_on_jobs = g_on_jobs && core && text && business && jobs;
     g_on_trace = g_on_trace && core && finance && credit && money && trace;
     g_trace_getter = g_trace_getter && g_on_trace;
     g_wage_refuse_all = g_wage_refuse_all && g_on_trace;
@@ -8037,6 +8292,12 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     int b = re_patch_call(AT(RE_VA_CALL_MONTHEND), AT(RE_VA_MONTHEND), monthend_wrapper);
     int c = re_patch_call(AT(RE_VA_CALL_MONTHSTART), AT(RE_VA_MONTHSTART), monthstart_wrapper);
     re_log("  call sites redirected: post-load=%d month-end=%d month-start=%d", a, b, c);
+    if (g_on_jobs) {
+        g_jobs_search_hooked = re_patch_call(AT(RE_VA_CALL_JOB_SEARCH), AT(RE_VA_JOB_SEARCH), job_search_wrapper);
+        re_log("jobs: a better job for a household member is told of after a month start, after a search and once a game day: the "
+               "game's call of the search %s, the call for the hour of the household's businesses %s",
+               g_jobs_search_hooked ? "redirected" : "NOT redirected", hour_hook() ? "redirected" : "NOT redirected");
+    }
     g_data_fix[RE_DATA_CONTRACT_ENGINEER] = g_data_fix[RE_DATA_CONTRACT_ENGINEER] && g_on_business;
     g_data_fix[RE_DATA_STOCK_FEE] = g_on_balance && re_data_number(RE_DATA_STOCK_FEE, g_stock_fee);
     g_data_fix[RE_DATA_FUTURES_FEE] = g_on_balance && re_data_number(RE_DATA_FUTURES_FEE, g_futures_fee);

@@ -284,17 +284,17 @@ What it does
          Earnings Per Share    $15.84 (PER 19.9)         price / earnings a share; "(-2.4% of equity)" for a loss
          Dividend Per Share    $4.79 (1.5% of the price) dividend yield
          Share Price           $392.18 (+17.9% in a month)   the price against the month before
-     - Shown only for a company you have had researched at least once:
+     - Shown only for a company with research of this month (since 1.6.0; before, research of any month):
          Share Price           $392.18 (+17.9%, fair $519.40)   the fair price behind the change
          Agriculture           --- (-$2.17 a month)      an industry row, as of now and not of the research
      - The industry rows are part of the game's research result. The game shows the value of the month of the
-       research as a run of + or - and leaves it until you research again. The mod puts today's value there and
-       an amount behind it: "(-$2.17 a month)" means that this industry takes $2.17 off the company's yearly
+       research as a run of + or - and leaves it until you research again. In the month of the research the mod
+       puts today's value there and an amount behind it: "(-$2.17 a month)" means that this industry takes $2.17 off the company's yearly
        earnings a share at every month end; with a + it adds. Rising prices in an industry help some companies
        and hurt others (it differs from company to company).
      - Hovering over a company's icon in the list gives one line without selecting it: "PER 19.9, PBR 1.29,
        yield 1.5%". Under it comes "-2.5% on the month before" (today's price against the price the game wrote
-       down a month ago; a company listed this month has none). A company in danger gets a warning line, a researched one the line "Fair $110.60 (-16%),
+       down a month ago; a company listed this month has none). A company in danger gets a warning line, one researched this month the line "Fair $110.60 (-16%),
        industry headwind": the fair price is 16% under today's price, and "industry tailwind" or "industry
        headwind" says which way the industry rows push the earnings together. A small sum gets no word.
      - The order of the list: above the company list are five small sort buttons. Four of them sort another way.
@@ -307,8 +307,8 @@ What it does
                                               (the game: by market capitalisation)
          fifth    by change in a month        every company, the one that rose most first
                                               (the game: by earnings a share)
-       The third and the fourth rank only the companies whose fair price is shown, the ones you have had
-       researched. The others come under them in the order the game lists them; with no researched company the
+       The third and the fourth rank only the companies whose fair price is shown, the ones with research of
+       this month. The others come under them in the order the game lists them; with no researched company the
        list stays as it is. With the fifth a company listed this month comes last, and the companies that fell
        most are on the last page. The hover text of a button says its order. A second click on a lit button goes
        back to the first order, as it always did. A row does not show the number it is ranked by; hover over the
@@ -421,7 +421,8 @@ What it does
                fee, and the top of the screen says "Research subscription: not on, your cash is short of the
                fee ($6,406,080.00)".
              - Switching off: no fee from the next month. This month's fee is not given back and this month's
-               research stays.
+               research stays: the fair price and the blue name stay to the month end and are gone from the next
+               month (since 1.6.0; before, they stayed for good).
              - Whether a company is subscribed is written on the screen. In the list its name is followed by
                "subscribed" (see "The rows of the list" below), and the line "Last Researched" of its page
                reads like "Oct 35 (subscribed)". A company you sit on the board of has "board" and "(board:
@@ -473,8 +474,8 @@ What it does
            with 1 is researched from the next month start on.
          · The rows of the list ([stocks] rowNumbers, on by default): in the list on the left of the stock
            window a company's name is followed by numbers in brackets. "Gold (+5.7%)" says the share price is
-           5.7% above last month's, and it changes every month. A company you have researched reads "Gold
-           (+5.7%, fair +34%)": how far the fair price is above today's price (below zero: the price is above
+           5.7% above last month's, and it changes every month. A company with research of this month reads
+           "Gold (+5.7%, fair +34%)": how far the fair price is above today's price (below zero: the price is above
            the fair price), and its name is blue. A subscribed company has "subscribed" at the end, one you
            sit on the board of "board". The company's name itself is not changed, only how this list shows
            it. The game draws a long row in a slightly smaller type. Off with rowNumbers=0.
@@ -1253,6 +1254,29 @@ What it does
    The change of a preference in the birthday window stays as in the game. Coaching does not count as a birthday
    change, so the points a change costs there stay as they were.
    Off: [features] coaching=0.
+
+17. Better jobs for your household (since 1.6.0)
+   The game makes the month's job openings anew at every month start, and a "Find" for a job adds openings of that
+   job at a few places. It does not say when one of them is better than what a member of your household has. The
+   mod looks at the openings at those two moments and once a game day, and tells of two kinds:
+     - The same job at the place the member works, for clearly more an hour. The pay agreed at the hiring stays as
+       it was while the job's standard wage moves with the prices, so an opening of the same job can pay more. It
+       is told of when the game's offer to that member is more than 6.7% over the pay now: the game draws its offer
+       a few percent either way, and at 6.7% the offer made is the higher with a chance of about 98%.
+     - A higher step of the member's own line of jobs, at any place, that the member qualifies for now. A line is
+       the jobs of one career file of the game that ask for the experience the member's job gives: Legal Intern,
+       Criminal Lawyer, Business Lawyer, District Judge, Federal Judge all ask for law experience. One file can hold
+       two lines: an Automotive Apprentice is told of an Automotive Mechanic, not of a Truck Driver. A job of no
+       career file (a cashier, a waiter) has no higher step. Experience grows while the member works (and the
+       month end takes 1% of it), so a step the member was a little short of at the month start can come within
+       reach some days later: the day's look tells of it then.
+   The monthly summary gets one line, for example "Better jobs: Alex Kim can apply as Business Lawyer for about
+   $96.05 an hour (now $79.60)", up to six of them and "and N more"; a Find's line goes under the month start's. The
+   ticker at the top gets a short one, "Better jobs: Alex Kim (Business Lawyer)". An opening is told of once, and a
+   load tells of nothing (what the save has counts as seen). The pay is what the game would offer that member
+   without its draw, so the interview can offer a little more or less. Where the opening is: the game's list of
+   openings (the top bar's first icon). Nothing of the game's is changed.
+   Off: [features] jobs=0.
 
 No window or button is added. Text is added to windows the game already has, and twenty activities to the game's
 lists of a place (the two donations and the 18 of Personal Coaching).

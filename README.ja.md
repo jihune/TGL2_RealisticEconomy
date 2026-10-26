@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョンは 1.5.1 です。ゲームの開発元が作ったものではありません。
+This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョンは 1.6.0 です。ゲームの開発元が作ったものではありません。
 
 ほかの言語: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [简体中文](README.zh-CN.md)
 
@@ -82,6 +82,7 @@ This Grand Life 2 のMODです。ゲーム v1.03.22 専用、MODのバージョ�
 - その月の採用候補者はロードしても同じ
 - 価値より大幅に安い物件が売りに出たときのお知らせ
 - 新しいビジネスの種類を選ぶ画面に、客が満ちたときの月の売上と費用
+- 世帯のメンバーにより良い仕事が出たときの通知: 同じ職場の同じ職業で時給がはっきり高い求人、または資格を満たした同じキャリアの一段上の職業
 
 ## インストール
 

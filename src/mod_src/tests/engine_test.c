@@ -2113,6 +2113,14 @@ static void test_brand(unsigned char *const *vector, const unsigned *record)
     g_brand_seen_word = record[0];
 }
 
+/* T30: a person's number of a kind: law (10610), law degree (45161), work (10505), high-school diploma (45036), and
+ * the communications degree 45221 standing for the "other" of the any-one job */
+static long long test_xp_have(int tag, void *ctx)
+{
+    const long long *have = (const long long *)ctx;
+    return tag == 10610 ? have[0] : tag == 45161 ? have[1] : tag == 10505 ? have[2] : tag == 45036 ? have[3] : tag == 45221 ? have[4] : 0;
+}
+
 int main(int argc, char **argv)
 {
     int control = argc > 2 && strcmp(argv[2], "--control") == 0;
@@ -4716,6 +4724,100 @@ int main(int argc, char **argv)
         printf("  T29 Korean texts put right in the game's files      files_read=%d files_with_pieces=%d made_whole=%d pieces=%d made=%d "
                "made_again=%d elements_changed=%d made_unwanted=%d %s\n",
                files, count, whole, pieces, made_pieces, again, elements, unwanted, ok ? "ok" : "FAIL");
+    }
+
+    /* T30: what a job asks of a person (REQUEST.md [100], note b28). The requirements of a <job> are read out of the
+     * data's text with its group and the text's line of jobs, not a comment's job, not a <tag> of another category;
+     * an amt or a prob left out counts 1 and 1.0 as the game reads them; a later job of the same id stands. Then
+     * the share a person reaches:
+     * the law jobs of data/jobs/careerLaw.xml, a job any one of three requirements qualifies for, a job that asks
+     * nothing. */
+    {
+        static const char data[] =
+            "<xml>\n<!-- <job><id>31399</id><requires><xpReq id=\"1\" amt=\"1\"/></requires></job> -->\n"
+            "<job>\n\t<id>31311</id>\n\t<special><actionSearchJob id=\"70511\"/></special>\n"
+            "\t<requires>\n\t\t<xpReqGroup id=\"83521\"/>\n\t</requires>\n\t<action hours=\"40\"><xpGain id=\"10610\" amt=\"1\"/></action>\n</job>\n"
+            "<job><id>31321</id><requires><xpReq id=\"10505\" amt=\"1\" prob=\"0.1\"/></requires></job>\n"
+            "<job><id>31321</id><requires><xpReq id=\"10610\" amt=\"4000\" prob=\"0.9\"/>"
+            "<xpReq id=\"45161\" amt=\"500\" prob=\"0.6\"/></requires></job>\n"
+            "<job><id>31501</id><requires><xpReq id=\"45221\" amt=\"50\"/><xpReq id=\"45241\" amt=\"50\"/>"
+            "<xpReq id=\"10565\"/></requires></job>\n<job><id>31601</id><action hours=\"40\"/></job>\n"
+            "<tag><id>83521</id><desc category=\"XP Require Group\" name=\"HS and Work XP\"/><group>\n"
+            "<xpReq id=\"10505\" amt=\"4000\" prob=\"0.9\"/><xpReq id=\"45036\" amt=\"400\" prob=\"0.6\"/></group></tag>\n"
+            "<tag><id>84211</id><desc category=\"Potential Group\"/><group><xpReq id=\"9\" amt=\"9\"/></group></tag>\n</xml>";
+        re_xp_job jobs[8], groups[4], tiny[1];
+        int count = 0, group_count = 0, tiny_count = 0, tiny_groups = 0;
+        int found = re_xp_jobs_scan(data, sizeof data - 1, 7, jobs, 8, &count, groups, 4, &group_count);
+        const re_xp_job *intern = re_xp_job_of(jobs, count, 31311), *criminal = re_xp_job_of(jobs, count, 31321);
+        const re_xp_job *any = re_xp_job_of(jobs, count, 31501), *none = re_xp_job_of(jobs, count, 31601);
+        int scan_wrong = (found != 6) + (count != 4) + (group_count != 1) + (re_xp_job_of(jobs, count, 31399) != NULL) +
+                         (intern == NULL || intern->group != 83521 || intern->count != 0 || intern->career != 7) +
+                         (group_count < 1 || groups[0].career != 0) +
+                         (criminal == NULL || criminal->count != 2 || criminal->req[0].tag != 10610 || criminal->req[1].prob != 0.6) +
+                         (any == NULL || any->count != 3 || any->req[0].prob != 1.0 || any->req[2].amt != 1.0) +
+                         (none == NULL || none->count != 0 || none->group != 0) + (re_xp_job_of(groups, group_count, 84211) != NULL) +
+                         (re_xp_jobs_scan(data, sizeof data - 1, 0, tiny, 1, &tiny_count, groups, 4, &tiny_groups) != -1);
+        static const struct {
+            int job, law, degree, work, diploma, other;
+            double want;
+        } people[] = {
+            {31321, 4000, 0, 0, 0, 0, 0.9},     /* the law experience alone: 90% of the threshold */
+            {31321, 1800, 500, 0, 0, 0, 1.005}, /* the degree and 45% of the law experience */
+            {31321, 8000, 900, 0, 0, 0, 1.5},   /* more than either asks counts no more */
+            {31311, 0, 0, 4000, 400, 0, 1.5},   /* the intern's group */
+            {31311, 0, 0, 2000, 0, 0, 0.45},
+            {31501, 0, 0, 0, 0, 50, 1.0},       /* one of three requirements with no prob, in full */
+            {31601, 0, 0, 0, 0, 0, 1.0},        /* nothing asked: qualified */
+        };
+        int share_wrong = 0, people_count = (int)(sizeof people / sizeof people[0]);
+        for (int i = 0; i < people_count; i++) {
+            const re_xp_job *job = re_xp_job_of(jobs, count, people[i].job);
+            long long have[6] = {people[i].law, people[i].degree, people[i].work, people[i].diploma, people[i].other, 0};
+            double share = job != NULL ? re_xp_job_share(job, groups, group_count, test_xp_have, have) : -1.0;
+            double want = people[i].want + (control && i == 1 ? 0.5 : 0.0);
+            if (share < want - 1e-6 || share > want + 1e-6) {
+                share_wrong++;
+                printf("  T30 case %d: job %d, share %.4f (expected %.4f)\n", i, people[i].job, share, want);
+            }
+        }
+        scan_wrong += intern == NULL || intern->gains != 1 || intern->gain[0] != 10610;
+        /* the lines of jobs, as data/jobs has them: law (career file 1) and transport (2), which holds the drivers'
+         * line and the mechanics'; work experience 10505 is given by the jobs of both files and joins nothing */
+        static const re_xp_job line[] = {
+            {31311, 83521, 1, 0, {{0, 0.0, 0.0}}, 2, {10505, 10610}},                           /* Legal Intern */
+            {31321, 0, 1, 2, {{10610, 4000, 0.9}, {45161, 500, 0.6}}, 3, {10505, 10610, 10615}}, /* Criminal Lawyer */
+            {30651, 83521, 2, 0, {{0, 0.0, 0.0}}, 2, {10505, 10630}},                           /* Automotive Apprentice */
+            {30661, 0, 2, 1, {{10630, 1, 1.0}}, 2, {10505, 10630}},                             /* Automotive Mechanic */
+            {30601, 0, 2, 1, {{10585, 1, 1.0}}, 2, {10505, 10585}},                             /* Delivery Driver */
+            {30631, 0, 2, 2, {{10505, 1, 1.0}, {10587, 1, 1.0}}, 2, {10505, 10535}},            /* Logistics Manager */
+            {30341, 0, 0, 1, {{10610, 1, 1.0}}, 2, {10505, 10515}},                             /* a job of no career file */
+        };
+        int common[4], commons = re_xp_jobs_common(line, 7, 2, common, 4);
+        static const struct {
+            int next, held, commons, want;
+        } steps[] = {
+            {1, 0, 1, 1}, /* Criminal Lawyer after Legal Intern: the law experience */
+            {0, 1, 1, 0}, /* Legal Intern after Criminal Lawyer: its group asks work experience and a diploma */
+            {3, 2, 1, 1}, /* Automotive Mechanic after Automotive Apprentice */
+            {4, 2, 1, 0}, /* Delivery Driver after Automotive Apprentice: the other line of the file */
+            {5, 2, 1, 0}, /* Logistics Manager after Automotive Apprentice: work experience alone */
+            {5, 2, 0, 1}, /* ... which would join them if it were not common */
+            {3, 1, 1, 0}, /* Automotive Mechanic after Criminal Lawyer: another file */
+            {6, 0, 1, 0}, /* a job of no career file */
+        };
+        int line_wrong = commons != 1 || common[0] != 10505, step_count = (int)(sizeof steps / sizeof steps[0]);
+        for (int i = 0; i < step_count; i++) {
+            int got = re_xp_job_follows(&line[steps[i].next], &line[steps[i].held], groups, group_count, common, steps[i].commons);
+            if (got != steps[i].want) {
+                line_wrong++;
+                printf("  T30 step %d: job %d after job %d: %d (expected %d)\n", i, line[steps[i].next].id, line[steps[i].held].id, got,
+                       steps[i].want);
+            }
+        }
+        int ok = scan_wrong == 0 && share_wrong == 0 && line_wrong == 0;
+        g_failures += !ok;
+        printf("  T30 what a job asks of a person                     scan_wrong=%d share_wrong=%d of %d line_wrong=%d of %d %s\n", scan_wrong,
+               share_wrong, people_count, line_wrong, step_count, ok ? "ok" : "FAIL");
     }
 
     printf("failures=%d control=%d verdict=%s\n", g_failures, control, g_failures == 0 ? "PASS" : "FAIL");

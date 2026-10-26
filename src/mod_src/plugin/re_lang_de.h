@@ -173,6 +173,12 @@ static const char *const LANG_DE[RE_MSG_COUNT] = {
     [RE_MSG_AUTO_RELEASED_PREFIX] = "Vom Mod zurückgeholt: ",
     [RE_MSG_AUTO_RELEASED] = "%s%s. Die Übergabe öffnet sich nach dem ersten Börsengang (IPO) Ihres Haushalts",
     [RE_MSG_AUTO_REOPENED] = "Mod: Ihr Haushalt hat ein Unternehmen an die Börse gebracht, Betriebe können jetzt übergeben werden",
+    [RE_MSG_JOB_PREFIX] = "Bessere Stellen: ",
+    [RE_MSG_JOB_SAME] = "%s: %s am selben Arbeitsplatz für etwa %s pro Stunde (jetzt %s)",
+    [RE_MSG_JOB_UP] = "%s kann sich als %s bewerben, etwa %s pro Stunde (jetzt %s)",
+    [RE_MSG_JOB_JOIN] = "; ",
+    [RE_MSG_JOB_MORE] = " und %d weitere",
+    [RE_MSG_JOB_TICK] = "%s (%s)",
     [RE_MSG_TYPE_MONTH_TIP] = "\nMod: mit allen Kunden im Monat etwa %s Umsatz und %s Kosten.",
     [RE_MSG_TYPE_CONTRACTS_TIP] = "\nMod: kein eigener Umsatz, verdient nur mit Verträgen.",
 };

@@ -1,6 +1,6 @@
 # Realistic Economy
 
-Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.5.1 do mod. Não é do desenvolvedor do jogo.
+Um mod para This Grand Life 2. Somente para a versão v1.03.22 do jogo, versão 1.6.0 do mod. Não é do desenvolvedor do jogo.
 
 Outros idiomas: [English](README.md), [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -82,6 +82,7 @@ Cada uma pode ser desligada no arquivo de configurações.
 - Os candidatos de um mês continuam os mesmos depois de carregar
 - Um aviso quando um imóvel está à venda bem abaixo do valor
 - Na janela que escolhe o tipo de uma empresa nova: as vendas e os custos de um mês com todos os clientes
+- Um aviso quando surge um emprego melhor para um membro da família: o mesmo emprego no mesmo local de trabalho por claramente mais por hora, ou o próximo passo da carreira para o qual ele já está qualificado
 
 ## Instalação
 

@@ -2131,6 +2131,142 @@ int re_game_xp_walk(void *statement, re_xp_visit visit, void *ctx)
     return map_walk(c.statement + RE_XP_EFFECTIVE, 0x20, visit_xp, &c);
 }
 
+long long re_game_xp_of(const void *statement, int tag)
+{
+    key_ctx k = {tag, NULL, NULL};
+    if (!re_readable(statement, RE_XP_EFFECTIVE + 8) || map_walk((const BYTE *)statement + RE_XP_EFFECTIVE, 0x20, visit_key, &k) < 0 ||
+        k.node == NULL)
+        return 0;
+    return *(const long long *)(k.node + 0x18);
+}
+
+/* ---- the jobs of household members and the openings of the month (REQUEST.md [100], note b28) ---- */
+
+typedef struct {
+    re_opening *out;
+    int cap, count;
+} openings_ctx;
+
+static int visit_opening(const BYTE *n, void *vctx)
+{
+    openings_ctx *c = (openings_ctx *)vctx;
+    const BYTE *r = n + 0x18; /* the record holds int64s: it starts 8 bytes on from the key */
+    if (c->count < c->cap)
+        c->out[c->count] = (re_opening){*(const int *)(r + RE_JOB_RECORD_ID), *(const int *)(r + RE_JOB_RECORD_SITE),
+                                        *(const int *)(r + RE_JOB_RECORD_JOB), *(const long long *)(r + RE_JOB_RECORD_BASE)};
+    c->count++;
+    return 1;
+}
+
+int re_game_openings(void *jobs, re_opening *out, int cap)
+{
+    openings_ctx c = {out, cap, 0};
+    if (!re_readable(jobs, RE_JOBS_HELD + 8) ||
+        map_walk((const BYTE *)jobs + RE_JOBS_OPEN, 0x18 + RE_JOB_RECORD_BYTES, visit_opening, &c) < 0)
+        return -1;
+    return c.count < cap ? c.count : cap;
+}
+
+typedef struct {
+    int person;
+    const BYTE *begin, *end;
+} held_ctx;
+
+static int visit_held(const BYTE *n, void *vctx)
+{
+    held_ctx *c = (held_ctx *)vctx;
+    if (*(const int *)(n + NODE_HEADER) == c->person) {
+        c->begin = *(const BYTE *const *)(n + 0x14);
+        c->end = *(const BYTE *const *)(n + 0x18);
+    }
+    return 1;
+}
+
+int re_game_member_jobs(void *main_obj, void *jobs, re_member_job *out, int cap)
+{
+    typedef struct {
+        void **functions;
+        volatile LONG use, weak;
+    } counted;
+    typedef struct {
+        BYTE *person;
+        counted *count;
+    } shared;
+    typedef shared *(__thiscall * person_fn)(void *people, shared * out, int id, char report);
+    typedef void(__thiscall * gone_fn)(void *self);
+    BYTE *p = (BYTE *)re_game_people(main_obj);
+    if (!re_readable(p, RE_PEOPLE_HOUSEHOLD + 8) || !re_readable(jobs, RE_JOBS_HELD + 8))
+        return -1;
+    const int *begin = *(const int *const *)(p + RE_PEOPLE_HOUSEHOLD), *end = *(const int *const *)(p + RE_PEOPLE_HOUSEHOLD + 4);
+    if (end < begin || end - begin > 64 || (end != begin && !re_readable(begin, (SIZE_T)(end - begin) * sizeof *begin)))
+        return -1;
+    int n = 0;
+    for (const int *id = begin; id != end; id++) {
+        held_ctx h = {*id, NULL, NULL};
+        if (map_walk((const BYTE *)jobs + RE_JOBS_HELD, 0x20, visit_held, &h) < 0)
+            return -1;
+        SIZE_T bytes = (SIZE_T)(h.end - h.begin);
+        if (h.begin == NULL || h.end <= h.begin || bytes % RE_JOB_RECORD_BYTES != 0 || bytes > 16 * RE_JOB_RECORD_BYTES ||
+            !re_readable(h.begin, bytes))
+            continue;
+        shared who = {NULL, NULL};
+        ((person_fn)AT(RE_VA_PERSON_OF))(p, &who, *id, 0);
+        if (re_readable(who.person, RE_PERSON_XP + RE_XP_EFFECTIVE + 8))
+            for (const BYTE *r = h.begin; r < h.end && n < cap; r += RE_JOB_RECORD_BYTES, n++) {
+                out[n] = (re_member_job){*id, *(const int *)(r + RE_JOB_RECORD_SITE), *(const int *)(r + RE_JOB_RECORD_JOB),
+                                         *(const long long *)(r + RE_JOB_RECORD_AGREED), who.person + RE_PERSON_XP, ""};
+                re_game_person_name(who.person, out[n].name, sizeof out[n].name);
+            }
+        if (who.count != NULL && InterlockedDecrement(&who.count->use) == 0) { /* the pointer handed out is given back */
+            ((gone_fn)who.count->functions[1])(who.count);
+            if (InterlockedDecrement(&who.count->weak) == 0)
+                ((gone_fn)who.count->functions[2])(who.count);
+        }
+    }
+    return n;
+}
+
+long long re_game_job_offer(void *jobs, int job, const void *statement)
+{
+    typedef long long(__thiscall * wage_fn)(void *jobs, int job, const void *skill, int seed);
+    if (!re_readable(jobs, 4) || !re_readable(statement, RE_XP_EFFECTIVE + 8))
+        return -1;
+    return ((wage_fn)AT(RE_VA_WAGE_REF))(jobs, job, statement, -1); /* seed -1: no draw, nothing of the game's written */
+}
+
+void re_game_job_name(void *main_obj, int job, char *out, unsigned cap)
+{
+    BYTE *people = (BYTE *)re_game_people(main_obj), info[RE_INFO_BYTES + 4];
+    out[0] = 0;
+    if (!re_readable(people, RE_PEOPLE_HOUSEHOLD + 8))
+        return;
+    /* the data object every person holds: the first member's */
+    typedef struct {
+        void **functions;
+        volatile LONG use, weak;
+    } counted;
+    typedef struct {
+        BYTE *person;
+        counted *count;
+    } shared;
+    typedef shared *(__thiscall * person_fn)(void *people, shared * out, int id, char report);
+    typedef void(__thiscall * gone_fn)(void *self);
+    const int *begin = *(const int *const *)(people + RE_PEOPLE_HOUSEHOLD), *end = *(const int *const *)(people + RE_PEOPLE_HOUSEHOLD + 4);
+    if (end <= begin || !re_readable(begin, sizeof *begin))
+        return;
+    shared who = {NULL, NULL};
+    ((person_fn)AT(RE_VA_PERSON_OF))(people, &who, *begin, 0);
+    if (re_readable(who.person, RE_PERSON_DATA + 4) && info_of_data(*(void **)(who.person + RE_PERSON_DATA), job, 2, info)) {
+        info_name(info, out, cap);
+        info_done(info);
+    }
+    if (who.count != NULL && InterlockedDecrement(&who.count->use) == 0) {
+        ((gone_fn)who.count->functions[1])(who.count);
+        if (InterlockedDecrement(&who.count->weak) == 0)
+            ((gone_fn)who.count->functions[2])(who.count);
+    }
+}
+
 int re_game_chart_step(void *chart, const int *steps, int count)
 {
     BYTE *c = (BYTE *)chart;

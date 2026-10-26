@@ -170,6 +170,12 @@ static const char *const LANG_PT_BR[RE_MSG_COUNT] = {
     [RE_MSG_AUTO_RELEASED_PREFIX] = "Retomado do mod: ",
     [RE_MSG_AUTO_RELEASED] = "%s%s. Entregar abre depois da primeira abertura de capital (IPO) da sua família",
     [RE_MSG_AUTO_REOPENED] = "Mod: sua família abriu o capital de uma empresa; agora é possível entregar negócios",
+    [RE_MSG_JOB_PREFIX] = "Empregos melhores: ",
+    [RE_MSG_JOB_SAME] = "%s: %s no mesmo local de trabalho por cerca de %s a hora (agora %s)",
+    [RE_MSG_JOB_UP] = "%s pode se candidatar a %s por cerca de %s a hora (agora %s)",
+    [RE_MSG_JOB_JOIN] = "; ",
+    [RE_MSG_JOB_MORE] = " e mais %d",
+    [RE_MSG_JOB_TICK] = "%s (%s)",
     [RE_MSG_TYPE_MONTH_TIP] = "\nMod: com todos os clientes, cerca de %s de vendas e %s de custos por mês.",
     [RE_MSG_TYPE_CONTRACTS_TIP] = "\nMod: sem vendas próprias; ganha só com contratos.",
 };

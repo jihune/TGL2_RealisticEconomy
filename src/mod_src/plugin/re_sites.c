@@ -294,6 +294,8 @@ static const site SITES[] = {
     {RE_GROUP_COACHING, "preference level: ret 4", RE_VA_PREF_LEVEL_RET, 0, {0xc2, 0x04, 0x00}, 3},
     {RE_GROUP_COACHING, "preference step entry", RE_VA_PREF_STEP, 0, {0x55, 0x8b, 0xec, 0x53, 0x56}, 5},
     {RE_GROUP_COACHING, "preference step: ret 0xc", RE_VA_PREF_STEP_RET, 0, {0xc2, 0x0c, 0x00}, 3},
+    {RE_GROUP_JOBS, "job search entry", RE_VA_JOB_SEARCH, 0, {0x55, 0x8b, 0xec, 0x6a, 0xff, 0x68, 0xf4, 0x86}, 8},
+    {RE_GROUP_JOBS, "call job search", RE_VA_CALL_JOB_SEARCH, RE_VA_JOB_SEARCH, {0}, 0},
     {RE_GROUP_COACHING, "preference set entry", RE_VA_PREF_SET, 0, {0x55, 0x8b, 0xec, 0x51, 0x8b, 0x45, 0x08}, 7},
     {RE_GROUP_COACHING, "preference set: ret 8", RE_VA_PREF_SET_RET, 0, {0xc2, 0x08, 0x00}, 3},
     {RE_GROUP_COACHING, "feeling word entry", RE_VA_FEELING, 0, {0x53, 0x8b, 0xdc, 0x83, 0xec, 0x08, 0x83, 0xe4}, 8},

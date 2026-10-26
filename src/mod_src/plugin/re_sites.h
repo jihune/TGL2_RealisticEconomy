@@ -32,6 +32,7 @@ enum {
     RE_GROUP_TRANSFER,
     RE_GROUP_BALANCE,
     RE_GROUP_COACHING,
+    RE_GROUP_JOBS,
     RE_GROUP_COUNT
 };
 
@@ -1234,6 +1235,18 @@ enum {
 #define RE_VA_CALL_XP_DECAY 0x006608aeu  /* in the month end of a household member (FUN_00660510) */
 #define RE_VA_XP_STATEMENT 0x006608a4u   /* lea ecx, [edi + 0x4d8] */
 #define RE_PERSON_XP 0x4d8
+/* the jobs people hold and the openings of the month (note b28), in the job manager ([FirmM + 4], re_game_jobs) */
+#define RE_JOBS_OPEN 0x9c          /* std::map<opening id, record>: what can be applied to, made anew at every month start */
+#define RE_JOBS_HELD 0xac          /* std::map<person id, std::vector<record>>: the jobs people hold */
+#define RE_JOB_RECORD_BYTES 0x50
+#define RE_JOB_RECORD_SITE 0x4     /* the workplace, a site */
+#define RE_JOB_RECORD_JOB 0x8      /* the job of the game's data */
+#define RE_JOB_RECORD_ID 0xc       /* the opening's id, the key of the map */
+#define RE_JOB_RECORD_BASE 0x18    /* int64 cents: the job's standard wage of an hour when the record was made */
+#define RE_JOB_RECORD_AGREED 0x20  /* int64 cents: the wage of an hour a person holding it was hired at, or raised to */
+/* a completed "Find" for a job (activity 70511): the game's search adds openings of that job at a few sites */
+#define RE_VA_JOB_SEARCH 0x0051ad00u      /* ecx = jobs; the vector it fills with the new openings, the job (ret 8) */
+#define RE_VA_CALL_JOB_SEARCH 0x0043c106u /* in the end of an action, after "actionSearchJob"; the caller reads no eax */
 #define RE_VA_XP_GAINED 0x0050d7e4u      /* lea esi, [ecx + 0x10]: the reader of what was gained, for the "lifetime" column */
 #define RE_VA_XP_DECAY_RET 0x0050dbbau   /* ret: nothing on the stack */
 

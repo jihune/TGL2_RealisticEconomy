@@ -32,5 +32,7 @@ const char *re_language(void);
  * read, -1 when the folder cannot be named. Mods' XML files are not looked at. */
 typedef void (*re_data_each)(const char *text, unsigned len, void *ctx);
 int re_data_files(re_data_each each, void *ctx);
+/* The name of the file being handed to `each` ("careerLaw.xml"), NULL outside a call. */
+const wchar_t *re_data_file_name(void);
 
 #endif

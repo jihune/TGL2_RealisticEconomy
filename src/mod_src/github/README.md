@@ -1,6 +1,6 @@
 # Realistic Economy
 
-A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.5.1. Not made by the game's developer.
+A mod for This Grand Life 2. Game v1.03.22 only, mod version 1.6.0. Not made by the game's developer.
 
 Other languages: [한국어](README.ko.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -82,6 +82,7 @@ Each can be switched off in the settings file.
 - The month's job candidates stay the same after a load
 - A notice when a property is for sale well under its value
 - In the window that picks a new business's type: a month's sales and costs once all its customers come
+- A notice when a better job opens for a household member: the same job at the same workplace for clearly more an hour, or the next step of the member's career that the member qualifies for
 
 ## Install
 

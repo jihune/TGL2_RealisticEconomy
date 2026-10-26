@@ -168,6 +168,13 @@ int re_ini_ints(const char *section, const char *key, const char *fallback, int 
     return n;
 }
 
+static const wchar_t *g_data_name; /* the file being handed to `each` */
+
+const wchar_t *re_data_file_name(void)
+{
+    return g_data_name;
+}
+
 static int data_walk(wchar_t *path, size_t at, int depth, re_data_each each, void *ctx)
 {
     WIN32_FIND_DATAW found;
@@ -195,7 +202,9 @@ static int data_walk(wchar_t *path, size_t at, int depth, re_data_each each, voi
             DWORD got = 0;
             if (text != NULL && ReadFile(file, text, found.nFileSizeLow, &got, NULL)) {
                 text[got] = 0;
+                g_data_name = found.cFileName;
                 each(text, got, ctx);
+                g_data_name = NULL;
                 files++;
             }
             free(text);

@@ -174,6 +174,12 @@ static const char *const LANG_FR[RE_MSG_COUNT] = {
     [RE_MSG_AUTO_RELEASED_PREFIX] = "Repris au mod : ",
     [RE_MSG_AUTO_RELEASED] = "%s%s. Confier s'ouvre après votre première entrée en bourse (IPO)",
     [RE_MSG_AUTO_REOPENED] = "Mod : votre foyer a introduit une société en bourse, vous pouvez désormais confier des entreprises",
+    [RE_MSG_JOB_PREFIX] = "Meilleurs emplois : ",
+    [RE_MSG_JOB_SAME] = "%s : %s au même lieu de travail pour environ %s de l'heure (actuellement %s)",
+    [RE_MSG_JOB_UP] = "%s peut postuler comme %s pour environ %s de l'heure (actuellement %s)",
+    [RE_MSG_JOB_JOIN] = " ; ",
+    [RE_MSG_JOB_MORE] = " (+%d)",
+    [RE_MSG_JOB_TICK] = "%s (%s)",
     [RE_MSG_TYPE_MONTH_TIP] = "\nMod : avec tous ses clients, environ %s de ventes et %s de coûts par mois.",
     [RE_MSG_TYPE_CONTRACTS_TIP] = "\nMod : pas de ventes propres ; ne gagne qu'avec des contrats.",
 };

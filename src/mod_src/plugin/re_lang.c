@@ -364,6 +364,15 @@ static const char *const TEXTS[RE_MSG_COUNT][RE_LANG_COUNT] = {
                                "\n모드: 손님이 다 차면 한 달에 대략\n매출 %s, 비용 %s", NULL, NULL, NULL, NULL},
     [RE_MSG_TYPE_CONTRACTS_TIP] = {"\nMod: no sales of its own; it earns from contracts only.",
                                    "\n모드: 손님 매출이 없고\n계약으로만 법니다.", NULL, NULL, NULL, NULL},
+    /* a better job for a household member at the site of the member's job (REQUEST.md [100], note b28) */
+    [RE_MSG_JOB_PREFIX] = {"Better jobs: ", "더 나은 일자리: ", NULL, NULL, NULL, NULL},
+    [RE_MSG_JOB_SAME] = {"%s: %s at the same workplace for about %s an hour (now %s)", "%s: 같은 직장의 %s 자리, 시급 약 %s(지금 %s)",
+                         NULL, NULL, NULL, NULL},
+    [RE_MSG_JOB_UP] = {"%s can apply as %s for about %s an hour (now %s)", "%s: %s 자리에 지원 가능, 시급 약 %s(지금 %s)", NULL, NULL,
+                       NULL, NULL},
+    [RE_MSG_JOB_JOIN] = {"; ", ", ", NULL, NULL, NULL, NULL},
+    [RE_MSG_JOB_MORE] = {" and %d more", " 외 %d건", NULL, NULL, NULL, NULL},
+    [RE_MSG_JOB_TICK] = {"%s (%s)", "%s(%s)", NULL, NULL, NULL, NULL},
 };
 
 /* What the table does not have: one file a language, `[RE_MSG_...] = "text"` a line. */

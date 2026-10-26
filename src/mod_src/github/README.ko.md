@@ -1,6 +1,6 @@
 # Realistic Economy
 
-This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.5.1. 게임 제작사가 만든 것이 아닙니다.
+This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.6.0. 게임 제작사가 만든 것이 아닙니다.
 
 다른 언어: [English](README.md), [Deutsch](README.de.md), [Español](README.es.md), [Français](README.fr.md), [Português (Brasil)](README.pt-BR.md), [日本語](README.ja.md), [简体中文](README.zh-CN.md)
 
@@ -82,6 +82,7 @@ This Grand Life 2 모드입니다. 게임 v1.03.22 전용, 모드 버전 1.5.1. 
 - 그 달의 채용 지원자는 불러와도 그대로
 - 가치보다 많이 싼 부동산이 나오면 알림
 - 새 사업체의 종류를 고르는 창에 손님이 다 찼을 때의 한 달 매출과 비용
+- 가족 구성원에게 더 나은 일자리가 나면 알림: 같은 직장의 같은 직업으로 시급이 확실히 높은 자리, 또는 자격이 되는 같은 계통의 한 단계 위 직업
 
 ## 설치
 
